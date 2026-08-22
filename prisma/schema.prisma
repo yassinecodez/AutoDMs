@@ -1,0 +1,60 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String       @id @default(uuid())
+  email       String       @unique
+  password    String
+  name        String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  accounts    IgAccount[]
+  automations Automation[]
+}
+
+model IgAccount {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instagramAccountId String   @unique
+  pageId             String   @unique
+  pageName           String
+  accessToken        String   // Encrypted Page Access Token
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Automation {
+  id                  String         @id @default(uuid())
+  userId              String
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                String
+  triggerType         String         // "ALL", "KEYWORD", "EXACT"
+  triggerKeyword      String?        // Target text to match against
+  replyDmMessage      String         // Content to send via DM
+  replyCommentOptions String[]       // Randomized public comment replies
+  active              Boolean        @default(true)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  logs                ExecutionLog[]
+}
+
+model ExecutionLog {
+  id                String      @id @default(uuid())
+  automationId      String?
+  automation        Automation? @relation(fields: [automationId], references: [id], onDelete: SetNull)
+  commentId         String      @unique
+  commentText       String
+  commenterUsername String
+  dmStatus          String      // "SUCCESS", "FAILED", "SKIPPED"
+  dmError           String?
+  commentStatus     String      // "SUCCESS", "FAILED", "SKIPPED"
+  commentError      String?
+  timestamp         DateTime    @default(now())
+}
