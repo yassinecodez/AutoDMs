@@ -26,13 +26,9 @@ export async function GET(request: NextRequest) {
 
   const clientId = process.env.META_APP_ID;
   const clientSecret = process.env.META_APP_SECRET;
-  const nextauthUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
   
   // Must match the exact redirect_uri sent during the initial OAuth link generation
-  const isProd = process.env.NODE_ENV === "production";
-  const redirectUri = isProd 
-    ? "https://autodms-project.vercel.app/api/auth/facebook/callback" 
-    : `${nextauthUrl}/api/auth/facebook/callback`;
+  const redirectUri = process.env.NODE_ENV === 'production' || process.env.VERCEL ? 'https://autodms-project.vercel.app/api/auth/facebook/callback' : 'http://localhost:3000/api/auth/facebook/callback';
   const version = process.env.META_API_VERSION || "v24.0";
 
   try {

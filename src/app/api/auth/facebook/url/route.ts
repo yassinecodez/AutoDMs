@@ -8,28 +8,18 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const clientId = process.env.META_APP_ID;
-  const nextauthUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const redirectUri = process.env.NODE_ENV === 'production' || process.env.VERCEL ? 'https://autodms-project.vercel.app/api/auth/facebook/callback' : 'http://localhost:3000/api/auth/facebook/callback';
   
-  // Meta OAuth requires the redirect_uri to match the exact domain registered in the App Console (preview branch URLs will fail)
-  const isProd = process.env.NODE_ENV === "production";
-  const redirectUri = isProd 
-    ? "https://autodms-project.vercel.app/api/auth/facebook/callback" 
-    : `${nextauthUrl}/api/auth/facebook/callback`;
-  
-  const scopes = [
-    "public_profile",
-    "pages_show_list",
-    "pages_read_engagement",
-    "instagram_basic",
-    "instagram_manage_comments",
-    "instagram_manage_messages",
-  ].join(",");
+  const params = new URLSearchParams({
+    client_id: process.env.META_APP_ID!,
+    redirect_uri: redirectUri,
+    scope: 'public_profile,pages_show_list,pages_read_engagement,instagram_basic,instagram_manage_comments,instagram_manage_messages',
+    response_type: 'code',
+    auth_type: 'rerequest',
+    display: 'popup'
+  });
 
-  const version = process.env.META_API_VERSION || "v24.0";
-  const oauthUrl = `https://www.facebook.com/${version}/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(
-    redirectUri
-  )}&scope=${encodeURIComponent(scopes)}&response_type=code`;
+  const url = `https://www.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
 
-  return NextResponse.json({ url: oauthUrl });
+  return NextResponse.json({ url, redirectUri });
 }

@@ -33,6 +33,7 @@ export function ConnectFacebookButton() {
       }
       const data = await res.json();
       if (data.url) {
+        console.log("Opening OAuth URL:", data.url);
         window.location.href = data.url;
       } else {
         throw new Error("Invalid redirect response.");
