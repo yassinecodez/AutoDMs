@@ -3,11 +3,17 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "./db";
 import bcrypt from "bcryptjs";
 
-// Dynamically handle Railway's public domain URL mapping for NextAuth
-if (!process.env.NEXTAUTH_URL && process.env.RAILWAY_PUBLIC_DOMAIN) {
-  const domain = process.env.RAILWAY_PUBLIC_DOMAIN;
-  process.env.NEXTAUTH_URL = domain.startsWith("http") ? domain : `https://${domain}`;
-  console.log(`[NextAuth] Dynamic URL mapped to: ${process.env.NEXTAUTH_URL}`);
+// Dynamically handle Railway's public domain URL mapping and Vercel's VERCEL_URL environment variable for NextAuth
+if (!process.env.NEXTAUTH_URL) {
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) {
+    const domain = process.env.RAILWAY_PUBLIC_DOMAIN;
+    process.env.NEXTAUTH_URL = domain.startsWith("http") ? domain : `https://${domain}`;
+  } else if (process.env.VERCEL_URL) {
+    process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`;
+  }
+  if (process.env.NEXTAUTH_URL) {
+    console.log(`[NextAuth] Dynamic URL mapped to: ${process.env.NEXTAUTH_URL}`);
+  }
 }
 
 export const authOptions: AuthOptions = {
