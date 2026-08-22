@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
-import { MetaApi } from "@/lib/meta";
 
 /**
  * GET Handler: Meta Webhook Subscription Verification Handshake
@@ -25,13 +24,13 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST Handler: Handles incoming real-time events from Meta
+ * POST Handler: Handles incoming real-time events from Meta/Instagram
  */
 export async function POST(request: NextRequest) {
   const signature = request.headers.get("X-Hub-Signature-256");
   
   if (!signature) {
-    console.error("[Webhook] Signature verification failed: X-Hub-Signature-256 header missing.");
+    console.error("[Webhook] Signature verification failed: X-Hub-Signature-255 header missing.");
     return new NextResponse("Unauthorized: Signature missing", { status: 401 });
   }
 
@@ -58,6 +57,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const payload = JSON.parse(rawBody);
+    
+    // Add full debug logging
+    console.log("Incoming Webhook:", JSON.stringify(payload, null, 2));
 
     if (payload.object !== "instagram") {
       return NextResponse.json({ received: true });
@@ -75,12 +77,13 @@ export async function POST(request: NextRequest) {
           const commentId = commentVal.id;
           const commentText = commentVal.text;
           const commenterUsername = commentVal.from?.username;
+          const mediaId = commentVal.media?.id; // Extract Instagram media ID
 
           if (!commentId || !commentText || !commenterUsername) {
             continue;
           }
 
-          console.log(`[Webhook] Direct-processing comment ${commentId} ("${commentText}") from user "${commenterUsername}"`);
+          console.log(`[Webhook] Processing comment ${commentId} ("${commentText}") on media ${mediaId || "unknown"}`);
 
           try {
             // 1. Deduplication: Check if comment was already processed
@@ -93,9 +96,14 @@ export async function POST(request: NextRequest) {
               continue;
             }
 
-            // 2. Fetch linked Instagram Account
-            const igAccount = await db.igAccount.findUnique({
-              where: { instagramAccountId },
+            // 2. Fetch linked Instagram Account flexibly
+            const igAccount = await db.igAccount.findFirst({
+              where: {
+                OR: [
+                  { instagramAccountId: String(instagramAccountId) },
+                  { pageId: String(instagramAccountId) }
+                ]
+              }
             });
 
             if (!igAccount) {
@@ -103,10 +111,10 @@ export async function POST(request: NextRequest) {
               continue;
             }
 
-            // Decrypt page access token
-            let pageAccessToken = "";
+            // Decrypt access token
+            let decryptedToken = "";
             try {
-              pageAccessToken = decrypt(igAccount.accessToken);
+              decryptedToken = decrypt(igAccount.accessToken);
             } catch (err: any) {
               console.error(`[Webhook] Failed to decrypt access token for account ${instagramAccountId}:`, err);
               continue;
@@ -124,6 +132,14 @@ export async function POST(request: NextRequest) {
             const normalizedComment = commentText.trim().toLowerCase();
 
             for (const auto of automations) {
+              // Post-Specific Targeting check:
+              // If scope is SPECIFIC_POSTS, check if mediaId matches
+              if (auto.triggerScope === "SPECIFIC_POSTS") {
+                if (!mediaId || !auto.targetMediaIds.includes(mediaId)) {
+                  continue; // Skip this rule, doesn't match this post
+                }
+              }
+
               const triggerType = auto.triggerType.toUpperCase();
               const keyword = auto.triggerKeyword?.trim().toLowerCase() || "";
 
@@ -144,7 +160,7 @@ export async function POST(request: NextRequest) {
             }
 
             if (!matchedAutomation) {
-              console.log(`[Webhook] No active automation rule matched comment text: "${commentText}"`);
+              console.log(`[Webhook] No active automation rule matched comment text/scope logic.`);
               await db.executionLog.create({
                 data: {
                   commentId,
@@ -161,24 +177,39 @@ export async function POST(request: NextRequest) {
 
             console.log(`[Webhook] Matched automation "${matchedAutomation.name}"`);
 
-            // 4. Execute Actions (Private DM & Public Comment Reply)
+            // 4. Execute Actions (Private DM & Public Comment Reply via Direct Instagram API)
             let dmStatus = "SKIPPED";
             let dmError: string | null = null;
             let commentStatus = "SKIPPED";
             let commentError: string | null = null;
 
-            // A. Send Private Reply (DM)
-            const dmResult = await MetaApi.sendPrivateReply(
-              commentId,
-              matchedAutomation.replyDmMessage,
-              pageAccessToken
-            );
+            // A. Send Private Reply (DM) using the Instagram Graph API
+            try {
+              console.log(`[Webhook] Dispatching Private DM to comment ${commentId}...`);
+              const dmRes = await fetch("https://graph.instagram.com/v24.0/me/messages", {
+                method: "POST",
+                headers: {
+                  "Authorization": `Bearer ${decryptedToken}`,
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  recipient: { comment_id: commentId },
+                  message: { text: matchedAutomation.replyDmMessage }
+                })
+              });
+              const dmResultJson = await dmRes.json();
+              console.log("DM Dispatch Response:", dmResultJson);
 
-            if (dmResult.success) {
-              dmStatus = "SUCCESS";
-            } else {
+              if (dmRes.ok && !dmResultJson.error) {
+                dmStatus = "SUCCESS";
+              } else {
+                dmStatus = "FAILED";
+                dmError = dmResultJson.error?.message || JSON.stringify(dmResultJson) || "Failed to send private reply";
+              }
+            } catch (err: any) {
+              console.error("[Webhook] Failed to dispatch DM:", err);
               dmStatus = "FAILED";
-              dmError = dmResult.error || "Failed to send private reply";
+              dmError = err.message || "Failed to dispatch DM";
             }
 
             // B. Send Public Comment Reply (Randomized option if available)
@@ -187,19 +218,31 @@ export async function POST(request: NextRequest) {
               matchedAutomation.replyCommentOptions.length > 0
             ) {
               const options = matchedAutomation.replyCommentOptions;
-              const randomReply = options[Math.floor(Math.random() * options.length)];
+              const chosenPublicReply = options[Math.floor(Math.random() * options.length)];
 
-              const commentResult = await MetaApi.sendPublicCommentReply(
-                commentId,
-                randomReply,
-                pageAccessToken
-              );
+              try {
+                console.log(`[Webhook] Dispatching Public Reply to comment ${commentId}...`);
+                const replyRes = await fetch(`https://graph.instagram.com/v24.0/${commentId}/replies`, {
+                  method: "POST",
+                  headers: {
+                    "Authorization": `Bearer ${decryptedToken}`,
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify({ message: chosenPublicReply })
+                });
+                const replyResultJson = await replyRes.json();
+                console.log("Public Reply Response:", replyResultJson);
 
-              if (commentResult.success) {
-                commentStatus = "SUCCESS";
-              } else {
+                if (replyRes.ok && !replyResultJson.error) {
+                  commentStatus = "SUCCESS";
+                } else {
+                  commentStatus = "FAILED";
+                  commentError = replyResultJson.error?.message || JSON.stringify(replyResultJson) || "Failed to send public comment reply";
+                }
+              } catch (err: any) {
+                console.error("[Webhook] Failed to dispatch public reply:", err);
                 commentStatus = "FAILED";
-                commentError = commentResult.error || "Failed to send public comment reply";
+                commentError = err.message || "Failed to dispatch public reply";
               }
             }
 
@@ -226,7 +269,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (err: any) {
     console.error("[Webhook] Failed to process payload:", err);
-    // Return a 200 OK anyway to satisfy Meta webhook requirements and prevent retries
     return NextResponse.json({ error: "Internal processing error acknowledged" }, { status: 200 });
   }
 }

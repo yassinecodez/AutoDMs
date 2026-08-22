@@ -40,6 +40,8 @@ model Automation {
   triggerKeyword      String?        // Target text to match against
   replyDmMessage      String         // Content to send via DM
   replyCommentOptions String[]       // Randomized public comment replies
+  triggerScope        String         @default("ALL_POSTS") // "ALL_POSTS" | "SPECIFIC_POSTS"
+  targetMediaIds      String[]       @default([])          // Array of Instagram media IDs
   active              Boolean        @default(true)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt

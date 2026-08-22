@@ -17,6 +17,8 @@ export async function createAutomation(formData: FormData) {
   const triggerKeyword = formData.get("triggerKeyword") as string;
   const replyDmMessage = formData.get("replyDmMessage") as string;
   const replyCommentRaw = formData.get("replyCommentOptions") as string;
+  const triggerScope = (formData.get("triggerScope") as string) || "ALL_POSTS";
+  const targetMediaIdsRaw = formData.get("targetMediaIds") as string;
 
   if (!name || !triggerType || !replyDmMessage) {
     throw new Error("Please fill in all required fields.");
@@ -30,6 +32,13 @@ export async function createAutomation(formData: FormData) {
         .filter((opt) => opt.length > 0)
     : [];
 
+  const targetMediaIds = targetMediaIdsRaw
+    ? targetMediaIdsRaw
+        .split(",")
+        .map((id) => id.trim())
+        .filter((id) => id.length > 0)
+    : [];
+
   await db.automation.create({
     data: {
       userId,
@@ -38,6 +47,8 @@ export async function createAutomation(formData: FormData) {
       triggerKeyword: triggerType === "ALL" ? null : triggerKeyword,
       replyDmMessage,
       replyCommentOptions,
+      triggerScope,
+      targetMediaIds,
       active: true,
     },
   });

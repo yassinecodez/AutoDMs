@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, Plus, Settings, Trash2, ToggleLeft, ToggleRight, MessageSquare, Key, AlertTriangle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Loader2, Plus, Settings, Trash2, ToggleLeft, ToggleRight, AlertTriangle, CheckSquare } from "lucide-react";
 import { createAutomation, toggleAutomationActive, deleteAutomation } from "@/app/dashboard/automations/actions";
 import Link from "next/link";
 
@@ -18,6 +18,8 @@ interface Automation {
   triggerKeyword: string | null;
   replyDmMessage: string;
   replyCommentOptions: string[];
+  triggerScope: string;
+  targetMediaIds: string[];
   active: boolean;
   createdAt: Date;
 }
@@ -37,6 +39,43 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
   
   // Form states
   const [triggerType, setTriggerType] = useState("KEYWORD");
+  const [triggerScope, setTriggerScope] = useState("ALL_POSTS");
+  const [targetMediaIds, setTargetMediaIds] = useState<string[]>([]);
+  
+  // Media items states
+  const [mediaItems, setMediaItems] = useState<any[]>([]);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaError, setMediaError] = useState("");
+
+  // Load Instagram posts when modal is open and scope is SPECIFIC_POSTS
+  useEffect(() => {
+    if (isModalOpen && triggerScope === "SPECIFIC_POSTS" && mediaItems.length === 0) {
+      const fetchMedia = async () => {
+        setMediaLoading(true);
+        setMediaError("");
+        try {
+          const res = await fetch("/api/instagram/media");
+          if (!res.ok) {
+            throw new Error("Failed to load Instagram posts.");
+          }
+          const data = await res.json();
+          setMediaItems(data.media || []);
+        } catch (err: any) {
+          setMediaError(err.message || "Failed to load posts from Instagram profile.");
+        } finally {
+          setMediaLoading(false);
+        }
+      };
+
+      fetchMedia();
+    }
+  }, [isModalOpen, triggerScope, mediaItems.length]);
+
+  const handleToggleMediaSelect = (mediaId: string) => {
+    setTargetMediaIds((prev) =>
+      prev.includes(mediaId) ? prev.filter((id) => id !== mediaId) : [...prev, mediaId]
+    );
+  };
 
   const handleToggleActive = async (id: string, currentStatus: boolean) => {
     setToggleLoading(id);
@@ -73,10 +112,7 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
     const formData = new FormData(e.currentTarget);
     try {
       await createAutomation(formData);
-      // Fetch updated list or append locally
-      // For simplicity, reload window or refresh routes. Since we're in Next.js, 
-      // the best approach to reflect Server Actions is letting the page revalidate.
-      // We will reload to sync instantly.
+      // Reload page to re-fetch Server Component state and sync UI
       window.location.reload();
     } catch (err: any) {
       setError(err.message || "Failed to create automation.");
@@ -109,6 +145,8 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
           onClick={() => {
             setIsModalOpen(true);
             setError("");
+            setTargetMediaIds([]);
+            setTriggerScope("ALL_POSTS");
           }}
           className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-sm transition-colors shadow-lg shadow-violet-500/10 active:scale-95"
         >
@@ -149,8 +187,8 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
                   </button>
                 </div>
 
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex items-center gap-2">
+                <div className="space-y-2 text-xs">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-slate-500">Trigger:</span>
                     <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold uppercase tracking-wider text-[10px]">
                       {auto.triggerType === "ALL"
@@ -164,6 +202,19 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
                     )}
                   </div>
 
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-slate-500">Targeting:</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      auto.triggerScope === "SPECIFIC_POSTS"
+                        ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                        : "bg-slate-800 text-slate-400"
+                    }`}>
+                      {auto.triggerScope === "SPECIFIC_POSTS"
+                        ? `Specific Media (${auto.targetMediaIds?.length || 0})`
+                        : "All Posts & Reels"}
+                    </span>
+                  </div>
+
                   <div className="space-y-1">
                     <span className="text-slate-500 block">Private Reply (DM):</span>
                     <p className="p-3 bg-slate-950 border border-slate-800 rounded-lg text-slate-300 font-mono text-[11px] leading-relaxed break-words">
@@ -173,9 +224,9 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
 
                   <div className="space-y-1">
                     <span className="text-slate-500 block">
-                      Public Comment Replies ({auto.replyCommentOptions.length} options):
+                      Public Comment Replies ({auto.replyCommentOptions?.length || 0} options):
                     </span>
-                    {auto.replyCommentOptions.length > 0 ? (
+                    {auto.replyCommentOptions && auto.replyCommentOptions.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5">
                         {auto.replyCommentOptions.map((opt, idx) => (
                           <span
@@ -220,8 +271,8 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
       {/* Creation Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/40 shrink-0">
               <h3 className="font-extrabold text-white text-base">New Automation Rule</h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -231,12 +282,14 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="p-6 space-y-4">
+            <form onSubmit={handleCreate} className="p-6 space-y-4 overflow-y-auto flex-1">
               {error && (
                 <div className="p-3 text-xs text-red-400 bg-red-950/20 border border-red-500/20 rounded-lg">
                   {error}
                 </div>
               )}
+
+              <input type="hidden" name="targetMediaIds" value={targetMediaIds.join(",")} />
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-300">Rule Name</label>
@@ -249,6 +302,7 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
                 />
               </div>
 
+              {/* Trigger Match Type and Keyword */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-300">Trigger Match Type</label>
@@ -279,24 +333,112 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
                 </div>
               </div>
 
+              {/* Post Scope Selection */}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-300">Trigger Target Scope</label>
+                <select
+                  name="triggerScope"
+                  value={triggerScope}
+                  onChange={(e) => setTriggerScope(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white"
+                >
+                  <option value="ALL_POSTS">All Posts & Reels</option>
+                  <option value="SPECIFIC_POSTS">Specific Posts / Reels</option>
+                </select>
+              </div>
+
+              {/* Media selection grid if SPECIFIC_POSTS */}
+              {triggerScope === "SPECIFIC_POSTS" && (
+                <div className="space-y-2 border border-slate-800/80 p-4 bg-slate-950/60 rounded-xl">
+                  <label className="text-[11px] font-semibold text-slate-400 block">
+                    Select Target Posts/Reels ({targetMediaIds.length} selected)
+                  </label>
+                  
+                  {mediaLoading && (
+                    <div className="flex items-center justify-center py-6 text-xs text-slate-500 gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
+                      Loading recent Instagram posts...
+                    </div>
+                  )}
+
+                  {mediaError && (
+                    <div className="text-xs text-red-400 p-2 bg-red-950/20 border border-red-500/20 rounded-lg">
+                      {mediaError}
+                    </div>
+                  )}
+
+                  {!mediaLoading && !mediaError && mediaItems.length === 0 && (
+                    <div className="text-xs text-slate-500 text-center py-6">
+                      No recent posts or Reels found on your Instagram profile.
+                    </div>
+                  )}
+
+                  {!mediaLoading && !mediaError && mediaItems.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 max-h-[160px] overflow-y-auto pr-1">
+                      {mediaItems.map((item) => {
+                        const isSelected = targetMediaIds.includes(item.id);
+                        const imageSrc = item.thumbnail_url || item.media_url;
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={() => handleToggleMediaSelect(item.id)}
+                            className={`relative aspect-square bg-slate-900 border rounded-lg overflow-hidden cursor-pointer transition-all ${
+                              isSelected 
+                                ? "border-violet-500 ring-2 ring-violet-500/20" 
+                                : "border-slate-800 hover:border-slate-700"
+                            }`}
+                          >
+                            {imageSrc ? (
+                              <img 
+                                src={imageSrc} 
+                                alt={item.caption || "Instagram media"} 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[9px] text-slate-500 p-1 text-center bg-slate-950">
+                                Media File
+                              </div>
+                            )}
+                            
+                            <div className="absolute inset-x-0 bottom-0 bg-black/50 p-1 text-left truncate">
+                              <span className="text-[8px] text-slate-200 font-mono">
+                                {item.caption || "Untitled"}
+                              </span>
+                            </div>
+
+                            {isSelected && (
+                              <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-violet-600 border border-white flex items-center justify-center text-[9px] text-white font-extrabold shadow-sm">
+                                ✓
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Private reply */}
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-300">Private Reply message (DM)</label>
                 <textarea
                   name="replyDmMessage"
                   required
-                  rows={3}
+                  rows={2}
                   placeholder="Hey! Here's the access link you requested: https://example.com/checkout 🚀"
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white leading-relaxed"
                 />
               </div>
 
+              {/* Public reply */}
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-300">
                   Public Comment Replies <span className="text-[10px] text-slate-500 font-normal">(One option per line - randomized)</span>
                 </label>
                 <textarea
                   name="replyCommentOptions"
-                  rows={3}
+                  rows={2}
                   placeholder="Just sent you a DM! Check your inbox 📥&#10;Sent! Let me know if you got it 🚀&#10;Check your messages!"
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white leading-relaxed font-sans"
                 />
@@ -305,7 +447,7 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full mt-2 py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-colors text-sm flex items-center justify-center gap-1.5 shadow-lg shadow-violet-500/10"
+                className="w-full mt-2 py-3 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl transition-colors text-sm flex items-center justify-center gap-1.5 shadow-lg shadow-violet-500/10 shrink-0"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
