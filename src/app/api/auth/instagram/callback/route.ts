@@ -1,0 +1,112 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { encrypt } from "@/lib/crypto";
+import { db } from "@/lib/db";
+
+export async function GET(request: NextRequest) {
+  // 1. Authenticate user session
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+  const userId = session.user.id;
+
+  const { searchParams } = new URL(request.url);
+  const code = searchParams.get("code");
+  const error = searchParams.get("error");
+
+  if (error || !code) {
+    console.error("Instagram OAuth callback error:", error);
+    return NextResponse.redirect(
+      new URL("/dashboard/accounts?status=error&message=" + encodeURIComponent(error || "No authorization code provided"), request.url)
+    );
+  }
+
+  const clientId = process.env.META_APP_ID || "954476037671354";
+  const clientSecret = process.env.META_APP_SECRET || "33f555ff97da5f3b5ba5f88c3ee40e11";
+  const redirectUri = "https://autodms-project.vercel.app/api/auth/instagram/callback";
+
+  try {
+    // 2. Exchange authorization code for short-lived User Access Token
+    const exchangeBody = new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      grant_type: "authorization_code",
+      redirect_uri: redirectUri,
+      code: code,
+    });
+
+    console.log("[Instagram Callback] Exchanging code for short-lived token...");
+    const tokenRes = await fetch("https://api.instagram.com/oauth/access_token", {
+      method: "POST",
+      body: exchangeBody,
+    });
+
+    if (!tokenRes.ok) {
+      const errorText = await tokenRes.text();
+      throw new Error(`Failed to exchange code: ${errorText}`);
+    }
+
+    const tokenData = await tokenRes.json();
+    const shortLivedToken = tokenData.access_token;
+
+    // 3. Exchange short-lived token for long-lived (60-day) token
+    console.log("[Instagram Callback] Exchanging for long-lived token...");
+    const longLivedUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${clientSecret}&access_token=${shortLivedToken}`;
+    
+    const longLivedRes = await fetch(longLivedUrl);
+    if (!longLivedRes.ok) {
+      const errorText = await longLivedRes.text();
+      throw new Error(`Failed to get long-lived token: ${errorText}`);
+    }
+
+    const longLivedData = await longLivedRes.json();
+    const longLivedToken = longLivedData.access_token;
+
+    // 4. Fetch the Instagram profile info
+    console.log("[Instagram Callback] Fetching profile info...");
+    const profileUrl = `https://graph.instagram.com/v24.0/me?fields=id,username,profile_picture_url&access_token=${longLivedToken}`;
+    
+    const profileRes = await fetch(profileUrl);
+    if (!profileRes.ok) {
+      const errorText = await profileRes.text();
+      throw new Error(`Failed to fetch profile: ${errorText}`);
+    }
+
+    const profileData = await profileRes.json();
+    const instagramId = profileData.id;
+    const username = profileData.username;
+
+    // 5. Encrypt long-lived token and save/update the IgAccount in database
+    const encryptedToken = encrypt(longLivedToken);
+
+    // Instagram direct login doesn't have a Facebook Page ID.
+    // We map instagramId to pageId to satisfy the database schema constraints.
+    await db.igAccount.upsert({
+      where: { instagramAccountId: instagramId },
+      update: {
+        pageId: instagramId,
+        pageName: username,
+        accessToken: encryptedToken,
+      },
+      create: {
+        userId: userId,
+        instagramAccountId: instagramId,
+        pageId: instagramId,
+        pageName: username,
+        accessToken: encryptedToken,
+      },
+    });
+
+    console.log(`[Instagram Callback] Account @${username} linked successfully.`);
+    return NextResponse.redirect(
+      new URL("/dashboard/accounts?connected=true&status=success&count=1", request.url)
+    );
+  } catch (err: any) {
+    console.error("[Instagram Callback] OAuth callback processing failed:", err);
+    return NextResponse.redirect(
+      new URL("/dashboard/accounts?status=error&message=" + encodeURIComponent(err.message || "Failed to link Instagram account"), request.url)
+    );
+  }
+}

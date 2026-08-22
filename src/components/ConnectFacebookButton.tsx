@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
-const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
+const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -14,7 +14,9 @@ const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
     strokeLinejoin="round"
     {...props}
   >
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
   </svg>
 );
 
@@ -27,7 +29,7 @@ export function ConnectFacebookButton() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/facebook/url");
+      const res = await fetch("/api/auth/instagram/url");
       if (!res.ok) {
         throw new Error("Failed to fetch integration URL.");
       }
@@ -49,14 +51,14 @@ export function ConnectFacebookButton() {
       <button
         onClick={handleConnect}
         disabled={loading}
-        className="inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-bold text-white transition-colors shadow-lg hover:shadow-blue-500/10 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-tr from-yellow-500 via-red-500 to-purple-600 font-bold text-white transition-all shadow-lg hover:shadow-purple-500/10 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? (
           <Loader2 className="w-5 h-5 animate-spin" />
         ) : (
-          <FacebookIcon className="w-5 h-5 fill-current" />
+          <InstagramIcon className="w-5 h-5" />
         )}
-        Connect Meta / Facebook Profile
+        Connect Instagram Account
       </button>
       {error && <p className="text-sm text-red-400 font-medium">{error}</p>}
     </div>
