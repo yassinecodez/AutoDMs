@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import ConnectFacebookButton from "@/components/ConnectFacebookButton";
+import ManualConnectForm from "@/components/ManualConnectForm";
 import { disconnectAccount } from "./actions";
 import { Shield, AlertCircle, CheckCircle, Trash2 } from "lucide-react";
 
@@ -89,7 +90,10 @@ export default async function AccountsPage({ searchParams }: PageProps) {
           </div>
         </div>
         
-        <ConnectFacebookButton />
+        <div className="flex flex-col md:flex-row md:items-start gap-4">
+          <ConnectFacebookButton />
+          <ManualConnectForm />
+        </div>
       </div>
 
       {/* Accounts List */}
