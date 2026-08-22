@@ -24,6 +24,8 @@ const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+import { redirect } from "next/navigation";
+
 interface PageProps {
   searchParams: Promise<{
     status?: string;
@@ -35,7 +37,10 @@ interface PageProps {
 export default async function AccountsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const session = await getServerSession(authOptions);
-  const userId = session!.user!.id!;
+  if (!session || !session.user) {
+    redirect("/login");
+  }
+  const userId = session.user.id;
 
   // Fetch all linked Instagram accounts for this user
   const accounts = await db.igAccount.findMany({

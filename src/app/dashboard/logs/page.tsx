@@ -9,10 +9,15 @@ interface PageProps {
   }>;
 }
 
+import { redirect } from "next/navigation";
+
 export default async function LogsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const session = await getServerSession(authOptions);
-  const userId = session!.user!.id!;
+  if (!session || !session.user) {
+    redirect("/login");
+  }
+  const userId = session.user.id;
   const q = params.q || "";
 
   // Query logs linked to this creator's automations

@@ -3,9 +3,14 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AutomationsManager from "@/components/AutomationsManager";
 
+import { redirect } from "next/navigation";
+
 export default async function AutomationsPage() {
   const session = await getServerSession(authOptions);
-  const userId = session!.user!.id!;
+  if (!session || !session.user) {
+    redirect("/login");
+  }
+  const userId = session.user.id;
 
   // Fetch automations rules
   const automations = await db.automation.findMany({

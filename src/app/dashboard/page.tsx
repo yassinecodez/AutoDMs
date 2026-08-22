@@ -3,10 +3,14 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { UserCheck, Settings, MessageSquare, ShieldCheck, Calendar } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function DashboardOverview() {
   const session = await getServerSession(authOptions);
-  const userId = session!.user!.id!;
+  if (!session || !session.user) {
+    redirect('/login');
+  }
+  const userId = session.user.id;
 
   // 1. Fetch DB Stats concurrently
   const [accountsCount, activeAutomationsCount, totalDmsCount, failedDmsCount, recentLogs] = await Promise.all([

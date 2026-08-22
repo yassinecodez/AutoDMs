@@ -6,19 +6,23 @@ import { getRedisConnection } from "./redis";
 
 export const QUEUE_NAME = "instagram-comment-queue";
 
-// Create queue instance
-export const commentQueue = new Queue(QUEUE_NAME, {
-  connection: getRedisConnection(),
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: {
-      type: "exponential",
-      delay: 5000,
-    },
-    removeOnComplete: true,
-    removeOnFail: false,
-  },
-});
+const connection = getRedisConnection();
+
+// Create queue instance only if Redis connection is active
+export const commentQueue = connection 
+  ? new Queue(QUEUE_NAME, {
+      connection,
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: "exponential",
+          delay: 5000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+    })
+  : null;
 
 export interface CommentJobData {
   commentId: string;
@@ -30,6 +34,10 @@ export interface CommentJobData {
 let worker: Worker | null = null;
 
 export function startWorker() {
+  if (!connection) {
+    console.log("[Queue] startWorker: No Redis connection active. Skipping worker boot.");
+    return null;
+  }
   if (worker) {
     return worker;
   }
@@ -194,7 +202,7 @@ export function startWorker() {
       };
     },
     {
-      connection: getRedisConnection(),
+      connection: connection!,
       concurrency: 5,
       limiter: {
         max: 5,
