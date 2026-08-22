@@ -10,14 +10,20 @@ export async function GET() {
 
   const clientId = process.env.META_APP_ID;
   const nextauthUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-  const redirectUri = `${nextauthUrl}/api/auth/facebook/callback`;
+  
+  // Meta OAuth requires the redirect_uri to match the exact domain registered in the App Console (preview branch URLs will fail)
+  const isProd = process.env.NODE_ENV === "production";
+  const redirectUri = isProd 
+    ? "https://autodms-project.vercel.app/api/auth/facebook/callback" 
+    : `${nextauthUrl}/api/auth/facebook/callback`;
   
   const scopes = [
+    "public_profile",
+    "pages_show_list",
+    "pages_read_engagement",
     "instagram_basic",
     "instagram_manage_comments",
     "instagram_manage_messages",
-    "pages_manage_metadata",
-    "pages_read_engagement",
   ].join(",");
 
   const version = process.env.META_API_VERSION || "v24.0";
