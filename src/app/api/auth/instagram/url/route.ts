@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   const redirectUri = "https://autodms-project.vercel.app/api/auth/instagram/callback";
-  const clientId = process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID || "954476037671354";
+  const clientId = process.env.INSTAGRAM_APP_ID || "1041048208692049";
   
   const params = new URLSearchParams({
     client_id: clientId,

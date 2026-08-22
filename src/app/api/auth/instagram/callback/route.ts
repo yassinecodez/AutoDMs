@@ -23,8 +23,8 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const clientId = process.env.META_APP_ID || "954476037671354";
-  const clientSecret = process.env.META_APP_SECRET || "33f555ff97da5f3b5ba5f88c3ee40e11";
+  const clientId = process.env.INSTAGRAM_APP_ID || "1041048208692049";
+  const clientSecret = process.env.INSTAGRAM_APP_SECRET || "41fed97dd8c8940e7b929984d3f16a5f";
   const redirectUri = "https://autodms-project.vercel.app/api/auth/instagram/callback";
 
   try {
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Instagram Callback] Account @${username} linked successfully.`);
     return NextResponse.redirect(
-      new URL("/dashboard/accounts?connected=true&status=success&count=1", request.url)
+      new URL("/dashboard/accounts?connected=true", request.url)
     );
   } catch (err: any) {
     console.error("[Instagram Callback] OAuth callback processing failed:", err);
