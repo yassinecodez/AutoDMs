@@ -78,6 +78,17 @@ export async function GET(request: NextRequest) {
     const instagramId = profileData.id;
     const username = profileData.username;
 
+    // 4.5 Call Webhook app subscription handshake
+    try {
+      console.log("[Instagram Callback] Registering App Webhook Subscriptions...");
+      const subscribeUrl = `https://graph.instagram.com/v24.0/me/subscribed_apps?subscribed_fields=comments,messages,messaging_postbacks&access_token=${longLivedToken}`;
+      const subscribeRes = await fetch(subscribeUrl, { method: "POST" });
+      const subscribeData = await subscribeRes.json();
+      console.log("[Instagram Callback] Subscription handshake response:", subscribeData);
+    } catch (subErr) {
+      console.error("[Instagram Callback] Subscription handshake failed, continuing anyway:", subErr);
+    }
+
     // 5. Encrypt long-lived token and save/update the IgAccount in database
     const encryptedToken = encrypt(longLivedToken);
 

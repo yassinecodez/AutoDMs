@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import ConnectFacebookButton from "@/components/ConnectFacebookButton";
 import ManualConnectForm from "@/components/ManualConnectForm";
+import SyncWebhookButton from "@/components/SyncWebhookButton";
 import { disconnectAccount } from "./actions";
 import { Shield, AlertCircle, CheckCircle, Trash2 } from "lucide-react";
 
@@ -132,20 +133,23 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                   </div>
                 </div>
 
-                <form
-                  action={async () => {
-                    "use server";
-                    await disconnectAccount(acc.id);
-                  }}
-                >
-                  <button
-                    type="submit"
-                    className="p-3 text-slate-500 hover:text-red-400 hover:bg-slate-800/50 rounded-xl transition-colors"
-                    title="Disconnect Account"
+                <div className="flex items-center gap-3">
+                  <SyncWebhookButton />
+                  <form
+                    action={async () => {
+                      "use server";
+                      await disconnectAccount(acc.id);
+                    }}
                   >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </form>
+                    <button
+                      type="submit"
+                      className="p-3 text-slate-500 hover:text-red-400 hover:bg-slate-800/50 rounded-xl transition-colors"
+                      title="Disconnect Account"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </form>
+                </div>
               </div>
             ))}
           </div>
