@@ -20,6 +20,8 @@ export async function createAutomation(formData: FormData) {
   const triggerScope = (formData.get("triggerScope") as string) || "ALL_POSTS";
   const targetMediaIdsRaw = formData.get("targetMediaIds") as string;
   const triggerSource = (formData.get("triggerSource") as string) || "COMMENTS";
+  const enableLeadCapture = formData.get("enableLeadCapture") === "true";
+  const leadConfirmationDm = formData.get("leadConfirmationDm") as string;
 
   if (!name || !triggerType || !replyDmMessage) {
     throw new Error("Please fill in all required fields.");
@@ -51,6 +53,8 @@ export async function createAutomation(formData: FormData) {
       triggerScope,
       targetMediaIds,
       triggerSource,
+      enableLeadCapture,
+      leadConfirmationDm: enableLeadCapture ? leadConfirmationDm : null,
       active: true,
     },
   });

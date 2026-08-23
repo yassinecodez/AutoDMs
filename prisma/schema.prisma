@@ -30,6 +30,7 @@ model IgAccount {
   tokenExpiresAt     DateTime?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  leads              Lead[]
 }
 
 model Automation {
@@ -44,10 +45,13 @@ model Automation {
   triggerScope        String         @default("ALL_POSTS") // "ALL_POSTS" | "SPECIFIC_POSTS"
   targetMediaIds      String[]       @default([])          // Array of Instagram media IDs
   triggerSource       String         @default("COMMENTS")  // "COMMENTS" | "STORY_MENTIONS" | "DIRECT_MESSAGES" | "ALL"
+  enableLeadCapture   Boolean        @default(false)
+  leadConfirmationDm  String?        // DM sent after email/phone is captured
   active              Boolean        @default(true)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   logs                ExecutionLog[]
+  leads               Lead[]
 }
 
 model ExecutionLog {
@@ -58,9 +62,25 @@ model ExecutionLog {
   commentText       String
   commenterUsername String
   triggerSource     String      @default("COMMENT")  // "COMMENT" | "STORY_MENTION" | "DIRECT_MESSAGE"
-  dmStatus          String      // "SUCCESS", "FAILED", "SKIPPED"
+  dmStatus          String      // "SUCCESS", "FAILED", "SKIPPED", "LEAD_CAPTURED"
   dmError           String?
   commentStatus     String      // "SUCCESS", "FAILED", "SKIPPED"
   commentError      String?
   timestamp         DateTime    @default(now())
+}
+
+model Lead {
+  id            String       @id @default(uuid())
+  igAccountId   String
+  igAccount     IgAccount    @relation(fields: [igAccountId], references: [id], onDelete: Cascade)
+  automationId  String?
+  automation    Automation?  @relation(fields: [automationId], references: [id], onDelete: SetNull)
+  instagramId   String
+  username      String?
+  email         String?
+  phone         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([igAccountId, instagramId])
 }

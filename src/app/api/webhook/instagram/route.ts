@@ -462,6 +462,87 @@ export async function POST(request: NextRequest) {
             console.warn("[Webhook Messaging] Could not resolve sender profile info:", profErr);
           }
 
+          // 3.5 Inbound Email & Phone Detection for Lead Capture
+          const emailMatch = message.text ? message.text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/) : null;
+          const phoneMatch = message.text ? message.text.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/) : null;
+
+          const email = emailMatch ? emailMatch[0] : null;
+          const phone = phoneMatch ? phoneMatch[0] : null;
+
+          if (email || phone) {
+            console.log(`[Webhook Lead Capture] Lead details detected from ${senderId}: email=${email}, phone=${phone}`);
+
+            // Find active lead capture automation
+            const leadCaptureAuto = await db.automation.findFirst({
+              where: {
+                userId: igAccount.userId,
+                active: true,
+                enableLeadCapture: true,
+              }
+            });
+
+            // Upsert the Lead in the database
+            await db.lead.upsert({
+              where: {
+                igAccountId_instagramId: {
+                  igAccountId: igAccount.id,
+                  instagramId: senderId,
+                }
+              },
+              update: {
+                username: resolvedUsername,
+                email: email || undefined,
+                phone: phone || undefined,
+                automationId: leadCaptureAuto?.id || undefined,
+              },
+              create: {
+                igAccountId: igAccount.id,
+                instagramId: senderId,
+                username: resolvedUsername,
+                email,
+                phone,
+                automationId: leadCaptureAuto?.id || null,
+              }
+            });
+
+            // Update execution log trigger source & status
+            await db.executionLog.update({
+              where: { commentId: messageId },
+              data: {
+                triggerSource: "DIRECT_MESSAGE",
+                commenterUsername: resolvedUsername,
+                automationId: leadCaptureAuto?.id || null,
+                dmStatus: "LEAD_CAPTURED",
+              }
+            });
+
+            // Send lead confirmation DM if configured
+            if (leadCaptureAuto && leadCaptureAuto.leadConfirmationDm) {
+              try {
+                await sleep(Math.floor(Math.random() * 1500) + 500);
+                const dmText = leadCaptureAuto.leadConfirmationDm.replace("{{username}}", resolvedUsername);
+                
+                const dmRes = await fetchWithRetry("https://graph.instagram.com/v24.0/me/messages", {
+                  method: "POST",
+                  headers: {
+                    "Authorization": `Bearer ${decryptedToken}`,
+                    "Content-Type": "application/json"
+                  },
+                  body: JSON.stringify({
+                    recipient: { id: senderId },
+                    message: { text: dmText }
+                  })
+                });
+                const dmJson = await dmRes.json();
+                console.log("[Webhook Lead Capture] DM confirmation response:", dmRes.status, JSON.stringify(dmJson));
+              } catch (dmErr) {
+                console.error("[Webhook Lead Capture] Failed to send DM confirmation:", dmErr);
+              }
+            }
+
+            continue; // Stop further keyword matching for this DM
+          }
+
           // Check if Story Mention
           const isStoryMention = message.attachments?.some(
             (att: any) => att.type === "story_mention" || att.type === "ig_story_mention"

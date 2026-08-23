@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, UserCheck, Settings, FileSpreadsheet } from "lucide-react";
+import { LayoutDashboard, UserCheck, Settings, FileSpreadsheet, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function SidebarNav() {
@@ -23,6 +23,11 @@ export function SidebarNav() {
       name: "Automations",
       href: "/dashboard/automations",
       icon: Settings,
+    },
+    {
+      name: "Leads Database",
+      href: "/dashboard/leads",
+      icon: Users,
     },
     {
       name: "Activity Logs",

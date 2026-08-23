@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, Plus, Settings, Trash2, ToggleLeft, ToggleRight, AlertTriangle } from "lucide-react";
+import { Loader2, Plus, Settings, Trash2, ToggleLeft, ToggleRight, AlertTriangle, Key } from "lucide-react";
 import { createAutomation, toggleAutomationActive, deleteAutomation } from "@/app/dashboard/automations/actions";
 import Link from "next/link";
 
@@ -21,6 +21,8 @@ interface Automation {
   triggerScope: string;
   targetMediaIds: string[];
   triggerSource: string;
+  enableLeadCapture: boolean;
+  leadConfirmationDm: string | null;
   active: boolean;
   createdAt: Date;
 }
@@ -42,6 +44,7 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
   const [triggerType, setTriggerType] = useState("KEYWORD");
   const [triggerScope, setTriggerScope] = useState("ALL_POSTS");
   const [triggerSource, setTriggerSource] = useState("COMMENTS");
+  const [enableLeadCapture, setEnableLeadCapture] = useState(false);
   const [targetMediaIds, setTargetMediaIds] = useState<string[]>([]);
   
   // Media items states
@@ -149,6 +152,7 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
             setTargetMediaIds([]);
             setTriggerScope("ALL_POSTS");
             setTriggerSource("COMMENTS");
+            setEnableLeadCapture(false);
           }}
           className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-sm transition-colors shadow-lg shadow-violet-500/10 active:scale-95"
         >
@@ -173,9 +177,16 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
             >
               <div className="space-y-3">
                 <div className="flex justify-between items-start gap-4">
-                  <h3 className="text-lg font-bold text-white truncate max-w-[200px]" title={auto.name}>
-                    {auto.name}
-                  </h3>
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-bold text-white truncate max-w-[200px]" title={auto.name}>
+                      {auto.name}
+                    </h3>
+                    {auto.enableLeadCapture && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
+                        Lead Capture Active
+                      </span>
+                    )}
+                  </div>
                   <button
                     disabled={toggleLoading === auto.id}
                     onClick={() => handleToggleActive(auto.id, auto.active)}
@@ -240,11 +251,22 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
                   )}
 
                   <div className="space-y-1">
-                    <span className="text-slate-500 block">Private Reply (DM):</span>
+                    <span className="text-slate-500 block">
+                      {auto.enableLeadCapture ? "Initial Ask (DM):" : "Private Reply (DM):"}
+                    </span>
                     <p className="p-3 bg-slate-950 border border-slate-800 rounded-lg text-slate-300 font-mono text-[11px] leading-relaxed break-words">
                       {auto.replyDmMessage}
                     </p>
                   </div>
+
+                  {auto.enableLeadCapture && auto.leadConfirmationDm && (
+                    <div className="space-y-1">
+                      <span className="text-slate-500 block">Lead Confirmation (DM):</span>
+                      <p className="p-3 bg-slate-950 border border-slate-800 rounded-lg text-emerald-400 font-mono text-[11px] leading-relaxed break-words">
+                        {auto.leadConfirmationDm}
+                      </p>
+                    </div>
+                  )}
 
                   {auto.triggerSource === "COMMENTS" && (
                     <div className="space-y-1">
@@ -256,7 +278,7 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
                           {auto.replyCommentOptions.map((opt, idx) => (
                             <span
                               key={idx}
-                              className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-slate-400 text-[10px] truncate max-w-[150px]"
+                              className="px-2 py-1 rounded bg-slate-950 border border-slate-855 text-slate-400 text-[10px] truncate max-w-[150px]"
                               title={opt}
                             >
                               "{opt}"
@@ -343,7 +365,7 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
                 </select>
               </div>
 
-              {/* Trigger Match Type and Keyword (Only for comments and direct DMs) */}
+              {/* Trigger Match Type and Keyword */}
               {triggerSource !== "STORY_MENTIONS" && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -375,6 +397,21 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
                   </div>
                 </div>
               )}
+
+              {/* Lead Capture Mode Toggle */}
+              <div className="flex items-center gap-2 py-1 bg-slate-950/40 p-3 rounded-xl border border-slate-800/80">
+                <input
+                  type="checkbox"
+                  id="enableLeadCapture"
+                  checked={enableLeadCapture}
+                  onChange={(e) => setEnableLeadCapture(e.target.checked)}
+                  className="w-4 h-4 text-violet-600 border-slate-800 rounded bg-slate-950 focus:ring-violet-500 cursor-pointer"
+                />
+                <input type="hidden" name="enableLeadCapture" value={String(enableLeadCapture)} />
+                <label htmlFor="enableLeadCapture" className="text-xs font-semibold text-slate-300 cursor-pointer select-none">
+                  Enable Lead Capture Mode (2-Step Email/Phone collection)
+                </label>
+              </div>
 
               {/* Post Scope Selection (Only for Comments source) */}
               {triggerSource === "COMMENTS" && (
@@ -467,16 +504,40 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
               {/* Private reply */}
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-300">
-                  {triggerSource === "STORY_MENTIONS" ? "Reward Message (DM)" : "Private Reply message (DM)"}
+                  {enableLeadCapture
+                    ? "Initial Ask message (Ask for email/phone)"
+                    : triggerSource === "STORY_MENTIONS"
+                    ? "Reward Message (DM)"
+                    : "Private Reply message (DM)"}
                 </label>
                 <textarea
                   name="replyDmMessage"
                   required
                   rows={2}
-                  placeholder={triggerSource === "STORY_MENTIONS" ? "Thanks for tagging us, {{username}}! Here is your gift: https://example.com/gift 🎁" : "Hey! Here's the access link you requested: https://example.com/checkout 🚀"}
+                  placeholder={
+                    enableLeadCapture
+                      ? "Hey! Reply to this DM with your email address to unlock your reward link 🚀"
+                      : triggerSource === "STORY_MENTIONS"
+                      ? "Thanks for tagging us, {{username}}! Here is your gift: https://example.com/gift 🎁"
+                      : "Hey! Here's the access link you requested: https://example.com/checkout 🚀"
+                  }
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white leading-relaxed"
                 />
               </div>
+
+              {/* Lead Confirmation DM (Only if Lead Capture enabled) */}
+              {enableLeadCapture && (
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-300">Lead Confirmation DM (Deliver reward link)</label>
+                  <textarea
+                    name="leadConfirmationDm"
+                    required
+                    rows={2}
+                    placeholder="Thanks {{username}}! We got your details. Here is your access link: https://example.com/checkout 🚀"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white leading-relaxed"
+                  />
+                </div>
+              )}
 
               {/* Public reply (Only for Comments source) */}
               {triggerSource === "COMMENTS" && (
