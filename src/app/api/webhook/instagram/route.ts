@@ -4,6 +4,44 @@ import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
 
 /**
+ * Text Normalization Helper
+ * Strips accents, emojis, punctuation, and lowercase/trims the string
+ */
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // strip accents
+    .replace(/[^\w\s]/gi, "")        // strip emojis/punctuation/special characters
+    .replace(/\s+/g, " ")            // normalize whitespace
+    .trim();
+}
+
+/**
+ * Fetch With Retry Helper
+ * Retries fetch once if Meta returns 500, 503, or ETIMEDOUT
+ */
+async function fetchWithRetry(url: string, options: RequestInit, retries = 1): Promise<Response> {
+  try {
+    const res = await fetch(url, options);
+    if ((res.status === 500 || res.status === 503) && retries > 0) {
+      console.log(`[Webhook] Meta returned status ${res.status}. Retrying 1 time...`);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    return res;
+  } catch (err: any) {
+    const isTimeout = err.code === "ETIMEDOUT" || err.message?.toLowerCase().includes("timeout");
+    if (isTimeout && retries > 0) {
+      console.log(`[Webhook] Fetch timed out. Retrying 1 time...`);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    throw err;
+  }
+}
+
+/**
  * GET Handler: Meta Webhook Subscription Verification Handshake
  */
 export async function GET(request: NextRequest) {
@@ -91,13 +129,19 @@ export async function POST(request: NextRequest) {
           console.log(`[Webhook] Processing comment ${commentId} ("${commentText}") on media ${mediaId || "unknown"}`);
 
           try {
-            // 1. Deduplication: Check if comment was already processed
-            const existingLog = await db.executionLog.findUnique({
-              where: { commentId },
-            });
-
-            if (existingLog) {
-              console.log(`[Webhook] Comment ${commentId} has already been processed. Skipping.`);
+            // 1. Atomic Deduplication: Check-and-set using database unique constraint
+            try {
+              await db.executionLog.create({
+                data: {
+                  commentId,
+                  commentText,
+                  commenterUsername,
+                  dmStatus: "PROCESSING",
+                  commentStatus: "PROCESSING",
+                },
+              });
+            } catch (err: any) {
+              console.log(`[Webhook] Duplicate comment skipped (atomic check): ${commentId}`);
               continue;
             }
 
@@ -118,12 +162,10 @@ export async function POST(request: NextRequest) {
             }
 
             if (!igAccount) {
-              console.warn(`[Webhook] No Instagram Account found in db even after fallback. Creating failed execution log.`);
-              await db.executionLog.create({
+              console.warn(`[Webhook] No Instagram Account found in db even after fallback. Updating placeholder to FAILED.`);
+              await db.executionLog.update({
+                where: { commentId },
                 data: {
-                  commentId,
-                  commentText,
-                  commenterUsername,
                   dmStatus: "FAILED",
                   dmError: "No accounts linked in system database",
                   commentStatus: "FAILED",
@@ -139,11 +181,9 @@ export async function POST(request: NextRequest) {
               decryptedToken = decrypt(igAccount.accessToken);
             } catch (err: any) {
               console.error(`[Webhook] Failed to decrypt access token for account ${igAccount.instagramAccountId}:`, err);
-              await db.executionLog.create({
+              await db.executionLog.update({
+                where: { commentId },
                 data: {
-                  commentId,
-                  commentText,
-                  commenterUsername,
                   dmStatus: "FAILED",
                   dmError: "Failed to decrypt token: " + err.message,
                   commentStatus: "FAILED",
@@ -162,11 +202,10 @@ export async function POST(request: NextRequest) {
             });
 
             let matchedAutomation = null;
-            const normalizedComment = commentText.trim().toLowerCase();
+            const normalizedComment = normalizeText(commentText);
 
             for (const auto of automations) {
               // Post-Specific Targeting check:
-              // If scope is SPECIFIC_POSTS, check if mediaId matches
               if (auto.triggerScope === "SPECIFIC_POSTS") {
                 if (!mediaId || !auto.targetMediaIds.includes(mediaId)) {
                   continue; // Skip this rule, doesn't match this post
@@ -174,18 +213,28 @@ export async function POST(request: NextRequest) {
               }
 
               const triggerType = auto.triggerType.toUpperCase();
-              const keyword = auto.triggerKeyword?.trim().toLowerCase() || "";
 
               if (triggerType === "ALL") {
                 matchedAutomation = auto;
                 break;
-              } else if (triggerType === "EXACT") {
-                if (normalizedComment === keyword) {
+              }
+
+              // Split trigger keyword string by comma to get individual targets
+              const targetKeywords = auto.triggerKeyword
+                ? auto.triggerKeyword.split(",").map(k => normalizeText(k)).filter(k => k.length > 0)
+                : [];
+
+              if (targetKeywords.length === 0) {
+                continue;
+              }
+
+              if (triggerType === "EXACT") {
+                if (targetKeywords.includes(normalizedComment)) {
                   matchedAutomation = auto;
                   break;
                 }
               } else if (triggerType === "KEYWORD") {
-                if (normalizedComment.includes(keyword)) {
+                if (targetKeywords.some(k => normalizedComment.includes(k))) {
                   matchedAutomation = auto;
                   break;
                 }
@@ -195,11 +244,9 @@ export async function POST(request: NextRequest) {
             if (!matchedAutomation) {
               console.log(`[Webhook] No active automation rule matched comment text/scope logic.`);
               const isTest = instagramAccountId === "0" || commenterUsername === "instagram";
-              await db.executionLog.create({
+              await db.executionLog.update({
+                where: { commentId },
                 data: {
-                  commentId,
-                  commentText,
-                  commenterUsername,
                   dmStatus: isTest ? "TEST_EVENT" : "SKIPPED",
                   dmError: "No matching automation trigger",
                   commentStatus: isTest ? "TEST_EVENT" : "SKIPPED",
@@ -211,7 +258,7 @@ export async function POST(request: NextRequest) {
 
             console.log(`[Webhook] Matched automation "${matchedAutomation.name}"`);
 
-            // 4. Execute Actions (Private DM & Public Comment Reply via Direct Instagram API)
+            // 4. Execute Actions (Private DM & Public Comment Reply via Direct Instagram API with retries)
             let dmStatus = "SKIPPED";
             let dmError: string | null = null;
             let commentStatus = "SKIPPED";
@@ -221,7 +268,7 @@ export async function POST(request: NextRequest) {
             try {
               console.log("Dispatching DM for comment:", commentId);
               const dmText = matchedAutomation.replyDmMessage.replace("{{username}}", commenterUsername || "there");
-              const dmRes = await fetch("https://graph.instagram.com/v24.0/me/messages", {
+              const dmRes = await fetchWithRetry("https://graph.instagram.com/v24.0/me/messages", {
                 method: "POST",
                 headers: {
                   "Authorization": `Bearer ${decryptedToken}`,
@@ -239,7 +286,9 @@ export async function POST(request: NextRequest) {
                 dmStatus = "SUCCESS";
               } else {
                 dmStatus = "FAILED";
-                dmError = dmJson.error?.message || JSON.stringify(dmJson) || "Failed to send private reply";
+                const errCode = dmJson.error?.code ? `[Code ${dmJson.error.code}] ` : "";
+                const errMsg = dmJson.error?.message || JSON.stringify(dmJson) || "Failed to send private reply";
+                dmError = `${errCode}${errMsg}`;
               }
             } catch (err: any) {
               console.error("[Webhook] Failed to dispatch DM:", err);
@@ -257,7 +306,7 @@ export async function POST(request: NextRequest) {
 
               try {
                 console.log(`[Webhook] Dispatching Public Reply to comment ${commentId}...`);
-                const replyRes = await fetch(`https://graph.instagram.com/v24.0/${commentId}/replies`, {
+                const replyRes = await fetchWithRetry(`https://graph.instagram.com/v24.0/${commentId}/replies`, {
                   method: "POST",
                   headers: {
                     "Authorization": `Bearer ${decryptedToken}`,
@@ -272,7 +321,9 @@ export async function POST(request: NextRequest) {
                   commentStatus = "SUCCESS";
                 } else {
                   commentStatus = "FAILED";
-                  commentError = replyResultJson.error?.message || JSON.stringify(replyResultJson) || "Failed to send public comment reply";
+                  const errCode = replyResultJson.error?.code ? `[Code ${replyResultJson.error.code}] ` : "";
+                  const errMsg = replyResultJson.error?.message || JSON.stringify(replyResultJson) || "Failed to send public comment reply";
+                  commentError = `${errCode}${errMsg}`;
                 }
               } catch (err: any) {
                 console.error("[Webhook] Failed to dispatch public reply:", err);
@@ -281,13 +332,11 @@ export async function POST(request: NextRequest) {
               }
             }
 
-            // 5. Log outcome
-            await db.executionLog.create({
+            // 5. Update placeholder log with outcomes
+            await db.executionLog.update({
+              where: { commentId },
               data: {
                 automationId: matchedAutomation.id,
-                commentId,
-                commentText,
-                commenterUsername,
                 dmStatus,
                 dmError,
                 commentStatus,
@@ -296,13 +345,11 @@ export async function POST(request: NextRequest) {
             });
           } catch (err: any) {
             console.error(`[Webhook] Error executing comment automation:`, err);
-            // Create a general failure log
+            // Try to log general failure outcome
             try {
-              await db.executionLog.create({
+              await db.executionLog.update({
+                where: { commentId },
                 data: {
-                  commentId,
-                  commentText,
-                  commenterUsername,
                   dmStatus: "FAILED",
                   dmError: err.message || "Unknown execution crash",
                   commentStatus: "FAILED",
@@ -310,7 +357,7 @@ export async function POST(request: NextRequest) {
                 },
               });
             } catch (logErr) {
-              console.error("Could not write fallback execution log:", logErr);
+              console.error("Could not write update execution log:", logErr);
             }
           }
         }

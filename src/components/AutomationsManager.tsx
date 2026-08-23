@@ -320,14 +320,14 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-300">
-                    Keyword {triggerType === "ALL" && "(Disabled)"}
+                    Keywords {triggerType === "ALL" && "(Disabled)"} <span className="text-[10px] text-slate-550 font-normal">(comma-separated)</span>
                   </label>
                   <input
                     name="triggerKeyword"
                     type="text"
                     disabled={triggerType === "ALL"}
                     required={triggerType !== "ALL"}
-                    placeholder={triggerType === "ALL" ? "N/A" : "e.g. discount"}
+                    placeholder={triggerType === "ALL" ? "N/A" : "e.g. gemini, link, info"}
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white disabled:opacity-40 disabled:cursor-not-allowed"
                   />
                 </div>
