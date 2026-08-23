@@ -44,6 +44,97 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 1): P
 }
 
 /**
+ * SaaS Quota Check Helper
+ */
+async function checkUsageAllowed(userId: string): Promise<{ allowed: boolean; current?: number; limit?: number }> {
+  try {
+    const user = await db.user.findUnique({ where: { id: userId } });
+    if (!user) return { allowed: true };
+
+    const oneMonth = 30 * 24 * 60 * 60 * 1000;
+    if (Date.now() - new Date(user.usageResetAt).getTime() > oneMonth) {
+      const updated = await db.user.update({
+        where: { id: userId },
+        data: {
+          dmsCountThisMonth: 0,
+          usageResetAt: new Date(),
+        }
+      });
+      return { allowed: true, current: 0, limit: updated.dmsLimit };
+    }
+
+    if (user.dmsCountThisMonth >= user.dmsLimit) {
+      return { allowed: false, current: user.dmsCountThisMonth, limit: user.dmsLimit };
+    }
+
+    return { allowed: true, current: user.dmsCountThisMonth, limit: user.dmsLimit };
+  } catch (err) {
+    console.error("[Usage Check Error]", err);
+    return { allowed: true };
+  }
+}
+
+/**
+ * Increment SaaS Quota Helper
+ */
+async function incrementUsage(userId: string) {
+  try {
+    await db.user.update({
+      where: { id: userId },
+      data: {
+        dmsCountThisMonth: { increment: 1 }
+      }
+    });
+  } catch (err) {
+    console.error("[Usage Increment Error]", err);
+  }
+}
+
+/**
+ * Build Message Payload for Meta
+ * Formats as Generic Template if buttonTitle/buttonUrl exist, otherwise standard text DM
+ */
+function buildMessagePayload(matchedAutomation: any, resolvedUsername: string) {
+  const dmText = matchedAutomation.replyDmMessage.replace("{{username}}", resolvedUsername);
+
+  if (matchedAutomation.buttonTitle && matchedAutomation.buttonUrl) {
+    const buttons: any[] = [
+      {
+        type: "web_url",
+        url: matchedAutomation.buttonUrl,
+        title: matchedAutomation.buttonTitle.slice(0, 20),
+      }
+    ];
+
+    if (matchedAutomation.secondaryButtonTitle && matchedAutomation.secondaryButtonUrl) {
+      buttons.push({
+        type: "web_url",
+        url: matchedAutomation.secondaryButtonUrl,
+        title: matchedAutomation.secondaryButtonTitle.slice(0, 20),
+      });
+    }
+
+    return {
+      attachment: {
+        type: "template",
+        payload: {
+          template_type: "generic",
+          elements: [
+            {
+              title: matchedAutomation.name.slice(0, 80),
+              subtitle: dmText.slice(0, 80),
+              buttons: buttons,
+            }
+          ]
+        }
+      }
+    };
+  }
+
+  return { text: dmText };
+}
+
+/**
  * GET Handler: Meta Webhook Subscription Verification Handshake
  */
 export async function GET(request: NextRequest) {
@@ -179,6 +270,21 @@ export async function POST(request: NextRequest) {
               continue;
             }
 
+            // Check SaaS Quota Limits
+            const quota = await checkUsageAllowed(igAccount.userId);
+            if (!quota.allowed) {
+              console.warn(`[Webhook Comments] DM Quota Exceeded for user ${igAccount.userId}. Current: ${quota.current}/${quota.limit}`);
+              await db.executionLog.update({
+                where: { commentId },
+                data: {
+                  dmStatus: "FAILED",
+                  dmError: `Quota limit exceeded (${quota.current}/${quota.limit})`,
+                  commentStatus: "SKIPPED",
+                },
+              });
+              continue;
+            }
+
             // Decrypt access token
             let decryptedToken = "";
             try {
@@ -273,7 +379,9 @@ export async function POST(request: NextRequest) {
             try {
               await sleep(Math.floor(Math.random() * 1500) + 500);
               console.log("Dispatching DM for comment:", commentId);
-              const dmText = matchedAutomation.replyDmMessage.replace("{{username}}", commenterUsername || "there");
+              
+              const dmPayload = buildMessagePayload(matchedAutomation, commenterUsername || "there");
+
               const dmRes = await fetchWithRetry("https://graph.instagram.com/v24.0/me/messages", {
                 method: "POST",
                 headers: {
@@ -282,7 +390,7 @@ export async function POST(request: NextRequest) {
                 },
                 body: JSON.stringify({
                   recipient: { comment_id: commentId },
-                  message: { text: dmText }
+                  message: dmPayload
                 })
               });
               const dmJson = await dmRes.json();
@@ -290,6 +398,7 @@ export async function POST(request: NextRequest) {
 
               if (dmRes.ok && !dmJson.error) {
                 dmStatus = "SUCCESS";
+                await incrementUsage(igAccount.userId);
               } else {
                 dmStatus = "FAILED";
                 const errCode = dmJson.error?.code ? `[Code ${dmJson.error.code}] ` : "";
@@ -369,22 +478,26 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // B. PROCESS DIRECT MESSAGES & STORY MENTIONS
+      // B. PROCESS DIRECT MESSAGES, STORY MENTIONS, AND POSTBACKS
       const messaging = entry.messaging || [];
       for (const msgEvent of messaging) {
         const senderId = msgEvent.sender?.id;
         const message = msgEvent.message;
+        const postback = msgEvent.postback;
 
-        if (!senderId || !message) {
+        // Verify sender and that we have a message or postback payload to process
+        if (!senderId || (!message && !postback)) {
           continue;
         }
 
-        const messageId = message.mid;
+        const messageText = message ? (message.text || "") : (postback.payload || postback.title || "");
+        const messageId = message ? (message.mid || "") : ("postback_" + msgEvent.timestamp + "_" + senderId);
+
         if (!messageId) {
           continue;
         }
 
-        console.log(`[Webhook Messaging] Processing messaging event ${messageId} from sender ${senderId}`);
+        console.log(`[Webhook Messaging] Processing messaging event ${messageId} (Postback: ${!!postback}) from sender ${senderId}`);
 
         try {
           // 1. Atomic Deduplication
@@ -392,7 +505,7 @@ export async function POST(request: NextRequest) {
             await db.executionLog.create({
               data: {
                 commentId: messageId,
-                commentText: message.text || "[Media/Attachment]",
+                commentText: messageText || "[Media/Postback/Attachment]",
                 commenterUsername: "ig_user_" + senderId, // Temporary fallback
                 triggerSource: "DIRECT_MESSAGE", // Temporary default
                 dmStatus: "PROCESSING",
@@ -432,6 +545,20 @@ export async function POST(request: NextRequest) {
             continue;
           }
 
+          // Check SaaS Quota Limits
+          const quota = await checkUsageAllowed(igAccount.userId);
+          if (!quota.allowed) {
+            console.warn(`[Webhook Messaging] DM Quota Exceeded for user ${igAccount.userId}. Current: ${quota.current}/${quota.limit}`);
+            await db.executionLog.update({
+              where: { commentId: messageId },
+              data: {
+                dmStatus: "FAILED",
+                dmError: `Quota limit exceeded (${quota.current}/${quota.limit})`,
+              },
+            });
+            continue;
+          }
+
           // Decrypt access token
           let decryptedToken = "";
           try {
@@ -463,8 +590,8 @@ export async function POST(request: NextRequest) {
           }
 
           // 3.5 Inbound Email & Phone Detection for Lead Capture
-          const emailMatch = message.text ? message.text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/) : null;
-          const phoneMatch = message.text ? message.text.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/) : null;
+          const emailMatch = messageText ? messageText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/) : null;
+          const phoneMatch = messageText ? messageText.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/) : null;
 
           const email = emailMatch ? emailMatch[0] : null;
           const phone = phoneMatch ? phoneMatch[0] : null;
@@ -518,25 +645,31 @@ export async function POST(request: NextRequest) {
 
             // Send lead confirmation DM if configured
             if (leadCaptureAuto && leadCaptureAuto.leadConfirmationDm) {
-              try {
-                await sleep(Math.floor(Math.random() * 1500) + 500);
-                const dmText = leadCaptureAuto.leadConfirmationDm.replace("{{username}}", resolvedUsername);
-                
-                const dmRes = await fetchWithRetry("https://graph.instagram.com/v24.0/me/messages", {
-                  method: "POST",
-                  headers: {
-                    "Authorization": `Bearer ${decryptedToken}`,
-                    "Content-Type": "application/json"
-                  },
-                  body: JSON.stringify({
-                    recipient: { id: senderId },
-                    message: { text: dmText }
-                  })
-                });
-                const dmJson = await dmRes.json();
-                console.log("[Webhook Lead Capture] DM confirmation response:", dmRes.status, JSON.stringify(dmJson));
-              } catch (dmErr) {
-                console.error("[Webhook Lead Capture] Failed to send DM confirmation:", dmErr);
+              const quotaCheck = await checkUsageAllowed(igAccount.userId);
+              if (quotaCheck.allowed) {
+                try {
+                  await sleep(Math.floor(Math.random() * 1500) + 500);
+                  const dmText = leadCaptureAuto.leadConfirmationDm.replace("{{username}}", resolvedUsername);
+                  
+                  const dmRes = await fetchWithRetry("https://graph.instagram.com/v24.0/me/messages", {
+                    method: "POST",
+                    headers: {
+                      "Authorization": `Bearer ${decryptedToken}`,
+                      "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                      recipient: { id: senderId },
+                      message: { text: dmText }
+                    })
+                  });
+                  const dmJson = await dmRes.json();
+                  console.log("[Webhook Lead Capture] DM confirmation response:", dmRes.status, JSON.stringify(dmJson));
+                  if (dmRes.ok && !dmJson.error) {
+                    await incrementUsage(igAccount.userId);
+                  }
+                } catch (dmErr) {
+                  console.error("[Webhook Lead Capture] Failed to send DM confirmation:", dmErr);
+                }
               }
             }
 
@@ -544,12 +677,12 @@ export async function POST(request: NextRequest) {
           }
 
           // Check if Story Mention
-          const isStoryMention = message.attachments?.some(
+          const isStoryMention = message?.attachments?.some(
             (att: any) => att.type === "story_mention" || att.type === "ig_story_mention"
-          );
+          ) || false;
 
           let matchedAutomation = null;
-          let triggerSourceField = "DIRECT_MESSAGE";
+          let triggerSourceField = postback ? "DIRECT_MESSAGE" : "DIRECT_MESSAGE";
 
           if (isStoryMention) {
             triggerSourceField = "STORY_MENTION";
@@ -566,7 +699,7 @@ export async function POST(request: NextRequest) {
             if (automations.length > 0) {
               matchedAutomation = automations[0];
             }
-          } else if (message.text) {
+          } else if (messageText) {
             triggerSourceField = "DIRECT_MESSAGE";
             // Match rules with triggerSource === "DIRECT_MESSAGES" or "ALL"
             const automations = await db.automation.findMany({
@@ -577,7 +710,7 @@ export async function POST(request: NextRequest) {
               },
             });
 
-            const normalizedMsg = normalizeText(message.text);
+            const normalizedMsg = normalizeText(messageText);
 
             for (const auto of automations) {
               const triggerType = auto.triggerType.toUpperCase();
@@ -620,7 +753,7 @@ export async function POST(request: NextRequest) {
           });
 
           if (!matchedAutomation) {
-            console.log(`[Webhook Messaging] No active automation rule matched DM/Story Mention.`);
+            console.log(`[Webhook Messaging] No active automation rule matched DM/Story Mention/Postback.`);
             await db.executionLog.update({
               where: { commentId: messageId },
               data: {
@@ -641,7 +774,8 @@ export async function POST(request: NextRequest) {
             await sleep(Math.floor(Math.random() * 1500) + 500);
             console.log("Dispatching Direct Message to user:", senderId);
             
-            const dmText = matchedAutomation.replyDmMessage.replace("{{username}}", resolvedUsername);
+            const dmPayload = buildMessagePayload(matchedAutomation, resolvedUsername);
+
             const dmRes = await fetchWithRetry("https://graph.instagram.com/v24.0/me/messages", {
               method: "POST",
               headers: {
@@ -650,7 +784,7 @@ export async function POST(request: NextRequest) {
               },
               body: JSON.stringify({
                 recipient: { id: senderId },
-                message: { text: dmText }
+                message: dmPayload
               })
             });
             const dmJson = await dmRes.json();
@@ -658,6 +792,7 @@ export async function POST(request: NextRequest) {
 
             if (dmRes.ok && !dmJson.error) {
               dmStatus = "SUCCESS";
+              await incrementUsage(igAccount.userId);
             } else {
               dmStatus = "FAILED";
               const errCode = dmJson.error?.code ? `[Code ${dmJson.error.code}] ` : "";

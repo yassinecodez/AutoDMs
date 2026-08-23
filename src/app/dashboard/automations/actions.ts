@@ -23,6 +23,11 @@ export async function createAutomation(formData: FormData) {
   const enableLeadCapture = formData.get("enableLeadCapture") === "true";
   const leadConfirmationDm = formData.get("leadConfirmationDm") as string;
 
+  const buttonTitle = formData.get("buttonTitle") as string;
+  const buttonUrl = formData.get("buttonUrl") as string;
+  const secondaryButtonTitle = formData.get("secondaryButtonTitle") as string;
+  const secondaryButtonUrl = formData.get("secondaryButtonUrl") as string;
+
   if (!name || !triggerType || !replyDmMessage) {
     throw new Error("Please fill in all required fields.");
   }
@@ -55,6 +60,10 @@ export async function createAutomation(formData: FormData) {
       triggerSource,
       enableLeadCapture,
       leadConfirmationDm: enableLeadCapture ? leadConfirmationDm : null,
+      buttonTitle: buttonTitle || null,
+      buttonUrl: buttonUrl || null,
+      secondaryButtonTitle: secondaryButtonTitle || null,
+      secondaryButtonUrl: secondaryButtonUrl || null,
       active: true,
     },
   });

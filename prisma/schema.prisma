@@ -9,14 +9,18 @@ generator client {
 }
 
 model User {
-  id          String       @id @default(uuid())
-  email       String       @unique
-  password    String
-  name        String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  accounts    IgAccount[]
-  automations Automation[]
+  id                 String       @id @default(uuid())
+  email              String       @unique
+  password           String
+  name               String?
+  planType           String       @default("FREE")      // "FREE" | "PRO"
+  dmsLimit           Int          @default(500)
+  dmsCountThisMonth  Int          @default(0)
+  usageResetAt       DateTime     @default(now())
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  accounts           IgAccount[]
+  automations        Automation[]
 }
 
 model IgAccount {
@@ -47,6 +51,10 @@ model Automation {
   triggerSource       String         @default("COMMENTS")  // "COMMENTS" | "STORY_MENTIONS" | "DIRECT_MESSAGES" | "ALL"
   enableLeadCapture   Boolean        @default(false)
   leadConfirmationDm  String?        // DM sent after email/phone is captured
+  buttonTitle         String?        // Generic template primary button title
+  buttonUrl           String?        // Generic template primary button URL
+  secondaryButtonTitle String?       // Generic template secondary button title
+  secondaryButtonUrl  String?        // Generic template secondary button URL
   active              Boolean        @default(true)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt

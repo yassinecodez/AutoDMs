@@ -39,6 +39,13 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
   const [enableLeadCapture, setEnableLeadCapture] = useState(false);
   const [leadConfirmationDm, setLeadConfirmationDm] = useState("Thanks {{username}}! I've sent the PDF to your email. You can also download it directly here: https://example.com/free-training.pdf 🎁");
 
+  // Rich Interactive Buttons States
+  const [enableButtons, setEnableButtons] = useState(false);
+  const [buttonTitle, setButtonTitle] = useState("");
+  const [buttonUrl, setButtonUrl] = useState("");
+  const [secondaryButtonTitle, setSecondaryButtonTitle] = useState("");
+  const [secondaryButtonUrl, setSecondaryButtonUrl] = useState("");
+
   const [leavePublicReply, setLeavePublicReply] = useState(true);
   const [replyCommentOptions, setReplyCommentOptions] = useState<string[]>([
     "Just sent you a DM! Check your inbox 📩",
@@ -73,7 +80,7 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
     setIsSavedDot(false);
     const t = setTimeout(() => setIsSavedDot(true), 600);
     return () => clearTimeout(t);
-  }, [ruleName, triggerSource, triggerScope, targetMediaIds, triggerType, triggerKeyword, replyDmMessage, enableLeadCapture, leadConfirmationDm, leavePublicReply, replyCommentOptions]);
+  }, [ruleName, triggerSource, triggerScope, targetMediaIds, triggerType, triggerKeyword, replyDmMessage, enableLeadCapture, leadConfirmationDm, leavePublicReply, replyCommentOptions, enableButtons, buttonTitle, buttonUrl, secondaryButtonTitle, secondaryButtonUrl]);
 
   // Fetch Instagram posts if target is SPECIFIC_POSTS and media list is empty
   useEffect(() => {
@@ -144,6 +151,12 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
     formData.append("leadConfirmationDm", enableLeadCapture ? leadConfirmationDm : "");
     formData.append("replyCommentOptions", triggerSource === "COMMENTS" && leavePublicReply ? replyCommentOptions.join("\n") : "");
     formData.append("targetMediaIds", triggerScope === "SPECIFIC_POSTS" && triggerSource === "COMMENTS" ? targetMediaIds.join(",") : "");
+    
+    // Buttons Fields
+    formData.append("buttonTitle", enableButtons ? buttonTitle : "");
+    formData.append("buttonUrl", enableButtons ? buttonUrl : "");
+    formData.append("secondaryButtonTitle", enableButtons ? secondaryButtonTitle : "");
+    formData.append("secondaryButtonUrl", enableButtons ? secondaryButtonUrl : "");
 
     try {
       await createAutomation(formData);
@@ -267,7 +280,7 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
                         </div>
                         <div className="text-left space-y-1">
                           <p className="text-xs font-bold text-white">A specific post or reel</p>
-                          <p className="text-[10px] text-slate-500 leading-relaxed">
+                          <p className="text-[10px] text-slate-555 leading-relaxed">
                             Triggers only when comments are left on selected publications.
                           </p>
                         </div>
@@ -290,7 +303,7 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
                         </div>
                         <div className="text-left space-y-1">
                           <p className="text-xs font-bold text-white">Any current or future post</p>
-                          <p className="text-[10px] text-slate-500 leading-relaxed">
+                          <p className="text-[10px] text-slate-555 leading-relaxed">
                             Triggers on all posts & reels instantly, saving you time.
                           </p>
                         </div>
@@ -326,7 +339,7 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
                                 className={`p-2 border rounded-lg text-center cursor-pointer transition-colors text-[10px] font-semibold ${
                                   triggerSource === "STORY_MENTIONS"
                                     ? "border-pink-500/50 bg-pink-500/10 text-pink-400"
-                                    : "border-slate-800 bg-slate-950 text-slate-500"
+                                    : "border-slate-800 bg-slate-955 text-slate-500"
                                 }`}
                               >
                                 Story Mentions
@@ -339,7 +352,7 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
                                 className={`p-2 border rounded-lg text-center cursor-pointer transition-colors text-[10px] font-semibold ${
                                   triggerSource === "DIRECT_MESSAGES"
                                     ? "border-indigo-500/50 bg-indigo-500/10 text-indigo-400"
-                                    : "border-slate-800 bg-slate-950 text-slate-500"
+                                    : "border-slate-800 bg-slate-955 text-slate-500"
                                 }`}
                               >
                                 Inbound DMs
@@ -398,7 +411,7 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
                                   {img ? (
                                     <img src={img} alt="Instagram Media" className="w-full h-full object-cover" />
                                   ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-[8px] bg-slate-950 text-slate-600">Media</div>
+                                    <div className="w-full h-full flex items-center justify-center text-[8px] bg-slate-955 text-slate-600">Media</div>
                                   )}
                                   {isSelected && (
                                     <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-violet-600 border border-white flex items-center justify-center text-[9px] text-white font-bold">✓</div>
@@ -459,7 +472,7 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
                             }`}
                           >
                             <p className="text-xs font-bold text-white">Any Comment</p>
-                            <p className="text-[10px] text-slate-550 leading-tight">
+                            <p className="text-[10px] text-slate-555 leading-tight">
                               Responds to every incoming message or comment universally.
                             </p>
                           </div>
@@ -475,13 +488,13 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
                               value={triggerKeyword}
                               onChange={(e) => setTriggerKeyword(e.target.value)}
                               placeholder="e.g. LINK, PRICE, GEMINI"
-                              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm text-white"
+                              className="w-full px-3.5 py-2.5 bg-slate-955 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm text-white"
                             />
                             
                             {/* Visual Chips */}
                             <div className="flex flex-wrap gap-1.5 mt-2">
                               {triggerKeyword.split(",").map((k) => k.trim()).filter((k) => k.length > 0).map((chip, idx) => (
-                                <span key={idx} className="px-2.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-violet-400 font-mono text-[9px] font-bold">
+                                <span key={idx} className="px-2.5 py-0.5 rounded bg-slate-905 border border-slate-800 text-violet-400 font-mono text-[9px] font-bold">
                                   #{chip.toLowerCase()}
                                 </span>
                               ))}
@@ -564,8 +577,78 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
                             value={leadConfirmationDm}
                             onChange={(e) => setLeadConfirmationDm(e.target.value)}
                             placeholder="Type reward delivery copy..."
-                            className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm text-white leading-relaxed"
+                            className="w-full px-3.5 py-2.5 bg-slate-955 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm text-white leading-relaxed"
                           />
+                        </div>
+                      )}
+
+                      {/* Interactive Buttons Toggle */}
+                      <div className="flex items-center justify-between p-4 bg-slate-900/40 border border-slate-850 rounded-xl">
+                        <div className="text-left space-y-0.5">
+                          <p className="text-xs font-bold text-white">Attach Web URL Buttons to DM?</p>
+                          <p className="text-[9px] text-slate-500">Adds interactive template buttons underneath messages.</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setEnableButtons(!enableButtons)}
+                          className="text-slate-400 hover:text-white transition-colors"
+                        >
+                          {enableButtons ? (
+                            <ToggleRight className="w-8 h-8 text-violet-500" />
+                          ) : (
+                            <ToggleLeft className="w-8 h-8 text-slate-600" />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Interactive Buttons Input Fields */}
+                      {enableButtons && (
+                        <div className="space-y-3 pt-3 border-t border-slate-900">
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-semibold text-slate-400 uppercase">Primary Button Title</label>
+                              <input
+                                type="text"
+                                value={buttonTitle}
+                                onChange={(e) => setButtonTitle(e.target.value)}
+                                placeholder="e.g. 👉 Get Access"
+                                className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 text-white"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-semibold text-slate-400 uppercase">Primary Button URL</label>
+                              <input
+                                type="text"
+                                value={buttonUrl}
+                                onChange={(e) => setButtonUrl(e.target.value)}
+                                placeholder="https://..."
+                                className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 text-white"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 pt-1">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-semibold text-slate-400 uppercase">Secondary Button Title</label>
+                              <input
+                                type="text"
+                                value={secondaryButtonTitle}
+                                onChange={(e) => setSecondaryButtonTitle(e.target.value)}
+                                placeholder="e.g. 📲 Chat on WA"
+                                className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 text-white"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-semibold text-slate-400 uppercase">Secondary Button URL</label>
+                              <input
+                                type="text"
+                                value={secondaryButtonUrl}
+                                onChange={(e) => setSecondaryButtonUrl(e.target.value)}
+                                placeholder="https://..."
+                                className="w-full px-3 py-2 bg-slate-950 border border-slate-850 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 text-white"
+                              />
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -638,7 +721,7 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
                                 placeholder="Add another reply variation..."
                                 value={newCommentOption}
                                 onChange={(e) => setNewCommentOption(e.target.value)}
-                                className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 text-white"
+                                className="flex-1 px-3 py-2 bg-slate-955 border border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 text-white"
                               />
                               <button
                                 type="button"
@@ -787,7 +870,7 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
 
               {/* TAB 2: COMMENTS VIEW */}
               {activeTab === "COMMENTS" && (
-                <div className="flex-1 flex flex-col justify-between p-3.5 bg-zinc-950">
+                <div className="flex-1 flex flex-col justify-between p-3.5 bg-zinc-955">
                   <div className="space-y-3">
                     <div className="pb-2 border-b border-slate-900 flex justify-between items-center text-[10px]">
                       <span className="font-bold text-white">Comments Sheet</span>
@@ -855,11 +938,28 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
                       {triggerSource === "COMMENTS" ? `Commented: "${triggerKeyword ? triggerKeyword.split(",")[0] : "LINK"}"` : triggerKeyword ? triggerKeyword.split(",")[0] : "LINK"}
                     </div>
 
-                    {/* Business reply message bubble */}
-                    <div className="self-start max-w-[80%] bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 text-white rounded-2xl px-3 py-2.5 text-[10px] break-words whitespace-pre-wrap leading-normal shadow-sm">
-                      {replyDmMessage
-                        ? replyDmMessage.replace("{{username}}", "customer_ig")
-                        : "DM reply content will populate here..."}
+                    {/* Business reply message bubble (with buttons attached if enabled) */}
+                    <div className="self-start max-w-[80%] space-y-1">
+                      <div className="bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 text-white rounded-2xl px-3 py-2.5 text-[10px] break-words whitespace-pre-wrap leading-normal shadow-sm">
+                        {replyDmMessage
+                          ? replyDmMessage.replace("{{username}}", "customer_ig")
+                          : "DM reply content will populate here..."}
+                      </div>
+                      
+                      {enableButtons && (buttonTitle || secondaryButtonTitle) && (
+                        <div className="flex flex-col gap-1 w-full bg-zinc-900 border border-slate-850 rounded-xl p-1 shrink-0">
+                          {buttonTitle && (
+                            <div className="py-1 px-2.5 bg-zinc-850 hover:bg-zinc-800 rounded-lg text-center text-[8px] font-bold text-violet-400 border border-slate-800 truncate select-none">
+                              {buttonTitle}
+                            </div>
+                          )}
+                          {secondaryButtonTitle && (
+                            <div className="py-1 px-2.5 bg-zinc-850 hover:bg-zinc-800 rounded-lg text-center text-[8px] font-bold text-violet-400 border border-slate-800 truncate select-none">
+                              {secondaryButtonTitle}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Email collection sequence simulation */}
