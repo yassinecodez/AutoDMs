@@ -219,7 +219,8 @@ export async function POST(request: NextRequest) {
 
             // A. Send Private Reply (DM) using the Instagram Graph API
             try {
-              console.log(`[Webhook] Dispatching Private DM to comment ${commentId}...`);
+              console.log("Dispatching DM for comment:", commentId);
+              const dmText = matchedAutomation.replyDmMessage.replace("{{username}}", commenterUsername || "there");
               const dmRes = await fetch("https://graph.instagram.com/v24.0/me/messages", {
                 method: "POST",
                 headers: {
@@ -228,17 +229,17 @@ export async function POST(request: NextRequest) {
                 },
                 body: JSON.stringify({
                   recipient: { comment_id: commentId },
-                  message: { text: matchedAutomation.replyDmMessage }
+                  message: { text: dmText }
                 })
               });
-              const dmResultJson = await dmRes.json();
-              console.log("DM Dispatch Response:", dmResultJson);
+              const dmJson = await dmRes.json();
+              console.log("Meta DM API Response:", dmRes.status, JSON.stringify(dmJson));
 
-              if (dmRes.ok && !dmResultJson.error) {
+              if (dmRes.ok && !dmJson.error) {
                 dmStatus = "SUCCESS";
               } else {
                 dmStatus = "FAILED";
-                dmError = dmResultJson.error?.message || JSON.stringify(dmResultJson) || "Failed to send private reply";
+                dmError = dmJson.error?.message || JSON.stringify(dmJson) || "Failed to send private reply";
               }
             } catch (err: any) {
               console.error("[Webhook] Failed to dispatch DM:", err);
