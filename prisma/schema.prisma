@@ -27,6 +27,7 @@ model IgAccount {
   pageId             String   @unique
   pageName           String
   accessToken        String   // Encrypted Page Access Token
+  tokenExpiresAt     DateTime?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }

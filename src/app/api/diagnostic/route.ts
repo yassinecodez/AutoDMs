@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
+import { refreshLongLivedTokenIfNeeded } from "@/lib/tokenRefresh";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,10 +14,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Auto-refresh token if within 20 days of expiry or null
+    await refreshLongLivedTokenIfNeeded(igAccount);
+
+    // Re-fetch account to get the refreshed token (if it changed)
+    const activeAccount = (await db.igAccount.findUnique({
+      where: { id: igAccount.id },
+    })) || igAccount;
+
     // 2. Decrypt the access token
     let decryptedToken = "";
     try {
-      decryptedToken = decrypt(igAccount.accessToken);
+      decryptedToken = decrypt(activeAccount.accessToken);
     } catch (err: any) {
       return NextResponse.json(
         { error: "Failed to decrypt access token: " + err.message },

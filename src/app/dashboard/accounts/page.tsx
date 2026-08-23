@@ -25,6 +25,8 @@ const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 import { redirect } from "next/navigation";
+import { refreshLongLivedTokenIfNeeded } from "@/lib/tokenRefresh";
+import RefreshTokenButton from "@/components/RefreshTokenButton";
 
 interface PageProps {
   searchParams: Promise<{
@@ -43,6 +45,16 @@ export default async function AccountsPage({ searchParams }: PageProps) {
   const userId = session.user.id;
 
   // Fetch all linked Instagram accounts for this user
+  const rawAccounts = await db.igAccount.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Automatically check/refresh long-lived tokens if expiring within 20 days
+  for (const acc of rawAccounts) {
+    await refreshLongLivedTokenIfNeeded(acc);
+  }
+
   const accounts = await db.igAccount.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
@@ -128,18 +140,41 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                   <div>
                     <h3 className="text-base font-bold text-white">IG Business Account</h3>
                     <p className="text-xs text-slate-400 mt-0.5">ID: {acc.instagramAccountId}</p>
-                    <div className="mt-1 flex items-center gap-2">
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
                       <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400">
                         FB Page: {acc.pageName}
                       </span>
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       <span className="text-[10px] text-emerald-400 uppercase font-semibold">Active webhook</span>
+                      
+                      {(() => {
+                        if (!acc.tokenExpiresAt) {
+                          return (
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-semibold border border-slate-750">
+                              🟢 Active (Long-Lived)
+                            </span>
+                          );
+                        }
+                        const diffTime = new Date(acc.tokenExpiresAt).getTime() - Date.now();
+                        const expiryDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        const daysLeft = expiryDays > 0 ? expiryDays : 0;
+                        return (
+                          <span className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${
+                            daysLeft < 15 
+                              ? "bg-amber-500/10 text-amber-400 border-amber-500/20" 
+                              : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                          }`}>
+                            🟢 Active ({daysLeft} days left)
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <SyncWebhookButton />
+                  <RefreshTokenButton instagramAccountId={acc.instagramAccountId} />
                   <form
                     action={async () => {
                       "use server";

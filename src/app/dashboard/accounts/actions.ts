@@ -61,3 +61,20 @@ export async function manualConnectAccount(formData: FormData) {
   revalidatePath("/dashboard/accounts");
   revalidatePath("/dashboard");
 }
+
+import { refreshLongLivedToken } from "@/lib/tokenRefresh";
+
+export async function manualRefreshTokenAction(instagramAccountId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const result = await refreshLongLivedToken(instagramAccountId);
+  if (!result.success) {
+    throw new Error(result.error || "Failed to refresh token.");
+  }
+
+  revalidatePath("/dashboard/accounts");
+  return { success: true };
+}

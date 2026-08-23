@@ -3,6 +3,8 @@ import crypto from "crypto";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
  * Text Normalization Helper
  * Strips accents, emojis, punctuation, and lowercase/trims the string
@@ -266,6 +268,7 @@ export async function POST(request: NextRequest) {
 
             // A. Send Private Reply (DM) using the Instagram Graph API
             try {
+              await sleep(Math.floor(Math.random() * 1500) + 500);
               console.log("Dispatching DM for comment:", commentId);
               const dmText = matchedAutomation.replyDmMessage.replace("{{username}}", commenterUsername || "there");
               const dmRes = await fetchWithRetry("https://graph.instagram.com/v24.0/me/messages", {
@@ -305,6 +308,7 @@ export async function POST(request: NextRequest) {
               const chosenPublicReply = options[Math.floor(Math.random() * options.length)];
 
               try {
+                await sleep(Math.floor(Math.random() * 1500) + 500);
                 console.log(`[Webhook] Dispatching Public Reply to comment ${commentId}...`);
                 const replyRes = await fetchWithRetry(`https://graph.instagram.com/v24.0/${commentId}/replies`, {
                   method: "POST",
