@@ -225,29 +225,13 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
       {/* Action Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold text-white">Active Rules ({automations.length})</h2>
-        <button
-          onClick={() => {
-            setIsModalOpen(true);
-            setError("");
-            setTargetMediaIds([]);
-            setTriggerScope("ALL_POSTS");
-            setTriggerSource("COMMENTS");
-            setTriggerType("KEYWORD");
-            setTriggerKeyword("");
-            setRuleName("");
-            setReplyDmMessage("");
-            setLeadConfirmationDm("");
-            setReplyCommentOptions(
-              "Just sent you a DM! Check your inbox 📩\nSent! Let me know if you got it 🚀\nCheck your messages! Just sent over the details ✨\nSent to your DMs! Let me know what you think 🔥\nJust sent it your way! Check message requests if you don't see it 💬"
-            );
-            setEnableLeadCapture(false);
-            setSelectedTemplate(null);
-          }}
+        <Link
+          href="/dashboard/automations/builder"
           className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-sm transition-colors shadow-lg shadow-violet-500/10 active:scale-95"
         >
           <Plus className="w-4 h-4" />
           Create Automation
-        </button>
+        </Link>
       </div>
 
       {/* Rules List */}
