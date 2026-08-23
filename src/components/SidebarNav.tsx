@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, UserCheck, Settings, FileSpreadsheet, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function SidebarNav() {
+export function SidebarNav({ dmsCount = 0, dmsLimit = 150 }: { dmsCount?: number; dmsLimit?: number }) {
   const pathname = usePathname();
 
   const navItems = [

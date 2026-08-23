@@ -13,8 +13,8 @@ model User {
   email              String       @unique
   password           String
   name               String?
-  planType           String       @default("FREE")      // "FREE" | "PRO"
-  dmsLimit           Int          @default(500)
+  planType           String       @default("FREE")      // "FREE" | "PRO" | "BUSINESS"
+  dmsLimit           Int          @default(150)
   dmsCountThisMonth  Int          @default(0)
   usageResetAt       DateTime     @default(now())
   createdAt          DateTime     @default(now())
