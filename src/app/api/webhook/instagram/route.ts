@@ -114,8 +114,9 @@ export async function POST(request: NextRequest) {
 
     for (const entry of entries) {
       const instagramAccountId = entry.id; // Instagram Business Account ID
+      
+      // A. PROCESS COMMENT EVENTS
       const changes = entry.changes || [];
-
       for (const change of changes) {
         if (change.field === "comments" && change.value) {
           const commentVal = change.value;
@@ -128,22 +129,23 @@ export async function POST(request: NextRequest) {
             continue;
           }
 
-          console.log(`[Webhook] Processing comment ${commentId} ("${commentText}") on media ${mediaId || "unknown"}`);
+          console.log(`[Webhook Comments] Processing comment ${commentId} ("${commentText}") on media ${mediaId || "unknown"}`);
 
           try {
-            // 1. Atomic Deduplication: Check-and-set using database unique constraint
+            // 1. Atomic Deduplication
             try {
               await db.executionLog.create({
                 data: {
                   commentId,
                   commentText,
                   commenterUsername,
+                  triggerSource: "COMMENT",
                   dmStatus: "PROCESSING",
                   commentStatus: "PROCESSING",
                 },
               });
             } catch (err: any) {
-              console.log(`[Webhook] Duplicate comment skipped (atomic check): ${commentId}`);
+              console.log(`[Webhook Comments] Duplicate comment skipped (atomic check): ${commentId}`);
               continue;
             }
 
@@ -159,12 +161,12 @@ export async function POST(request: NextRequest) {
 
             // Fallback for Meta Dashboard Test Events (entry.id === "0")
             if (!igAccount) {
-              console.log(`[Webhook] Account ${instagramAccountId} not found. Falling back to first database account for testing.`);
+              console.log(`[Webhook Comments] Account ${instagramAccountId} not found. Falling back to first database account for testing.`);
               igAccount = await db.igAccount.findFirst();
             }
 
             if (!igAccount) {
-              console.warn(`[Webhook] No Instagram Account found in db even after fallback. Updating placeholder to FAILED.`);
+              console.warn(`[Webhook Comments] No Instagram Account found in db even after fallback. Updating placeholder to FAILED.`);
               await db.executionLog.update({
                 where: { commentId },
                 data: {
@@ -182,7 +184,7 @@ export async function POST(request: NextRequest) {
             try {
               decryptedToken = decrypt(igAccount.accessToken);
             } catch (err: any) {
-              console.error(`[Webhook] Failed to decrypt access token for account ${igAccount.instagramAccountId}:`, err);
+              console.error(`[Webhook Comments] Failed to decrypt access token for account ${igAccount.instagramAccountId}:`, err);
               await db.executionLog.update({
                 where: { commentId },
                 data: {
@@ -195,11 +197,12 @@ export async function POST(request: NextRequest) {
               continue;
             }
 
-            // 3. Match rules
+            // 3. Match rules (COMMENTS or ALL)
             const automations = await db.automation.findMany({
               where: {
                 userId: igAccount.userId,
                 active: true,
+                triggerSource: { in: ["COMMENTS", "ALL"] }
               },
             });
 
@@ -244,7 +247,7 @@ export async function POST(request: NextRequest) {
             }
 
             if (!matchedAutomation) {
-              console.log(`[Webhook] No active automation rule matched comment text/scope logic.`);
+              console.log(`[Webhook Comments] No active automation rule matched comment text/scope logic.`);
               const isTest = instagramAccountId === "0" || commenterUsername === "instagram";
               await db.executionLog.update({
                 where: { commentId },
@@ -258,7 +261,7 @@ export async function POST(request: NextRequest) {
               continue;
             }
 
-            console.log(`[Webhook] Matched automation "${matchedAutomation.name}"`);
+            console.log(`[Webhook Comments] Matched automation "${matchedAutomation.name}"`);
 
             // 4. Execute Actions (Private DM & Public Comment Reply via Direct Instagram API with retries)
             let dmStatus = "SKIPPED";
@@ -294,7 +297,7 @@ export async function POST(request: NextRequest) {
                 dmError = `${errCode}${errMsg}`;
               }
             } catch (err: any) {
-              console.error("[Webhook] Failed to dispatch DM:", err);
+              console.error("[Webhook Comments] Failed to dispatch DM:", err);
               dmStatus = "FAILED";
               dmError = err.message || "Failed to dispatch DM";
             }
@@ -309,7 +312,7 @@ export async function POST(request: NextRequest) {
 
               try {
                 await sleep(Math.floor(Math.random() * 1500) + 500);
-                console.log(`[Webhook] Dispatching Public Reply to comment ${commentId}...`);
+                console.log(`[Webhook Comments] Dispatching Public Reply to comment ${commentId}...`);
                 const replyRes = await fetchWithRetry(`https://graph.instagram.com/v24.0/${commentId}/replies`, {
                   method: "POST",
                   headers: {
@@ -330,7 +333,7 @@ export async function POST(request: NextRequest) {
                   commentError = `${errCode}${errMsg}`;
                 }
               } catch (err: any) {
-                console.error("[Webhook] Failed to dispatch public reply:", err);
+                console.error("[Webhook Comments] Failed to dispatch public reply:", err);
                 commentStatus = "FAILED";
                 commentError = err.message || "Failed to dispatch public reply";
               }
@@ -348,8 +351,7 @@ export async function POST(request: NextRequest) {
               },
             });
           } catch (err: any) {
-            console.error(`[Webhook] Error executing comment automation:`, err);
-            // Try to log general failure outcome
+            console.error(`[Webhook Comments] Error executing comment automation:`, err);
             try {
               await db.executionLog.update({
                 where: { commentId },
@@ -363,6 +365,251 @@ export async function POST(request: NextRequest) {
             } catch (logErr) {
               console.error("Could not write update execution log:", logErr);
             }
+          }
+        }
+      }
+
+      // B. PROCESS DIRECT MESSAGES & STORY MENTIONS
+      const messaging = entry.messaging || [];
+      for (const msgEvent of messaging) {
+        const senderId = msgEvent.sender?.id;
+        const message = msgEvent.message;
+
+        if (!senderId || !message) {
+          continue;
+        }
+
+        const messageId = message.mid;
+        if (!messageId) {
+          continue;
+        }
+
+        console.log(`[Webhook Messaging] Processing messaging event ${messageId} from sender ${senderId}`);
+
+        try {
+          // 1. Atomic Deduplication
+          try {
+            await db.executionLog.create({
+              data: {
+                commentId: messageId,
+                commentText: message.text || "[Media/Attachment]",
+                commenterUsername: "ig_user_" + senderId, // Temporary fallback
+                triggerSource: "DIRECT_MESSAGE", // Temporary default
+                dmStatus: "PROCESSING",
+                commentStatus: "SKIPPED",
+              },
+            });
+          } catch (err: any) {
+            console.log(`[Webhook Messaging] Duplicate message skipped (atomic check): ${messageId}`);
+            continue;
+          }
+
+          // 2. Fetch linked Instagram Account flexibly
+          let igAccount = await db.igAccount.findFirst({
+            where: {
+              OR: [
+                { instagramAccountId: String(instagramAccountId) },
+                { pageId: String(instagramAccountId) }
+              ]
+            }
+          });
+
+          // Fallback for Meta Dashboard Test Events (entry.id === "0")
+          if (!igAccount) {
+            console.log(`[Webhook Messaging] Account ${instagramAccountId} not found. Falling back to first database account for testing.`);
+            igAccount = await db.igAccount.findFirst();
+          }
+
+          if (!igAccount) {
+            console.warn(`[Webhook Messaging] No Instagram Account found in db even after fallback. Updating placeholder to FAILED.`);
+            await db.executionLog.update({
+              where: { commentId: messageId },
+              data: {
+                dmStatus: "FAILED",
+                dmError: "No accounts linked in system database",
+              },
+            });
+            continue;
+          }
+
+          // Decrypt access token
+          let decryptedToken = "";
+          try {
+            decryptedToken = decrypt(igAccount.accessToken);
+          } catch (err: any) {
+            console.error(`[Webhook Messaging] Failed to decrypt access token for account ${igAccount.instagramAccountId}:`, err);
+            await db.executionLog.update({
+              where: { commentId: messageId },
+              data: {
+                dmStatus: "FAILED",
+                dmError: "Failed to decrypt token: " + err.message,
+              },
+            });
+            continue;
+          }
+
+          // 3. Resolve real Instagram username via Meta API
+          let resolvedUsername = "there";
+          try {
+            const profileRes = await fetch(`https://graph.instagram.com/v24.0/${senderId}?fields=username&access_token=${decryptedToken}`);
+            if (profileRes.ok) {
+              const profileData = await profileRes.json();
+              if (profileData.username) {
+                resolvedUsername = profileData.username;
+              }
+            }
+          } catch (profErr) {
+            console.warn("[Webhook Messaging] Could not resolve sender profile info:", profErr);
+          }
+
+          // Check if Story Mention
+          const isStoryMention = message.attachments?.some(
+            (att: any) => att.type === "story_mention" || att.type === "ig_story_mention"
+          );
+
+          let matchedAutomation = null;
+          let triggerSourceField = "DIRECT_MESSAGE";
+
+          if (isStoryMention) {
+            triggerSourceField = "STORY_MENTION";
+            // Match rules with triggerSource === "STORY_MENTIONS" or "ALL"
+            const automations = await db.automation.findMany({
+              where: {
+                userId: igAccount.userId,
+                active: true,
+                triggerSource: { in: ["STORY_MENTIONS", "ALL"] }
+              },
+            });
+
+            // Match the first active Story Mention rule as rewards don't require keyword checks
+            if (automations.length > 0) {
+              matchedAutomation = automations[0];
+            }
+          } else if (message.text) {
+            triggerSourceField = "DIRECT_MESSAGE";
+            // Match rules with triggerSource === "DIRECT_MESSAGES" or "ALL"
+            const automations = await db.automation.findMany({
+              where: {
+                userId: igAccount.userId,
+                active: true,
+                triggerSource: { in: ["DIRECT_MESSAGES", "ALL"] }
+              },
+            });
+
+            const normalizedMsg = normalizeText(message.text);
+
+            for (const auto of automations) {
+              const triggerType = auto.triggerType.toUpperCase();
+
+              if (triggerType === "ALL") {
+                matchedAutomation = auto;
+                break;
+              }
+
+              // Split trigger keyword string by comma to get individual targets
+              const targetKeywords = auto.triggerKeyword
+                ? auto.triggerKeyword.split(",").map(k => normalizeText(k)).filter(k => k.length > 0)
+                : [];
+
+              if (targetKeywords.length === 0) {
+                continue;
+              }
+
+              if (triggerType === "EXACT") {
+                if (targetKeywords.includes(normalizedMsg)) {
+                  matchedAutomation = auto;
+                  break;
+                }
+              } else if (triggerType === "KEYWORD") {
+                if (targetKeywords.some(k => normalizedMsg.includes(k))) {
+                  matchedAutomation = auto;
+                  break;
+                }
+              }
+            }
+          }
+
+          // Update triggerSource and resolvedUsername in Log
+          await db.executionLog.update({
+            where: { commentId: messageId },
+            data: {
+              triggerSource: triggerSourceField,
+              commenterUsername: resolvedUsername,
+            }
+          });
+
+          if (!matchedAutomation) {
+            console.log(`[Webhook Messaging] No active automation rule matched DM/Story Mention.`);
+            await db.executionLog.update({
+              where: { commentId: messageId },
+              data: {
+                dmStatus: "SKIPPED",
+                dmError: "No matching automation trigger",
+              },
+            });
+            continue;
+          }
+
+          console.log(`[Webhook Messaging] Matched automation "${matchedAutomation.name}"`);
+
+          // 4. Execute DM Private Reply
+          let dmStatus = "SKIPPED";
+          let dmError: string | null = null;
+
+          try {
+            await sleep(Math.floor(Math.random() * 1500) + 500);
+            console.log("Dispatching Direct Message to user:", senderId);
+            
+            const dmText = matchedAutomation.replyDmMessage.replace("{{username}}", resolvedUsername);
+            const dmRes = await fetchWithRetry("https://graph.instagram.com/v24.0/me/messages", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${decryptedToken}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                recipient: { id: senderId },
+                message: { text: dmText }
+              })
+            });
+            const dmJson = await dmRes.json();
+            console.log("Meta Messaging API Response:", dmRes.status, JSON.stringify(dmJson));
+
+            if (dmRes.ok && !dmJson.error) {
+              dmStatus = "SUCCESS";
+            } else {
+              dmStatus = "FAILED";
+              const errCode = dmJson.error?.code ? `[Code ${dmJson.error.code}] ` : "";
+              const errMsg = dmJson.error?.message || JSON.stringify(dmJson) || "Failed to send private reply";
+              dmError = `${errCode}${errMsg}`;
+            }
+          } catch (err: any) {
+            console.error("[Webhook Messaging] Failed to dispatch DM:", err);
+            dmStatus = "FAILED";
+            dmError = err.message || "Failed to dispatch DM";
+          }
+
+          // 5. Update placeholder log with outcomes
+          await db.executionLog.update({
+            where: { commentId: messageId },
+            data: {
+              automationId: matchedAutomation.id,
+              dmStatus,
+              dmError,
+            },
+          });
+        } catch (err: any) {
+          console.error(`[Webhook Messaging] Error executing messaging automation:`, err);
+          try {
+            await db.executionLog.update({
+              where: { commentId: messageId },
+              data: {
+                dmStatus: "FAILED",
+                dmError: err.message || "Unknown execution crash",
+              },
+            });
+          } catch (logErr) {
+            console.error("Could not write update execution log:", logErr);
           }
         }
       }

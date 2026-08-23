@@ -1,19 +1,27 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { UserCheck, Settings, MessageSquare, ShieldCheck, Calendar } from "lucide-react";
+import { MessageSquare, ShieldCheck, Calendar, Camera, Send } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export default async function DashboardOverview() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
-    redirect('/login');
+    redirect("/login");
   }
   const userId = session.user.id;
 
   // 1. Fetch DB Stats concurrently
-  const [accountsCount, activeAutomationsCount, totalDmsCount, failedDmsCount, recentLogs] = await Promise.all([
+  const [
+    accountsCount,
+    activeAutomationsCount,
+    totalDmsCount,
+    failedDmsCount,
+    commentsCount,
+    storyMentionsCount,
+    recentLogs,
+  ] = await Promise.all([
     db.igAccount.count({
       where: { userId },
     }),
@@ -32,6 +40,18 @@ export default async function DashboardOverview() {
         dmStatus: "FAILED",
       },
     }),
+    db.executionLog.count({
+      where: {
+        automation: { userId },
+        triggerSource: "COMMENT",
+      },
+    }),
+    db.executionLog.count({
+      where: {
+        automation: { userId },
+        triggerSource: "STORY_MENTION",
+      },
+    }),
     db.executionLog.findMany({
       where: {
         automation: { userId },
@@ -39,7 +59,7 @@ export default async function DashboardOverview() {
       orderBy: {
         timestamp: "desc",
       },
-      take: 5,
+      take: 10, // Latest 10 deliveries
       include: {
         automation: true,
       },
@@ -51,21 +71,21 @@ export default async function DashboardOverview() {
 
   const stats = [
     {
-      name: "Connected IG Accounts",
-      value: accountsCount,
-      icon: UserCheck,
+      name: "Comments Triggered",
+      value: commentsCount,
+      icon: MessageSquare,
       color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
     },
     {
-      name: "Active Automations",
-      value: activeAutomationsCount,
-      icon: Settings,
-      color: "text-violet-400 bg-violet-500/10 border-violet-500/20",
+      name: "Story Mentions Rewarded",
+      value: storyMentionsCount,
+      icon: Camera,
+      color: "text-pink-400 bg-pink-500/10 border-pink-500/20",
     },
     {
-      name: "Total DMs Dispatched",
+      name: "DMs Delivered",
       value: totalDmsCount,
-      icon: MessageSquare,
+      icon: Send,
       color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     },
     {
@@ -134,7 +154,8 @@ export default async function DashboardOverview() {
                 <thead>
                   <tr className="text-xs text-slate-400 border-b border-slate-800">
                     <th className="pb-3 font-semibold">User</th>
-                    <th className="pb-3 font-semibold">Comment text</th>
+                    <th className="pb-3 font-semibold">Source</th>
+                    <th className="pb-3 font-semibold">Trigger text</th>
                     <th className="pb-3 font-semibold">Rule</th>
                     <th className="pb-3 font-semibold">DM Status</th>
                   </tr>
@@ -143,6 +164,17 @@ export default async function DashboardOverview() {
                   {recentLogs.map((log) => (
                     <tr key={log.id} className="group">
                       <td className="py-3 font-medium text-slate-200">@{log.commenterUsername}</td>
+                      <td className="py-3">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                          log.triggerSource === "COMMENT"
+                            ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                            : log.triggerSource === "STORY_MENTION"
+                            ? "bg-pink-500/10 text-pink-400 border-pink-500/20"
+                            : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                        }`}>
+                          {log.triggerSource === "COMMENT" ? "Comment" : log.triggerSource === "STORY_MENTION" ? "Story" : "Direct DM"}
+                        </span>
+                      </td>
                       <td className="py-3 text-slate-400 max-w-xs truncate">"{log.commentText}"</td>
                       <td className="py-3 text-slate-400">{log.automation?.name || "Deleted Rule"}</td>
                       <td className="py-3">
@@ -174,7 +206,7 @@ export default async function DashboardOverview() {
               To trigger automations, set up a webhook in your Meta Developer console pointed to:
             </p>
             <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 font-mono text-xs break-all selection:bg-violet-500/30">
-              {process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/webhook/instagram
+              {process.env.NEXTAUTH_URL || "https://autodms-project.vercel.app"}/api/webhook/instagram
             </div>
             <div className="space-y-2 pt-2">
               <h3 className="font-semibold text-slate-300 text-xs uppercase tracking-wider">Required Webhook Fields:</h3>

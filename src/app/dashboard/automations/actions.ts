@@ -19,6 +19,7 @@ export async function createAutomation(formData: FormData) {
   const replyCommentRaw = formData.get("replyCommentOptions") as string;
   const triggerScope = (formData.get("triggerScope") as string) || "ALL_POSTS";
   const targetMediaIdsRaw = formData.get("targetMediaIds") as string;
+  const triggerSource = (formData.get("triggerSource") as string) || "COMMENTS";
 
   if (!name || !triggerType || !replyDmMessage) {
     throw new Error("Please fill in all required fields.");
@@ -49,6 +50,7 @@ export async function createAutomation(formData: FormData) {
       replyCommentOptions,
       triggerScope,
       targetMediaIds,
+      triggerSource,
       active: true,
     },
   });

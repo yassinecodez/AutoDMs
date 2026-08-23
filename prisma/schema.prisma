@@ -43,6 +43,7 @@ model Automation {
   replyCommentOptions String[]       // Randomized public comment replies
   triggerScope        String         @default("ALL_POSTS") // "ALL_POSTS" | "SPECIFIC_POSTS"
   targetMediaIds      String[]       @default([])          // Array of Instagram media IDs
+  triggerSource       String         @default("COMMENTS")  // "COMMENTS" | "STORY_MENTIONS" | "DIRECT_MESSAGES" | "ALL"
   active              Boolean        @default(true)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
@@ -56,6 +57,7 @@ model ExecutionLog {
   commentId         String      @unique
   commentText       String
   commenterUsername String
+  triggerSource     String      @default("COMMENT")  // "COMMENT" | "STORY_MENTION" | "DIRECT_MESSAGE"
   dmStatus          String      // "SUCCESS", "FAILED", "SKIPPED"
   dmError           String?
   commentStatus     String      // "SUCCESS", "FAILED", "SKIPPED"

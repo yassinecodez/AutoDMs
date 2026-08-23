@@ -75,8 +75,9 @@ export default async function LogsPage({ searchParams }: PageProps) {
               <thead>
                 <tr className="text-xs text-slate-400 border-b border-slate-800 bg-slate-950/40 uppercase tracking-wider font-semibold">
                   <th className="px-6 py-4">Time</th>
-                  <th className="px-6 py-4">Commenter</th>
-                  <th className="px-6 py-4">Comment Text</th>
+                  <th className="px-6 py-4">User</th>
+                  <th className="px-6 py-4">Source</th>
+                  <th className="px-6 py-4">Trigger text</th>
                   <th className="px-6 py-4">Matched Rule</th>
                   <th className="px-6 py-4">DM status</th>
                   <th className="px-6 py-4">Public Reply</th>
@@ -96,6 +97,17 @@ export default async function LogsPage({ searchParams }: PageProps) {
                       })}
                     </td>
                     <td className="px-6 py-4 font-semibold text-slate-200">@{log.commenterUsername}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                        log.triggerSource === "COMMENT"
+                          ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                          : log.triggerSource === "STORY_MENTION"
+                          ? "bg-pink-500/10 text-pink-400 border-pink-500/20"
+                          : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                      }`}>
+                        {log.triggerSource === "COMMENT" ? "Comment" : log.triggerSource === "STORY_MENTION" ? "Story" : "Direct DM"}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-slate-400 max-w-sm truncate" title={log.commentText}>
                       "{log.commentText}"
                     </td>

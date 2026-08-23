@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, Plus, Settings, Trash2, ToggleLeft, ToggleRight, AlertTriangle, CheckSquare } from "lucide-react";
+import { Loader2, Plus, Settings, Trash2, ToggleLeft, ToggleRight, AlertTriangle } from "lucide-react";
 import { createAutomation, toggleAutomationActive, deleteAutomation } from "@/app/dashboard/automations/actions";
 import Link from "next/link";
 
@@ -20,6 +20,7 @@ interface Automation {
   replyCommentOptions: string[];
   triggerScope: string;
   targetMediaIds: string[];
+  triggerSource: string;
   active: boolean;
   createdAt: Date;
 }
@@ -40,6 +41,7 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
   // Form states
   const [triggerType, setTriggerType] = useState("KEYWORD");
   const [triggerScope, setTriggerScope] = useState("ALL_POSTS");
+  const [triggerSource, setTriggerSource] = useState("COMMENTS");
   const [targetMediaIds, setTargetMediaIds] = useState<string[]>([]);
   
   // Media items states
@@ -47,9 +49,9 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
   const [mediaLoading, setMediaLoading] = useState(false);
   const [mediaError, setMediaError] = useState("");
 
-  // Load Instagram posts when modal is open and scope is SPECIFIC_POSTS
+  // Load Instagram posts when modal is open, source is COMMENTS and scope is SPECIFIC_POSTS
   useEffect(() => {
-    if (isModalOpen && triggerScope === "SPECIFIC_POSTS" && mediaItems.length === 0) {
+    if (isModalOpen && triggerSource === "COMMENTS" && triggerScope === "SPECIFIC_POSTS" && mediaItems.length === 0) {
       const fetchMedia = async () => {
         setMediaLoading(true);
         setMediaError("");
@@ -69,7 +71,7 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
 
       fetchMedia();
     }
-  }, [isModalOpen, triggerScope, mediaItems.length]);
+  }, [isModalOpen, triggerSource, triggerScope, mediaItems.length]);
 
   const handleToggleMediaSelect = (mediaId: string) => {
     setTargetMediaIds((prev) =>
@@ -112,7 +114,6 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
     const formData = new FormData(e.currentTarget);
     try {
       await createAutomation(formData);
-      // Reload page to re-fetch Server Component state and sync UI
       window.location.reload();
     } catch (err: any) {
       setError(err.message || "Failed to create automation.");
@@ -147,6 +148,7 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
             setError("");
             setTargetMediaIds([]);
             setTriggerScope("ALL_POSTS");
+            setTriggerSource("COMMENTS");
           }}
           className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-sm transition-colors shadow-lg shadow-violet-500/10 active:scale-95"
         >
@@ -188,32 +190,54 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
                 </div>
 
                 <div className="space-y-2 text-xs">
+                  {/* Trigger Source Badge */}
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-slate-500">Trigger:</span>
-                    <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold uppercase tracking-wider text-[10px]">
-                      {auto.triggerType === "ALL"
-                        ? "Any Comment"
-                        : auto.triggerType === "EXACT"
-                        ? "Exact Match"
-                        : "Contains Keyword"}
+                    <span className="text-slate-500">Source:</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                      auto.triggerSource === "COMMENTS"
+                        ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                        : auto.triggerSource === "STORY_MENTIONS"
+                        ? "bg-pink-500/10 text-pink-400 border-pink-500/20"
+                        : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                    }`}>
+                      {auto.triggerSource === "COMMENTS"
+                        ? "Comments"
+                        : auto.triggerSource === "STORY_MENTIONS"
+                        ? "Story Mentions"
+                        : "Direct Messages"}
                     </span>
-                    {auto.triggerKeyword && (
-                      <span className="text-violet-400 font-mono font-bold">"{auto.triggerKeyword}"</span>
-                    )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-slate-500">Targeting:</span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                      auto.triggerScope === "SPECIFIC_POSTS"
-                        ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                        : "bg-slate-800 text-slate-400"
-                    }`}>
-                      {auto.triggerScope === "SPECIFIC_POSTS"
-                        ? `Specific Media (${auto.targetMediaIds?.length || 0})`
-                        : "All Posts & Reels"}
-                    </span>
-                  </div>
+                  {auto.triggerSource !== "STORY_MENTIONS" && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-slate-500">Trigger:</span>
+                      <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold uppercase tracking-wider text-[10px]">
+                        {auto.triggerType === "ALL"
+                          ? "Any Message"
+                          : auto.triggerType === "EXACT"
+                          ? "Exact Match"
+                          : "Contains Keyword"}
+                      </span>
+                      {auto.triggerKeyword && (
+                        <span className="text-violet-400 font-mono font-bold">"{auto.triggerKeyword}"</span>
+                      )}
+                    </div>
+                  )}
+
+                  {auto.triggerSource === "COMMENTS" && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-slate-500">Targeting:</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                        auto.triggerScope === "SPECIFIC_POSTS"
+                          ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                          : "bg-slate-800 text-slate-400"
+                      }`}>
+                        {auto.triggerScope === "SPECIFIC_POSTS"
+                          ? `Specific Media (${auto.targetMediaIds?.length || 0})`
+                          : "All Posts & Reels"}
+                      </span>
+                    </div>
+                  )}
 
                   <div className="space-y-1">
                     <span className="text-slate-500 block">Private Reply (DM):</span>
@@ -222,26 +246,28 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
                     </p>
                   </div>
 
-                  <div className="space-y-1">
-                    <span className="text-slate-500 block">
-                      Public Comment Replies ({auto.replyCommentOptions?.length || 0} options):
-                    </span>
-                    {auto.replyCommentOptions && auto.replyCommentOptions.length > 0 ? (
-                      <div className="flex flex-wrap gap-1.5">
-                        {auto.replyCommentOptions.map((opt, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-slate-400 text-[10px] truncate max-w-[150px]"
-                            title={opt}
-                          >
-                            "{opt}"
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-[10px] text-slate-600 italic">None configured (replies off)</p>
-                    )}
-                  </div>
+                  {auto.triggerSource === "COMMENTS" && (
+                    <div className="space-y-1">
+                      <span className="text-slate-500 block">
+                        Public Comment Replies ({auto.replyCommentOptions?.length || 0} options):
+                      </span>
+                      {auto.replyCommentOptions && auto.replyCommentOptions.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {auto.replyCommentOptions.map((opt, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-1 rounded bg-slate-950 border border-slate-850 text-slate-400 text-[10px] truncate max-w-[150px]"
+                              title={opt}
+                            >
+                              "{opt}"
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-slate-600 italic">None configured (replies off)</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -302,53 +328,72 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
                 />
               </div>
 
-              {/* Trigger Match Type and Keyword */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300">Trigger Match Type</label>
-                  <select
-                    name="triggerType"
-                    value={triggerType}
-                    onChange={(e) => setTriggerType(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white"
-                  >
-                    <option value="KEYWORD">Contains Keyword</option>
-                    <option value="EXACT">Exact Match</option>
-                    <option value="ALL">Any Comment (Universal)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300">
-                    Keywords {triggerType === "ALL" && "(Disabled)"} <span className="text-[10px] text-slate-550 font-normal">(comma-separated)</span>
-                  </label>
-                  <input
-                    name="triggerKeyword"
-                    type="text"
-                    disabled={triggerType === "ALL"}
-                    required={triggerType !== "ALL"}
-                    placeholder={triggerType === "ALL" ? "N/A" : "e.g. gemini, link, info"}
-                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white disabled:opacity-40 disabled:cursor-not-allowed"
-                  />
-                </div>
-              </div>
-
-              {/* Post Scope Selection */}
+              {/* Trigger Source Dropdown */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Trigger Target Scope</label>
+                <label className="text-xs font-semibold text-slate-300">Trigger Source</label>
                 <select
-                  name="triggerScope"
-                  value={triggerScope}
-                  onChange={(e) => setTriggerScope(e.target.value)}
+                  name="triggerSource"
+                  value={triggerSource}
+                  onChange={(e) => setTriggerSource(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white"
                 >
-                  <option value="ALL_POSTS">All Posts & Reels</option>
-                  <option value="SPECIFIC_POSTS">Specific Posts / Reels</option>
+                  <option value="COMMENTS">💬 Post / Reel Comments</option>
+                  <option value="STORY_MENTIONS">📸 Story Mentions</option>
+                  <option value="DIRECT_MESSAGES">✉️ Direct Messages (DMs)</option>
                 </select>
               </div>
 
-              {/* Media selection grid if SPECIFIC_POSTS */}
-              {triggerScope === "SPECIFIC_POSTS" && (
+              {/* Trigger Match Type and Keyword (Only for comments and direct DMs) */}
+              {triggerSource !== "STORY_MENTIONS" && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-300">Trigger Match Type</label>
+                    <select
+                      name="triggerType"
+                      value={triggerType}
+                      onChange={(e) => setTriggerType(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white"
+                    >
+                      <option value="KEYWORD">Contains Keyword</option>
+                      <option value="EXACT">Exact Match</option>
+                      <option value="ALL">Any Message (Universal)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-300">
+                      Keywords {triggerType === "ALL" && "(Disabled)"} <span className="text-[10px] text-slate-550 font-normal">(comma-separated)</span>
+                    </label>
+                    <input
+                      name="triggerKeyword"
+                      type="text"
+                      disabled={triggerType === "ALL"}
+                      required={triggerType !== "ALL"}
+                      placeholder={triggerType === "ALL" ? "N/A" : "e.g. gemini, link, info"}
+                      className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Post Scope Selection (Only for Comments source) */}
+              {triggerSource === "COMMENTS" && (
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-300">Trigger Target Scope</label>
+                  <select
+                    name="triggerScope"
+                    value={triggerScope}
+                    onChange={(e) => setTriggerScope(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white"
+                  >
+                    <option value="ALL_POSTS">All Posts & Reels</option>
+                    <option value="SPECIFIC_POSTS">Specific Posts / Reels</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Media selection grid if COMMENTS and SPECIFIC_POSTS */}
+              {triggerSource === "COMMENTS" && triggerScope === "SPECIFIC_POSTS" && (
                 <div className="space-y-2 border border-slate-800/80 p-4 bg-slate-950/60 rounded-xl">
                   <label className="text-[11px] font-semibold text-slate-400 block">
                     Select Target Posts/Reels ({targetMediaIds.length} selected)
@@ -421,28 +466,32 @@ export function AutomationsManager({ initialAutomations, connectedAccounts }: Au
 
               {/* Private reply */}
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">Private Reply message (DM)</label>
+                <label className="text-xs font-semibold text-slate-300">
+                  {triggerSource === "STORY_MENTIONS" ? "Reward Message (DM)" : "Private Reply message (DM)"}
+                </label>
                 <textarea
                   name="replyDmMessage"
                   required
                   rows={2}
-                  placeholder="Hey! Here's the access link you requested: https://example.com/checkout 🚀"
+                  placeholder={triggerSource === "STORY_MENTIONS" ? "Thanks for tagging us, {{username}}! Here is your gift: https://example.com/gift 🎁" : "Hey! Here's the access link you requested: https://example.com/checkout 🚀"}
                   className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white leading-relaxed"
                 />
               </div>
 
-              {/* Public reply */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-300">
-                  Public Comment Replies <span className="text-[10px] text-slate-500 font-normal">(One option per line - randomized)</span>
-                </label>
-                <textarea
-                  name="replyCommentOptions"
-                  rows={2}
-                  placeholder="Just sent you a DM! Check your inbox 📥&#10;Sent! Let me know if you got it 🚀&#10;Check your messages!"
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white leading-relaxed font-sans"
-                />
-              </div>
+              {/* Public reply (Only for Comments source) */}
+              {triggerSource === "COMMENTS" && (
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-300">
+                    Public Comment Replies <span className="text-[10px] text-slate-550 font-normal">(One option per line - randomized)</span>
+                  </label>
+                  <textarea
+                    name="replyCommentOptions"
+                    rows={2}
+                    placeholder="Just sent you a DM! Check your inbox 📥&#10;Sent! Let me know if you got it 🚀&#10;Check your messages!"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm text-white leading-relaxed font-sans"
+                  />
+                </div>
+              )}
 
               <button
                 type="submit"
