@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Loader2, ArrowRight, Activity } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,28 +44,28 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-slate-950">
-      <div className="w-full max-w-md space-y-8 bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-xl">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-[#0B0F17] text-slate-100">
+      <div className="w-full max-w-md space-y-8 bg-[#111827] border border-[#1F2937] p-8 rounded-2xl shadow-xl">
         <div className="flex flex-col items-center text-center">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-violet-600/20 text-violet-400 mb-4 border border-violet-500/20">
-            <Activity className="w-6 h-6 animate-pulse" />
-          </div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-white">InstaFlow</h2>
-          <p className="mt-2 text-sm text-slate-400">
+          <Link href="/" className="flex items-center gap-2 mb-4 font-black text-2xl tracking-tight text-white select-none">
+            <span className="w-3 h-3 rounded-full bg-[#00DF81] inline-block animate-pulse" />
+            AutoDMs
+          </Link>
+          <p className="text-sm text-slate-400">
             Instagram Comment-to-DM SaaS Automation
           </p>
         </div>
 
         {error && (
-          <div className="p-4 text-sm text-red-400 bg-red-950/30 border border-red-500/20 rounded-lg">
+          <div className="p-4 text-xs font-medium text-red-400 bg-red-950/30 border border-red-500/20 rounded-xl">
             {error}
           </div>
         )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4 rounded-md shadow-sm">
+        <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
+          <div className="space-y-4">
             <div>
-              <label htmlFor="email-address" className="text-sm font-medium text-slate-300 block mb-2">
+              <label htmlFor="email-address" className="text-xs font-semibold text-slate-300 block mb-2">
                 Email address
               </label>
               <input
@@ -74,12 +75,12 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-white placeholder-slate-500 transition-colors"
+                className="w-full px-4 py-3 bg-[#0B0F17] border border-[#1F2937] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#00DF81] focus:border-[#00DF81] text-white text-sm placeholder-slate-500 transition-colors"
                 placeholder="creator@example.com"
               />
             </div>
             <div>
-              <label htmlFor="password" className="text-sm font-medium text-slate-300 block mb-2">
+              <label htmlFor="password" className="text-xs font-semibold text-slate-300 block mb-2">
                 Password
               </label>
               <input
@@ -89,7 +90,7 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-white placeholder-slate-500 transition-colors"
+                className="w-full px-4 py-3 bg-[#0B0F17] border border-[#1F2937] rounded-xl focus:outline-none focus:ring-1 focus:ring-[#00DF81] focus:border-[#00DF81] text-white text-sm placeholder-slate-500 transition-colors"
                 placeholder="••••••••"
               />
             </div>
@@ -99,21 +100,21 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="group relative flex w-full justify-center rounded-lg bg-violet-600 px-4 py-3 text-sm font-semibold text-white hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative flex w-full justify-center items-center rounded-xl bg-[#00DF81] hover:bg-[#00C770] px-4 py-3 text-sm font-bold text-[#000000] focus:outline-none transition-all shadow-md shadow-[#00DF81]/10 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
               ) : (
                 <>
                   Get Started / Login
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
                 </>
               )}
             </button>
           </div>
         </form>
 
-        <div className="mt-6 text-center border-t border-slate-800 pt-6">
+        <div className="mt-6 text-center border-t border-[#1F2937] pt-6">
           <p className="text-xs text-slate-500 leading-relaxed">
             <span className="font-semibold text-slate-400">💡 Tip:</span> If your account does not exist, entering an email and password will automatically register and log you in.
           </p>

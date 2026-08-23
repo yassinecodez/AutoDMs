@@ -28,7 +28,7 @@ export function UpgradeButton({ plan, current }: UpgradeButtonProps) {
     return (
       <button
         disabled
-        className="w-full py-2.5 bg-slate-800 text-slate-500 font-bold rounded-xl text-xs cursor-default select-none border border-slate-700/50"
+        className="w-full py-2.5 bg-[#0B0F17] text-slate-500 font-bold rounded-xl text-xs cursor-default select-none border border-[#1F2937]"
       >
         Current Plan
       </button>
@@ -39,7 +39,7 @@ export function UpgradeButton({ plan, current }: UpgradeButtonProps) {
     <button
       onClick={handleUpgrade}
       disabled={loading}
-      className="w-full py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-lg shadow-violet-600/10 active:scale-95 disabled:opacity-50"
+      className="w-full py-2.5 bg-[#00DF81] hover:bg-[#00C770] text-[#000000] font-bold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5 shadow-md shadow-[#00DF81]/10 active:scale-95 disabled:opacity-50"
     >
       {loading ? (
         <Loader2 className="w-3.5 h-3.5 animate-spin" />

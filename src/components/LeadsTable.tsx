@@ -31,7 +31,7 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
       l.username ? `@${l.username}` : "unknown",
       l.email || "N/A",
       l.phone || "N/A",
-      l.automation?.name || "Direct/Manual",
+      l.automation?.name || "Direct / Manual",
       new Date(l.createdAt).toLocaleString()
     ]);
 
@@ -53,56 +53,56 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search leads handle, email, phone..."
-            className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-white"
+            placeholder="Search handle, email, phone..."
+            className="w-full pl-9 pr-4 py-2 bg-[#111827] border border-[#1F2937] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#00DF81] text-[#F9FAFB] placeholder-slate-500"
           />
         </div>
         
         <button
           onClick={exportToCsv}
           disabled={filteredLeads.length === 0}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl text-sm transition-colors shadow-lg shadow-violet-500/10 disabled:opacity-50 active:scale-95 shrink-0"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#00DF81] hover:bg-[#00C770] text-[#000000] font-bold rounded-xl text-xs transition-all shadow-md shadow-[#00DF81]/10 disabled:opacity-50 active:scale-95 shrink-0"
         >
           <Download className="w-4 h-4" />
           Export to CSV
         </button>
       </div>
 
-      <div className="overflow-x-auto border border-slate-800 rounded-2xl bg-slate-900/40">
+      <div className="overflow-x-auto border border-[#1F2937] rounded-xl bg-[#111827]">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="text-xs text-slate-400 border-b border-slate-800 bg-slate-950/20 uppercase tracking-wider font-semibold">
-              <th className="px-6 py-4">Instagram Handle</th>
-              <th className="px-6 py-4">Email</th>
-              <th className="px-6 py-4">Phone Number</th>
-              <th className="px-6 py-4">Source Automation</th>
-              <th className="px-6 py-4">Capture Date</th>
+            <tr className="text-[11px] text-[#9CA3AF] border-b border-[#1F2937] bg-[#0B0F17]/40">
+              <th className="px-6 py-3.5 font-semibold">Instagram handle</th>
+              <th className="px-6 py-3.5 font-semibold">Email</th>
+              <th className="px-6 py-3.5 font-semibold">Phone number</th>
+              <th className="px-6 py-3.5 font-semibold">Source automation</th>
+              <th className="px-6 py-3.5 font-semibold">Capture date</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/50 text-sm">
+          <tbody className="divide-y divide-[#1F2937]/60 text-xs">
             {filteredLeads.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-slate-500 text-xs">
-                  No leads match your search criteria.
+                <td colSpan={5} className="px-6 py-8 text-center text-[#9CA3AF] text-xs">
+                  No leads found matching your search.
                 </td>
               </tr>
             ) : (
               filteredLeads.map(l => (
-                <tr key={l.id} className="hover:bg-slate-800/10 transition-colors">
-                  <td className="px-6 py-4 font-semibold text-slate-200">
+                <tr key={l.id} className="hover:bg-[#0B0F17]/30 transition-colors">
+                  <td className="px-6 py-3.5 font-semibold text-[#F9FAFB]">
                     {l.username ? `@${l.username}` : "unknown"}
                   </td>
-                  <td className="px-6 py-4 text-slate-355 font-mono text-xs">{l.email || "N/A"}</td>
-                  <td className="px-6 py-4 text-slate-400 font-mono text-xs">{l.phone || "N/A"}</td>
-                  <td className="px-6 py-4 text-slate-400">{l.automation?.name || "Direct/Manual"}</td>
-                  <td className="px-6 py-4 text-slate-500 text-xs font-mono">
+                  <td className="px-6 py-3.5 text-slate-300 font-mono text-[11px]">{l.email || "N/A"}</td>
+                  <td className="px-6 py-3.5 text-slate-400 font-mono text-[11px]">{l.phone || "N/A"}</td>
+                  <td className="px-6 py-3.5 text-[#9CA3AF]">{l.automation?.name || "Direct / Manual"}</td>
+                  <td className="px-6 py-3.5 text-slate-500 text-[11px] font-mono">
                     {new Date(l.createdAt).toLocaleDateString()}
                   </td>
                 </tr>

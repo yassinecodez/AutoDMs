@@ -44,7 +44,7 @@ export default async function LeadsPage() {
   // Calculate top converting rule
   const counts: { [key: string]: number } = {};
   leads.forEach((l) => {
-    const name = l.automation?.name || "Direct/Manual";
+    const name = l.automation?.name || "Direct / Manual";
     counts[name] = (counts[name] || 0) + 1;
   });
 
@@ -59,31 +59,28 @@ export default async function LeadsPage() {
 
   const stats = [
     {
-      name: "Total Leads Captured",
+      name: "Total leads captured",
       value: totalLeads,
       icon: Users,
-      color: "text-blue-400 bg-blue-500/10 border-blue-500/20",
     },
     {
-      name: "Leads This Week",
+      name: "Leads this week",
       value: leadsThisWeek,
       icon: Calendar,
-      color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     },
     {
-      name: "Top Converting Rule",
+      name: "Top converting rule",
       value: topConvertingRule,
       icon: Award,
-      color: "text-violet-400 bg-violet-500/10 border-violet-500/20",
     },
   ];
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-5xl">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Leads Database</h1>
-        <p className="text-slate-400 text-sm">
+      <div className="space-y-1">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-[#F9FAFB] tracking-tight">Leads database</h1>
+        <p className="text-xs md:text-sm text-[#9CA3AF]">
           Track and export emails and phone numbers captured through direct message conversations
         </p>
       </div>
@@ -95,15 +92,15 @@ export default async function LeadsPage() {
           return (
             <div
               key={stat.name}
-              className="p-6 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between shadow-sm"
+              className="p-5 bg-[#111827] border border-[#1F2937] rounded-xl flex items-center justify-between shadow-sm"
             >
               <div className="space-y-1">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{stat.name}</p>
-                <p className="text-2xl font-bold text-white tracking-tight truncate max-w-[200px]" title={String(stat.value)}>
+                <p className="text-xs font-medium text-[#9CA3AF]">{stat.name}</p>
+                <p className="text-2xl font-extrabold text-[#F9FAFB] tracking-tight truncate max-w-[200px]" title={String(stat.value)}>
                   {stat.value}
                 </p>
               </div>
-              <div className={`p-3 rounded-xl border ${stat.color} shrink-0`}>
+              <div className="p-2.5 rounded-xl bg-[#0B0F17] border border-[#1F2937] text-[#00DF81] shrink-0">
                 <Icon className="w-5 h-5" />
               </div>
             </div>
@@ -111,9 +108,9 @@ export default async function LeadsPage() {
         })}
       </div>
 
-      {/* Leads Table */}
+      {/* Leads Table Section */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold text-white">All Captured Leads</h2>
+        <h2 className="text-base font-bold text-[#F9FAFB]">All captured leads</h2>
         <LeadsTable initialLeads={leads} />
       </div>
     </div>

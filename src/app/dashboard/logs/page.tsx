@@ -40,53 +40,53 @@ export default async function LogsPage({ searchParams }: PageProps) {
   });
 
   return (
-    <div className="p-6 md:p-8 space-y-8">
+    <div className="p-6 md:p-8 space-y-8 max-w-6xl">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Activity Logs</h1>
-        <p className="text-slate-400 text-sm">Audit trail of all comment detections, matched rules, and messaging statuses</p>
+      <div className="space-y-1">
+        <h1 className="text-2xl md:text-3xl font-extrabold text-[#F9FAFB] tracking-tight">Activity logs</h1>
+        <p className="text-xs md:text-sm text-[#9CA3AF]">Audit trail of all comment detections, matched rules, and messaging statuses</p>
       </div>
 
       {/* Search and Filters */}
-      <div className="flex items-center gap-4 bg-slate-900 border border-slate-800 p-4 rounded-2xl max-w-lg">
-        <Search className="w-5 h-5 text-slate-500 shrink-0" />
+      <div className="flex items-center gap-3 bg-[#111827] border border-[#1F2937] px-4 py-2.5 rounded-xl max-w-md">
+        <Search className="w-4 h-4 text-slate-500 shrink-0" />
         <form method="GET" className="flex-1">
           <input
             type="text"
             name="q"
             defaultValue={q}
-            placeholder="Search by username or comment text..."
-            className="w-full bg-transparent border-none text-slate-200 placeholder-slate-500 focus:outline-none text-sm"
+            placeholder="Search by username or comment..."
+            className="w-full bg-transparent border-none text-[#F9FAFB] placeholder-slate-500 focus:outline-none text-xs"
           />
         </form>
       </div>
 
       {/* Logs Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-[#111827] border border-[#1F2937] rounded-xl overflow-hidden shadow-sm">
         {logs.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 text-sm space-y-2">
-            <FileSpreadsheet className="w-12 h-12 text-slate-700 mx-auto mb-3" />
-            <p className="font-semibold text-slate-400">No matching logs found.</p>
-            <p className="text-xs text-slate-600">Either no comments have been processed yet, or your search query yielded no results.</p>
+          <div className="p-12 text-center text-slate-500 text-xs space-y-2">
+            <FileSpreadsheet className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+            <p className="font-semibold text-[#F9FAFB]">No matching logs found</p>
+            <p className="text-[#9CA3AF]">Either no comments have been processed yet, or your search query yielded no results.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-xs text-slate-400 border-b border-slate-800 bg-slate-950/40 uppercase tracking-wider font-semibold">
-                  <th className="px-6 py-4">Time</th>
-                  <th className="px-6 py-4">User</th>
-                  <th className="px-6 py-4">Source</th>
-                  <th className="px-6 py-4">Trigger text</th>
-                  <th className="px-6 py-4">Matched Rule</th>
-                  <th className="px-6 py-4">DM status</th>
-                  <th className="px-6 py-4">Public Reply</th>
+                <tr className="text-[11px] text-[#9CA3AF] border-b border-[#1F2937] bg-[#0B0F17]/40">
+                  <th className="px-6 py-3.5 font-semibold">Time</th>
+                  <th className="px-6 py-3.5 font-semibold">User</th>
+                  <th className="px-6 py-3.5 font-semibold">Source</th>
+                  <th className="px-6 py-3.5 font-semibold">Trigger text</th>
+                  <th className="px-6 py-3.5 font-semibold">Matched rule</th>
+                  <th className="px-6 py-3.5 font-semibold">DM status</th>
+                  <th className="px-6 py-3.5 font-semibold">Public reply</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/50 text-sm">
+              <tbody className="divide-y divide-[#1F2937]/60 text-xs">
                 {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-800/20 transition-colors">
-                    <td className="px-6 py-4 text-slate-400 text-xs font-mono">
+                  <tr key={log.id} className="hover:bg-[#0B0F17]/30 transition-colors">
+                    <td className="px-6 py-3.5 text-slate-400 font-mono text-[11px]">
                       {new Date(log.timestamp).toLocaleString("en-US", {
                         hour12: false,
                         month: "short",
@@ -96,41 +96,35 @@ export default async function LogsPage({ searchParams }: PageProps) {
                         second: "2-digit",
                       })}
                     </td>
-                    <td className="px-6 py-4 font-semibold text-slate-200">@{log.commenterUsername}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                        log.triggerSource === "COMMENT"
-                          ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                          : log.triggerSource === "STORY_MENTION"
-                          ? "bg-pink-500/10 text-pink-400 border-pink-500/20"
-                          : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
-                      }`}>
+                    <td className="px-6 py-3.5 font-semibold text-[#F9FAFB]">@{log.commenterUsername}</td>
+                    <td className="px-6 py-3.5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-[#0B0F17] border border-[#1F2937] text-slate-300">
                         {log.triggerSource === "COMMENT" ? "Comment" : log.triggerSource === "STORY_MENTION" ? "Story" : "Direct DM"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-slate-400 max-w-sm truncate" title={log.commentText}>
+                    <td className="px-6 py-3.5 text-[#9CA3AF] max-w-xs truncate font-mono text-[11px]" title={log.commentText}>
                       "{log.commentText}"
                     </td>
-                    <td className="px-6 py-4 text-slate-300 font-medium">
+                    <td className="px-6 py-3.5 text-slate-300 font-medium">
                       {log.automation?.name || (
-                        <span className="text-slate-600 italic">Deleted Rule</span>
+                        <span className="text-slate-600 italic">Deleted rule</span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-3.5">
                       <div className="flex items-center gap-1.5">
                         {log.dmStatus === "SUCCESS" ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#00DF81]" />
                         ) : log.dmStatus === "FAILED" ? (
                           <span title={log.dmError || undefined}>
-                            <AlertCircle className="w-4 h-4 text-red-400" />
+                            <AlertCircle className="w-3.5 h-3.5 text-red-400" />
                           </span>
                         ) : (
-                          <HelpCircle className="w-4 h-4 text-slate-500" />
+                          <HelpCircle className="w-3.5 h-3.5 text-slate-500" />
                         )}
                         <span
-                          className={`text-xs font-bold ${
+                          className={`text-[10px] font-bold ${
                             log.dmStatus === "SUCCESS"
-                              ? "text-emerald-400"
+                              ? "text-[#00DF81]"
                               : log.dmStatus === "FAILED"
                               ? "text-red-400"
                               : "text-slate-500"
@@ -140,21 +134,21 @@ export default async function LogsPage({ searchParams }: PageProps) {
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-3.5">
                       <div className="flex items-center gap-1.5">
                         {log.commentStatus === "SUCCESS" ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#00DF81]" />
                         ) : log.commentStatus === "FAILED" ? (
                           <span title={log.commentError || undefined}>
-                            <AlertCircle className="w-4 h-4 text-red-400" />
+                            <AlertCircle className="w-3.5 h-3.5 text-red-400" />
                           </span>
                         ) : (
-                          <HelpCircle className="w-4 h-4 text-slate-500" />
+                          <HelpCircle className="w-3.5 h-3.5 text-slate-500" />
                         )}
                         <span
-                          className={`text-xs font-bold ${
+                          className={`text-[10px] font-bold ${
                             log.commentStatus === "SUCCESS"
-                              ? "text-emerald-400"
+                              ? "text-[#00DF81]"
                               : log.commentStatus === "FAILED"
                               ? "text-red-400"
                               : "text-slate-500"

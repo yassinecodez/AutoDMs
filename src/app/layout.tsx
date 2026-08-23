@@ -3,8 +3,8 @@ import { Providers } from "@/components/Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "InstaFlow - Comment-to-DM Automation",
-  description: "Automate private comment replies and DMs for Instagram Creators",
+  title: "AutoDMs - Instagram Comment-to-DM Automation",
+  description: "Turn your Instagram comments into sales. Automatically send direct messages, links, and promo codes.",
 };
 
 export default function RootLayout({

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, UserCheck, Settings, FileSpreadsheet, Users } from "lucide-react";
+import { LayoutDashboard, UserCheck, Settings, FileSpreadsheet, Users, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function SidebarNav({ dmsCount = 0, dmsLimit = 150 }: { dmsCount?: number; dmsLimit?: number }) {
@@ -34,10 +34,15 @@ export function SidebarNav({ dmsCount = 0, dmsLimit = 150 }: { dmsCount?: number
       href: "/dashboard/logs",
       icon: FileSpreadsheet,
     },
+    {
+      name: "Settings & Billing",
+      href: "/dashboard/settings",
+      icon: CreditCard,
+    },
   ];
 
   return (
-    <>
+    <div className="space-y-1">
       {navItems.map((item) => {
         const isActive = pathname === item.href;
         const Icon = item.icon;
@@ -46,18 +51,23 @@ export function SidebarNav({ dmsCount = 0, dmsLimit = 150 }: { dmsCount?: number
             key={item.href}
             href={item.href}
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+              "flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors group relative",
               isActive
-                ? "bg-violet-600 text-white"
-                : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                ? "bg-[#1F2937] text-[#F9FAFB]"
+                : "text-[#9CA3AF] hover:bg-[#111827] hover:text-[#F9FAFB]"
             )}
           >
-            <Icon className="w-5 h-5" />
-            {item.name}
+            <div className="flex items-center gap-3">
+              <Icon className={cn("w-4 h-4 transition-colors", isActive ? "text-[#00DF81]" : "text-slate-500 group-hover:text-slate-300")} />
+              <span>{item.name}</span>
+            </div>
+            {isActive && (
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00DF81] shrink-0" />
+            )}
           </Link>
         );
       })}
-    </>
+    </div>
   );
 }
 export default SidebarNav;
