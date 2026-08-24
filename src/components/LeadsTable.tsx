@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Search } from "lucide-react";
+import { Download, Search, Users, Mail, Phone, CheckCircle2 } from "lucide-react";
 
 interface Lead {
   id: string;
@@ -53,56 +53,85 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
 
   return (
     <div className="space-y-4">
+      {/* Controls Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-500" strokeWidth={1.75} />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search handle, email, phone..."
-            className="w-full pl-9 pr-4 py-2 bg-[#111827] border border-[#1F2937] rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-[#00DF81] text-[#F9FAFB] placeholder-slate-500"
+            placeholder="Filter leads by handle, email, phone..."
+            className="w-full h-9 pl-9 pr-3 bg-[#18181B] border border-[#27272A] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#00DF81] text-zinc-100 placeholder-zinc-500"
           />
         </div>
         
         <button
           onClick={exportToCsv}
           disabled={filteredLeads.length === 0}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#00DF81] hover:bg-[#00C770] text-[#000000] font-bold rounded-xl text-xs transition-all shadow-md shadow-[#00DF81]/10 disabled:opacity-50 active:scale-95 shrink-0"
+          className="h-9 inline-flex items-center justify-center gap-1.5 px-3.5 bg-[#00DF81] hover:bg-[#00C770] text-[#000000] font-semibold rounded-lg text-xs transition-all active:scale-95 shadow-sm disabled:opacity-40 shrink-0"
         >
-          <Download className="w-4 h-4" />
-          Export to CSV
+          <Download className="w-3.5 h-3.5" strokeWidth={2} />
+          Export CSV ({filteredLeads.length})
         </button>
       </div>
 
-      <div className="overflow-x-auto border border-[#1F2937] rounded-xl bg-[#111827]">
+      {/* Table Container */}
+      <div className="overflow-x-auto border border-[#27272A] rounded-xl bg-[#18181B]">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="text-[11px] text-[#9CA3AF] border-b border-[#1F2937] bg-[#0B0F17]/40">
-              <th className="px-6 py-3.5 font-semibold">Instagram handle</th>
-              <th className="px-6 py-3.5 font-semibold">Email</th>
-              <th className="px-6 py-3.5 font-semibold">Phone number</th>
-              <th className="px-6 py-3.5 font-semibold">Source automation</th>
-              <th className="px-6 py-3.5 font-semibold">Capture date</th>
+            <tr className="text-[11px] text-zinc-400 border-b border-[#27272A] bg-[#0F0F0F]/50">
+              <th className="px-5 py-3 font-medium">Instagram handle</th>
+              <th className="px-5 py-3 font-medium">Contact email</th>
+              <th className="px-5 py-3 font-medium">Phone number</th>
+              <th className="px-5 py-3 font-medium">Source rule</th>
+              <th className="px-5 py-3 font-medium text-right">Capture date</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#1F2937]/60 text-xs">
+          <tbody className="divide-y divide-[#27272A]/70 text-xs">
             {filteredLeads.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-[#9CA3AF] text-xs">
-                  No leads found matching your search.
+                <td colSpan={5} className="px-6 py-12 text-center text-zinc-500 text-xs">
+                  <Users className="w-6 h-6 mx-auto mb-2 text-zinc-600" strokeWidth={1.75} />
+                  <p className="font-semibold text-zinc-300">No leads found</p>
+                  <p className="text-zinc-500 mt-0.5">Leads captured via 2-step direct message verification will populate here.</p>
                 </td>
               </tr>
             ) : (
               filteredLeads.map(l => (
-                <tr key={l.id} className="hover:bg-[#0B0F17]/30 transition-colors">
-                  <td className="px-6 py-3.5 font-semibold text-[#F9FAFB]">
-                    {l.username ? `@${l.username}` : "unknown"}
+                <tr key={l.id} className="hover:bg-[#0F0F0F]/40 transition-colors">
+                  <td className="px-5 py-3 font-medium text-zinc-100 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] text-zinc-300 font-bold">
+                      {l.username ? l.username[0].toUpperCase() : "U"}
+                    </span>
+                    <span>{l.username ? `@${l.username}` : "unknown"}</span>
                   </td>
-                  <td className="px-6 py-3.5 text-slate-300 font-mono text-[11px]">{l.email || "N/A"}</td>
-                  <td className="px-6 py-3.5 text-slate-400 font-mono text-[11px]">{l.phone || "N/A"}</td>
-                  <td className="px-6 py-3.5 text-[#9CA3AF]">{l.automation?.name || "Direct / Manual"}</td>
-                  <td className="px-6 py-3.5 text-slate-500 text-[11px] font-mono">
+                  <td className="px-5 py-3 text-zinc-300 font-mono text-[11px]">
+                    {l.email ? (
+                      <span className="inline-flex items-center gap-1.5 text-zinc-200">
+                        <Mail className="w-3 h-3 text-[#00DF81]" strokeWidth={1.75} />
+                        {l.email}
+                      </span>
+                    ) : (
+                      <span className="text-zinc-500">—</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3 text-zinc-300 font-mono text-[11px]">
+                    {l.phone ? (
+                      <span className="inline-flex items-center gap-1.5 text-zinc-200">
+                        <Phone className="w-3 h-3 text-[#00DF81]" strokeWidth={1.75} />
+                        {l.phone}
+                      </span>
+                    ) : (
+                      <span className="text-zinc-500">—</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3 text-zinc-400">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[#0F0F0F] border border-[#27272A] text-zinc-300">
+                      {l.automation?.name || "Direct / Manual"}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3 text-zinc-400 text-[11px] font-mono text-right">
                     {new Date(l.createdAt).toLocaleDateString()}
                   </td>
                 </tr>

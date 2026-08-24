@@ -13,7 +13,7 @@ export function FaqAccordion() {
     },
     {
       q: "Does it work while my phone is off?",
-      a: "Yes. AutoDMs runs 24/7 in the cloud. Once your rules are configured, our background workers handle webhook notifications and dispatch replies even while you sleep."
+      a: "Yes. AutoDMs runs 24/7 in the cloud. Once your rules are configured, our background webhook processors handle notifications and dispatch replies even while you are offline."
     },
     {
       q: "Can I choose which specific Reel or post to automate?",
@@ -26,39 +26,39 @@ export function FaqAccordion() {
   ];
 
   return (
-    <section id="faq" className="py-20 border-t border-slate-900 bg-[#0B0F17]">
-      <div className="max-w-3xl mx-auto px-6 space-y-12">
+    <section id="faq" className="py-20 border-t border-[#27272A] bg-[#0F0F0F]">
+      <div className="max-w-3xl mx-auto px-6 space-y-10">
         
         {/* Header */}
-        <div className="text-center space-y-3">
+        <div className="text-center space-y-2">
           <span className="text-xs font-bold text-[#00DF81] uppercase tracking-widest">Support</span>
-          <h2 className="text-3xl font-extrabold text-white tracking-tight">Frequently asked questions</h2>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-zinc-100 tracking-tight">Frequently asked questions</h2>
         </div>
 
         {/* FAQs */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {faqs.map((faq, idx) => {
             const isOpen = openIdx === idx;
             return (
               <div
                 key={idx}
-                className="bg-[#111827] border border-slate-800 rounded-xl overflow-hidden transition-colors"
+                className="bg-[#18181B] border border-[#27272A] rounded-xl overflow-hidden transition-colors"
               >
                 <button
                   type="button"
                   onClick={() => setOpenIdx(isOpen ? null : idx)}
-                  className="w-full px-6 py-4 flex items-center justify-between text-left text-white font-bold text-sm"
+                  className="w-full px-5 py-4 flex items-center justify-between text-left text-zinc-100 font-semibold text-xs md:text-sm"
                 >
                   <span>{faq.q}</span>
                   {isOpen ? (
-                    <Minus className="w-4 h-4 text-[#00DF81] shrink-0" />
+                    <Minus className="w-4 h-4 text-[#00DF81] shrink-0" strokeWidth={2} />
                   ) : (
-                    <Plus className="w-4 h-4 text-slate-500 shrink-0" />
+                    <Plus className="w-4 h-4 text-zinc-500 shrink-0" strokeWidth={2} />
                   )}
                 </button>
 
                 {isOpen && (
-                  <div className="px-6 pb-5 text-xs text-slate-400 leading-relaxed border-t border-slate-900/60 pt-3">
+                  <div className="px-5 pb-4 text-xs text-zinc-400 leading-relaxed border-t border-[#27272A] pt-3">
                     {faq.a}
                   </div>
                 )}

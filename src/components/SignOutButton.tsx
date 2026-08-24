@@ -7,10 +7,10 @@ export function SignOutButton() {
   return (
     <button
       onClick={() => signOut({ callbackUrl: "/login" })}
-      className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors"
-      title="Sign Out"
+      className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition-colors"
+      title="Sign out"
     >
-      <LogOut className="w-5 h-5" />
+      <LogOut className="w-4 h-4" strokeWidth={1.75} />
     </button>
   );
 }

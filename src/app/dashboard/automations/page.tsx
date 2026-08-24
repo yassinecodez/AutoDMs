@@ -2,7 +2,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AutomationsManager from "@/components/AutomationsManager";
-
 import { redirect } from "next/navigation";
 
 export default async function AutomationsPage() {
@@ -29,11 +28,11 @@ export default async function AutomationsPage() {
   });
 
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-5xl">
+    <div className="p-6 md:p-8 space-y-6 max-w-5xl">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Automations Manager</h1>
-        <p className="text-slate-400 text-sm">Configure real-time trigger keywords, automated private replies, and algorithms boosters</p>
+      <div className="space-y-0.5 pb-2 border-b border-[#27272A]">
+        <h1 className="text-xl font-bold text-zinc-100 tracking-tight">Automations</h1>
+        <p className="text-xs text-zinc-400">Configure trigger keywords, direct private replies, and engagement actions</p>
       </div>
 
       {/* Main Content */}

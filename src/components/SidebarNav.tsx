@@ -2,10 +2,27 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, UserCheck, Settings, FileSpreadsheet, Users, CreditCard } from "lucide-react";
+import { LayoutDashboard, Zap, Users, ScrollText, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function SidebarNav({ dmsCount = 0, dmsLimit = 150 }: { dmsCount?: number; dmsLimit?: number }) {
+const InstagramNavIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.75"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+);
+
+export function SidebarNav() {
   const pathname = usePathname();
 
   const navItems = [
@@ -15,14 +32,9 @@ export function SidebarNav({ dmsCount = 0, dmsLimit = 150 }: { dmsCount?: number
       icon: LayoutDashboard,
     },
     {
-      name: "Meta Accounts",
-      href: "/dashboard/accounts",
-      icon: UserCheck,
-    },
-    {
       name: "Automations",
       href: "/dashboard/automations",
-      icon: Settings,
+      icon: Zap,
     },
     {
       name: "Leads Database",
@@ -30,39 +42,44 @@ export function SidebarNav({ dmsCount = 0, dmsLimit = 150 }: { dmsCount?: number
       icon: Users,
     },
     {
+      name: "Meta Accounts",
+      href: "/dashboard/accounts",
+      icon: InstagramNavIcon,
+    },
+    {
       name: "Activity Logs",
       href: "/dashboard/logs",
-      icon: FileSpreadsheet,
+      icon: ScrollText,
     },
     {
       name: "Settings & Billing",
       href: "/dashboard/settings",
-      icon: CreditCard,
+      icon: Settings,
     },
   ];
 
   return (
     <div className="space-y-1">
       {navItems.map((item) => {
-        const isActive = pathname === item.href;
+        const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
         const Icon = item.icon;
         return (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              "flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors group relative",
+              "flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all group relative",
               isActive
-                ? "bg-[#1F2937] text-[#F9FAFB]"
-                : "text-[#9CA3AF] hover:bg-[#111827] hover:text-[#F9FAFB]"
+                ? "bg-zinc-800/80 text-zinc-100 shadow-sm"
+                : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
             )}
           >
-            <div className="flex items-center gap-3">
-              <Icon className={cn("w-4 h-4 transition-colors", isActive ? "text-[#00DF81]" : "text-slate-500 group-hover:text-slate-300")} />
+            <div className="flex items-center gap-2.5">
+              <Icon className={cn("w-4 h-4 transition-colors", isActive ? "text-[#00DF81]" : "text-zinc-500 group-hover:text-zinc-300")} />
               <span>{item.name}</span>
             </div>
             {isActive && (
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00DF81] shrink-0" />
+              <span className="w-1 h-3.5 rounded-full bg-[#00DF81] shrink-0" />
             )}
           </Link>
         );

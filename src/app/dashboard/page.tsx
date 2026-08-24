@@ -1,26 +1,9 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { MessageSquare, ShieldCheck, Camera, Send, Plus, ArrowUpRight, Users, Settings, CreditCard, ChevronRight } from "lucide-react";
+import { Send, CheckCircle2, Users, Zap, Plus, ArrowUpRight, ChevronRight, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-
-const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-  </svg>
-);
 
 export default async function DashboardOverview() {
   const session = await getServerSession(authOptions);
@@ -34,9 +17,8 @@ export default async function DashboardOverview() {
     accounts,
     activeAutomationsCount,
     totalDmsCount,
-    failedDmsCount,
-    commentsCount,
-    storyMentionsCount,
+    totalLogsCount,
+    capturedLeadsCount,
     recentLogs,
     user,
   ] = await Promise.all([
@@ -61,19 +43,11 @@ export default async function DashboardOverview() {
     db.executionLog.count({
       where: {
         automation: { userId },
-        dmStatus: "FAILED",
       },
     }),
-    db.executionLog.count({
+    db.lead.count({
       where: {
-        automation: { userId },
-        triggerSource: "COMMENT",
-      },
-    }),
-    db.executionLog.count({
-      where: {
-        automation: { userId },
-        triggerSource: "STORY_MENTION",
+        igAccount: { userId },
       },
     }),
     db.executionLog.findMany({
@@ -83,7 +57,7 @@ export default async function DashboardOverview() {
       orderBy: {
         timestamp: "desc",
       },
-      take: 8,
+      take: 10,
       include: {
         automation: true,
       },
@@ -91,305 +65,222 @@ export default async function DashboardOverview() {
     db.user.findUnique({
       where: { id: userId },
       select: {
-        id: true,
         dmsCountThisMonth: true,
         dmsLimit: true,
         planType: true,
-        usageResetAt: true,
       },
     }),
   ]);
 
-  const totalInteractions = totalDmsCount + failedDmsCount;
-  const successRate = totalInteractions > 0 ? Math.round((totalDmsCount / totalInteractions) * 100) : 100;
-
+  const successRate = totalLogsCount > 0 ? Math.round((totalDmsCount / totalLogsCount) * 100) : 100;
   const primaryAccount = accounts[0];
-  let tokenDaysRemaining = 59;
-  if (primaryAccount?.tokenExpiresAt) {
-    const diff = new Date(primaryAccount.tokenExpiresAt).getTime() - Date.now();
-    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-    if (days > 0) tokenDaysRemaining = days;
-  }
-
   const dmsUsed = user?.dmsCountThisMonth || 0;
   const dmsLimit = user?.dmsLimit || 150;
-  const quotaPercent = Math.min(Math.round((dmsUsed / dmsLimit) * 100), 100);
 
-  const stats = [
+  const kpis = [
     {
-      name: "Comments handled",
-      value: commentsCount,
-      icon: MessageSquare,
-      detail: "Incoming post comments",
-    },
-    {
-      name: "Story mentions rewarded",
-      value: storyMentionsCount,
-      icon: Camera,
-      detail: "Tags in user stories",
-    },
-    {
-      name: "DMs delivered",
-      value: totalDmsCount,
+      title: "Total DMs Delivered",
+      value: totalDmsCount.toLocaleString(),
+      subtext: `${dmsUsed} of ${dmsLimit} monthly quota`,
       icon: Send,
-      detail: "Private replies sent",
+      href: "/dashboard/logs",
     },
     {
-      name: "Delivery success rate",
+      title: "Success Rate",
       value: `${successRate}%`,
-      icon: ShieldCheck,
-      detail: "API dispatch reliability",
+      subtext: "API delivery reliability",
+      icon: CheckCircle2,
+      trend: "100% uptime",
+      href: "/dashboard/logs",
+    },
+    {
+      title: "Captured Leads",
+      value: capturedLeadsCount.toLocaleString(),
+      subtext: "Emails & phone contacts",
+      icon: Users,
+      href: "/dashboard/leads",
+      badge: "View DB &rarr;",
+    },
+    {
+      title: "Active Automations",
+      value: activeAutomationsCount.toLocaleString(),
+      subtext: "Real-time trigger rules",
+      icon: Zap,
+      href: "/dashboard/automations",
     },
   ];
 
   return (
-    <div className="p-6 md:p-8 space-y-8 max-w-7xl">
-      {/* Header Row */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-[#F9FAFB] tracking-tight">Overview</h1>
-          <p className="text-xs md:text-sm text-[#9CA3AF]">Real-time activity and automation metrics</p>
+    <div className="p-6 md:p-8 space-y-6 max-w-7xl">
+      {/* Top Header Row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-[#27272A]">
+        <div>
+          <h1 className="text-xl font-bold text-zinc-100 tracking-tight">Overview</h1>
+          <p className="text-xs text-zinc-400">Real-time automation activity and contact conversions</p>
         </div>
 
         <div className="flex items-center gap-3">
           {primaryAccount ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#111827] border border-[#1F2937] text-xs font-semibold text-[#F9FAFB]">
-              <span className="w-2 h-2 rounded-full bg-[#00DF81] inline-block animate-pulse" />
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18181B] border border-[#27272A] text-xs font-medium text-zinc-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00DF81] animate-pulse" />
               <span>@{primaryAccount.pageName}</span>
-              <span className="text-[10px] text-slate-500 font-mono">Live</span>
+              <span className="text-[10px] text-zinc-500 font-mono">Live</span>
             </div>
           ) : (
             <Link
               href="/dashboard/accounts"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#111827] border border-amber-500/30 text-xs font-semibold text-amber-400"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18181B] border border-amber-500/30 text-xs font-medium text-amber-400 hover:border-amber-500/50 transition-colors"
             >
-              <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-              Connect Instagram Account
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+              Connect Instagram Profile
             </Link>
           )}
 
           <Link
             href="/dashboard/automations/builder"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#00DF81] hover:bg-[#00C770] text-[#000000] font-bold rounded-xl text-xs transition-all shadow-md shadow-[#00DF81]/10 active:scale-95 shrink-0"
+            className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-[#00DF81] hover:bg-[#00C770] text-[#000000] font-semibold rounded-lg text-xs transition-all active:scale-95 shadow-sm shrink-0"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" strokeWidth={2} />
             Create automation
           </Link>
         </div>
       </div>
 
-      {/* 4 Stat Metric Cards (Clean & Flat) */}
+      {/* 4 Compact KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
+        {kpis.map((kpi) => {
+          const Icon = kpi.icon;
           return (
-            <div
-              key={stat.name}
-              className="p-5 bg-[#111827] border border-[#1F2937] rounded-xl flex flex-col justify-between h-[120px]"
+            <Link
+              key={kpi.title}
+              href={kpi.href}
+              className="p-4 bg-[#18181B] border border-[#27272A] rounded-xl hover:border-zinc-700 transition-all flex flex-col justify-between h-[115px] group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-[#9CA3AF]">{stat.name}</span>
-                <Icon className="w-4 h-4 text-slate-500" />
+                <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-300 transition-colors">{kpi.title}</span>
+                <Icon className="w-4 h-4 text-zinc-500 group-hover:text-[#00DF81] transition-colors" strokeWidth={1.75} />
               </div>
-              <div>
-                <p className="text-2xl font-extrabold text-[#F9FAFB] tracking-tight">{stat.value}</p>
-                <p className="text-[10px] text-slate-500 mt-0.5">{stat.detail}</p>
+              <div className="space-y-0.5">
+                <div className="flex items-baseline justify-between">
+                  <p className="text-2xl font-extrabold text-zinc-100 tracking-tight">{kpi.value}</p>
+                  {kpi.badge && (
+                    <span className="text-[10px] text-[#00DF81] font-semibold group-hover:underline">
+                      {kpi.badge}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-zinc-500 truncate">{kpi.subtext}</p>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
 
-      {/* Two-Column Main Content (65% / 35%) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        {/* Left Column (65% -> 8 cols of 12) */}
-        <div className="lg:col-span-8 bg-[#111827] border border-[#1F2937] rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-[#1F2937] pb-4">
-            <div>
-              <h2 className="text-base font-bold text-[#F9FAFB]">Recent actions</h2>
-              <p className="text-xs text-[#9CA3AF]">Latest comment-to-DM triggers and deliveries</p>
-            </div>
-            <Link
-              href="/dashboard/logs"
-              className="text-xs font-semibold text-[#00DF81] hover:text-[#00C770] flex items-center gap-1 transition-colors"
-            >
-              View all logs
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
+      {/* Activity Table */}
+      <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-5 space-y-4">
+        <div className="flex items-center justify-between border-b border-[#27272A] pb-3">
+          <div>
+            <h2 className="text-sm font-bold text-zinc-100">Recent execution activity</h2>
+            <p className="text-xs text-zinc-400">Live stream of incoming comments, direct messages, and automation triggers</p>
           </div>
+          <Link
+            href="/dashboard/logs"
+            className="text-xs font-semibold text-[#00DF81] hover:text-[#00C770] flex items-center gap-1 transition-colors"
+          >
+            View all logs
+            <ChevronRight className="w-3.5 h-3.5" strokeWidth={2} />
+          </Link>
+        </div>
 
-          {recentLogs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-14 text-center space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-[#0B0F17] border border-[#1F2937] flex items-center justify-center text-slate-500">
-                <MessageSquare className="w-5 h-5" />
-              </div>
-              <p className="text-xs font-semibold text-[#F9FAFB]">No activity recorded yet</p>
-              <p className="text-[11px] text-[#9CA3AF] max-w-xs leading-relaxed">
-                When people comment keywords on your posts or tag you in stories, live actions will stream here.
-              </p>
+        {recentLogs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center space-y-2">
+            <div className="w-9 h-9 rounded-lg bg-[#0F0F0F] border border-[#27272A] flex items-center justify-center text-zinc-500">
+              <MessageSquare className="w-4 h-4" strokeWidth={1.75} />
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="text-[11px] text-[#9CA3AF] border-b border-[#1F2937]">
-                    <th className="pb-3 font-semibold">User</th>
-                    <th className="pb-3 font-semibold">Source</th>
-                    <th className="pb-3 font-semibold">Trigger text</th>
-                    <th className="pb-3 font-semibold">Rule name</th>
-                    <th className="pb-3 font-semibold text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#1F2937]/60 text-xs">
-                  {recentLogs.map((log) => (
-                    <tr key={log.id} className="group hover:bg-[#0B0F17]/40 transition-colors">
-                      <td className="py-3 font-medium text-[#F9FAFB]">
-                        @{log.commenterUsername}
-                      </td>
-                      <td className="py-3">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-[#0B0F17] border border-[#1F2937] text-slate-300">
-                          {log.triggerSource === "COMMENT" ? "Comment" : log.triggerSource === "STORY_MENTION" ? "Story" : "Direct DM"}
-                        </span>
-                      </td>
-                      <td className="py-3 text-[#9CA3AF] max-w-[160px] truncate font-mono text-[11px]">
-                        "{log.commentText}"
-                      </td>
-                      <td className="py-3 text-[#9CA3AF] max-w-[140px] truncate">
-                        {log.automation?.name || "Automation Rule"}
-                      </td>
-                      <td className="py-3 text-right">
+            <p className="text-xs font-semibold text-zinc-200">No automation triggers recorded yet</p>
+            <p className="text-[11px] text-zinc-500 max-w-xs leading-relaxed">
+              When followers comment keywords or tag you in stories, real-time dispatches will stream here.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-[11px] text-zinc-400 border-b border-[#27272A]">
+                  <th className="pb-2.5 font-medium">Time</th>
+                  <th className="pb-2.5 font-medium">Source</th>
+                  <th className="pb-2.5 font-medium">User</th>
+                  <th className="pb-2.5 font-medium">Input message</th>
+                  <th className="pb-2.5 font-medium">Matched rule</th>
+                  <th className="pb-2.5 font-medium text-right">Status</th>
+                  <th className="pb-2.5 font-medium text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#27272A]/70 text-xs">
+                {recentLogs.map((log) => (
+                  <tr key={log.id} className="group hover:bg-[#0F0F0F]/50 transition-colors">
+                    <td className="py-2.5 text-zinc-500 font-mono text-[11px] whitespace-nowrap">
+                      {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </td>
+                    <td className="py-2.5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-[#0F0F0F] border border-[#27272A] text-zinc-300">
+                        {log.triggerSource === "COMMENT" ? "Comment" : log.triggerSource === "STORY_MENTION" ? "Story" : "Direct DM"}
+                      </span>
+                    </td>
+                    <td className="py-2.5 font-medium text-zinc-200">
+                      @{log.commenterUsername}
+                    </td>
+                    <td className="py-2.5 text-zinc-400 max-w-[180px] truncate font-mono text-[11px]" title={log.commentText}>
+                      "{log.commentText}"
+                    </td>
+                    <td className="py-2.5 text-zinc-400 max-w-[140px] truncate">
+                      {log.automation?.name || "Automation rule"}
+                    </td>
+                    <td className="py-2.5 text-right whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide ${
+                          className={`w-1.5 h-1.5 rounded-full ${
                             log.dmStatus === "SUCCESS"
-                              ? "bg-[#00DF81]/10 text-[#00DF81] border border-[#00DF81]/20"
+                              ? "bg-[#00DF81]"
                               : log.dmStatus === "LEAD_CAPTURED"
-                              ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                              ? "bg-blue-400"
+                              : log.dmStatus === "PROCESSING"
+                              ? "bg-amber-400 animate-pulse"
                               : log.dmStatus === "SKIPPED"
-                              ? "bg-slate-800 text-slate-400 border border-slate-700"
-                              : "bg-red-500/10 text-red-400 border border-red-500/20"
+                              ? "bg-zinc-500"
+                              : "bg-red-400"
                           }`}
+                        />
+                        <span
+                          className={
+                            log.dmStatus === "SUCCESS"
+                              ? "text-[#00DF81]"
+                              : log.dmStatus === "LEAD_CAPTURED"
+                              ? "text-blue-400"
+                              : log.dmStatus === "SKIPPED"
+                              ? "text-zinc-500"
+                              : "text-red-400"
+                          }
                         >
                           {log.dmStatus}
                         </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Right Column (35% -> 4 cols of 12) */}
-        <div className="lg:col-span-4 space-y-6">
-          
-          {/* Account Health Card */}
-          <div className="bg-[#111827] border border-[#1F2937] rounded-xl p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-[#1F2937] pb-3">
-              <h2 className="text-xs font-bold text-[#F9FAFB] uppercase tracking-wider">Account health</h2>
-              <span className="text-[10px] text-[#00DF81] font-semibold bg-[#00DF81]/10 px-2 py-0.5 rounded border border-[#00DF81]/20">
-                Connected
-              </span>
-            </div>
-
-            {primaryAccount ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-[#0B0F17] border border-[#1F2937] rounded-xl">
-                  <div className="w-9 h-9 rounded-full bg-[#111827] border border-[#1F2937] flex items-center justify-center text-slate-400 shrink-0">
-                    <InstagramIcon className="w-4 h-4 text-[#00DF81]" />
-                  </div>
-                  <div className="truncate">
-                    <p className="text-xs font-bold text-[#F9FAFB] truncate">@{primaryAccount.pageName}</p>
-                    <p className="text-[10px] text-[#9CA3AF] truncate">ID: {primaryAccount.instagramAccountId}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 text-xs">
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-[#9CA3AF]">Meta Token:</span>
-                    <span className="text-[#00DF81] font-semibold flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#00DF81] inline-block" />
-                      Active ({tokenDaysRemaining}d remaining)
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-[#9CA3AF]">Active automations:</span>
-                    <span className="text-[#F9FAFB] font-semibold">{activeAutomationsCount} active</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 bg-[#0B0F17] border border-[#1F2937] rounded-xl text-center space-y-2">
-                <p className="text-xs text-[#9CA3AF]">No Instagram profile linked yet</p>
-                <Link
-                  href="/dashboard/accounts"
-                  className="inline-block text-xs font-bold text-[#00DF81] hover:underline"
-                >
-                  Link Instagram Account &rarr;
-                </Link>
-              </div>
-            )}
-
-            {/* Monthly Quota Mini Bar */}
-            <div className="pt-2 border-t border-[#1F2937] space-y-2">
-              <div className="flex justify-between text-[11px] font-semibold">
-                <span className="text-[#9CA3AF]">Monthly Quota:</span>
-                <span className="text-[#F9FAFB]">{dmsUsed} / {dmsLimit} DMs</span>
-              </div>
-              <div className="w-full h-1.5 bg-[#0B0F17] rounded-full overflow-hidden border border-[#1F2937]/50">
-                <div
-                  style={{ width: `${quotaPercent}%` }}
-                  className="h-full bg-[#00DF81] rounded-full transition-all"
-                />
-              </div>
-            </div>
+                      </span>
+                    </td>
+                    <td className="py-2.5 text-right">
+                      <Link
+                        href="/dashboard/logs"
+                        className="inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-200 transition-colors"
+                      >
+                        Details
+                        <ArrowUpRight className="w-3 h-3 text-zinc-600 group-hover:text-zinc-300" strokeWidth={1.75} />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-
-          {/* Quick Links Card */}
-          <div className="bg-[#111827] border border-[#1F2937] rounded-xl p-5 space-y-3">
-            <h2 className="text-xs font-bold text-[#F9FAFB] uppercase tracking-wider border-b border-[#1F2937] pb-3">
-              Quick shortcuts
-            </h2>
-
-            <div className="space-y-1.5">
-              <Link
-                href="/dashboard/automations"
-                className="flex items-center justify-between p-2.5 rounded-lg text-xs font-semibold text-[#9CA3AF] hover:text-[#F9FAFB] hover:bg-[#0B0F17] transition-colors group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Settings className="w-4 h-4 text-slate-500 group-hover:text-[#00DF81] transition-colors" />
-                  <span>Manage automations</span>
-                </div>
-                <ArrowUpRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#F9FAFB]" />
-              </Link>
-
-              <Link
-                href="/dashboard/leads"
-                className="flex items-center justify-between p-2.5 rounded-lg text-xs font-semibold text-[#9CA3AF] hover:text-[#F9FAFB] hover:bg-[#0B0F17] transition-colors group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Users className="w-4 h-4 text-slate-500 group-hover:text-[#00DF81] transition-colors" />
-                  <span>View leads database</span>
-                </div>
-                <ArrowUpRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#F9FAFB]" />
-              </Link>
-
-              <Link
-                href="/dashboard/settings"
-                className="flex items-center justify-between p-2.5 rounded-lg text-xs font-semibold text-[#9CA3AF] hover:text-[#F9FAFB] hover:bg-[#0B0F17] transition-colors group"
-              >
-                <div className="flex items-center gap-2.5">
-                  <CreditCard className="w-4 h-4 text-slate-500 group-hover:text-[#00DF81] transition-colors" />
-                  <span>Billing & plan settings</span>
-                </div>
-                <ArrowUpRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#F9FAFB]" />
-              </Link>
-            </div>
-          </div>
-
-        </div>
-
+        )}
       </div>
     </div>
   );

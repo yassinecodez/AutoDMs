@@ -9,7 +9,7 @@ const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="2"
+    strokeWidth="1.75"
     strokeLinecap="round"
     strokeLinejoin="round"
     {...props}
@@ -51,16 +51,16 @@ export function ConnectFacebookButton() {
       <button
         onClick={handleConnect}
         disabled={loading}
-        className="inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-tr from-yellow-500 via-red-500 to-purple-600 font-bold text-white transition-all shadow-lg hover:shadow-purple-500/10 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-[#00DF81] hover:bg-[#00C770] font-semibold text-xs text-black transition-all active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? (
-          <Loader2 className="w-5 h-5 animate-spin" />
+          <Loader2 className="w-4 h-4 animate-spin text-black" />
         ) : (
-          <InstagramIcon className="w-5 h-5" />
+          <InstagramIcon className="w-4 h-4 text-black" />
         )}
         Connect Instagram Account
       </button>
-      {error && <p className="text-sm text-red-400 font-medium">{error}</p>}
+      {error && <p className="text-xs text-red-400 font-medium">{error}</p>}
     </div>
   );
 }
