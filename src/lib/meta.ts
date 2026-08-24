@@ -276,6 +276,18 @@ export class MetaApi {
   }
 
   /**
+   * Debugs and inspects access token validity, scopes, and expiration with Meta API
+   */
+  static async debugToken(inputToken: string, appAccessToken?: string): Promise<any> {
+    const appId = process.env.META_APP_ID || process.env.INSTAGRAM_APP_ID;
+    const appSecret = process.env.META_APP_SECRET || process.env.INSTAGRAM_APP_SECRET;
+    const token = appAccessToken || (appId && appSecret ? `${appId}|${appSecret}` : inputToken);
+    const url = `${META_API_URL}/debug_token?input_token=${inputToken}&access_token=${token}`;
+    const res = await fetch(url);
+    return await res.json();
+  }
+
+  /**
    * Send Private Reply (DM) to an Instagram Comment with error boundaries
    */
   static async sendPrivateReply(

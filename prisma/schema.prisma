@@ -60,6 +60,8 @@ model Automation {
   updatedAt           DateTime       @updatedAt
   logs                ExecutionLog[]
   leads               Lead[]
+
+  @@index([userId, active, triggerSource])
 }
 
 model ExecutionLog {
@@ -72,9 +74,12 @@ model ExecutionLog {
   triggerSource     String      @default("COMMENT")  // "COMMENT" | "STORY_MENTION" | "DIRECT_MESSAGE"
   dmStatus          String      // "SUCCESS", "FAILED", "SKIPPED", "LEAD_CAPTURED"
   dmError           String?
-  commentStatus     String      // "SUCCESS", "FAILED", "SKIPPED"
+  commentStatus     String      @default("SKIPPED")  // "SUCCESS", "FAILED", "SKIPPED"
   commentError      String?
   timestamp         DateTime    @default(now())
+
+  @@index([automationId, timestamp])
+  @@index([timestamp(sort: Desc)])
 }
 
 model Lead {
@@ -91,4 +96,5 @@ model Lead {
   updatedAt     DateTime     @updatedAt
 
   @@unique([igAccountId, instagramId])
+  @@index([igAccountId, createdAt(sort: Desc)])
 }
