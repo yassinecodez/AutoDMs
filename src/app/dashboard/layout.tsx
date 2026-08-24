@@ -93,10 +93,15 @@ export default async function DashboardLayout({
           </div>
 
           {/* User Footer Profile */}
-          <div className="p-3 px-4 border-t border-[#222222] flex items-center justify-between gap-2 bg-[#0A0A0A]">
-            <div className="truncate">
-              <p className="text-xs font-medium text-white truncate">{session.user.name || session.user.email}</p>
-              <p className="text-[10px] text-zinc-500 truncate">{session.user.email}</p>
+          <div className="p-3 px-4 border-t border-[#222222] flex items-center justify-between gap-2.5 bg-[#0A0A0A]">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-full bg-[#1A1A1A] border border-[#262626] flex items-center justify-center font-medium text-xs text-white uppercase shrink-0">
+                {(session.user.name || session.user.email || "U")[0]}
+              </div>
+              <div className="truncate">
+                <p className="text-xs font-medium text-white truncate">{session.user.name || session.user.email}</p>
+                <p className="text-[10px] text-zinc-500 truncate">{session.user.email}</p>
+              </div>
             </div>
             <SignOutButton />
           </div>

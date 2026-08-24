@@ -1,7 +1,9 @@
 import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import { db } from "./db";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 // Dynamically handle Railway's public domain URL mapping and Vercel's VERCEL_URL environment variable for NextAuth
 if (!process.env.NEXTAUTH_URL) {
@@ -11,13 +13,15 @@ if (!process.env.NEXTAUTH_URL) {
   } else if (process.env.VERCEL_URL) {
     process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`;
   }
-  if (process.env.NEXTAUTH_URL) {
-    console.log(`[NextAuth] Dynamic URL mapped to: ${process.env.NEXTAUTH_URL}`);
-  }
 }
 
 export const authOptions: AuthOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      allowDangerousEmailAccountLinking: true,
+    }),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -29,18 +33,22 @@ export const authOptions: AuthOptions = {
           throw new Error("Missing email or password");
         }
 
+        const email = credentials.email.toLowerCase().trim();
         let user = await db.user.findUnique({
-          where: { email: credentials.email },
+          where: { email },
         });
 
-        // Automatically register the user if they don't exist yet (convenient for setup)
+        // Automatically register the user if they don't exist yet
         if (!user) {
           const hashedPassword = await bcrypt.hash(credentials.password, 10);
           user = await db.user.create({
             data: {
-              email: credentials.email,
+              email,
               password: hashedPassword,
-              name: credentials.email.split("@")[0],
+              name: email.split("@")[0],
+              planType: "FREE",
+              dmsLimit: 150,
+              usageResetAt: new Date(),
             },
           });
         } else {
@@ -54,22 +62,54 @@ export const authOptions: AuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
+          planType: user.planType,
         };
       },
     }),
   ],
   callbacks: {
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.sub as string;
+    async signIn({ user, account }) {
+      if (account?.provider === "google") {
+        if (!user.email) return false;
+        const email = user.email.toLowerCase().trim();
+        
+        let existingUser = await db.user.findUnique({
+          where: { email },
+        });
+
+        if (!existingUser) {
+          const randomPassword = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
+          existingUser = await db.user.create({
+            data: {
+              email,
+              name: user.name || email.split("@")[0],
+              password: randomPassword,
+              planType: "FREE",
+              dmsLimit: 150,
+              usageResetAt: new Date(),
+            },
+          });
+        }
+        
+        user.id = existingUser.id;
+        user.planType = existingUser.planType;
       }
-      return session;
+      return true;
     },
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id;
         token.sub = user.id;
+        token.planType = user.planType || "FREE";
       }
       return token;
+    },
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = (token.sub || token.id) as string;
+        session.user.planType = (token.planType as string) || "FREE";
+      }
+      return session;
     },
   },
   session: {
@@ -80,4 +120,5 @@ export const authOptions: AuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
+
 export default authOptions;
