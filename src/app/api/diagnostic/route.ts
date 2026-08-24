@@ -63,8 +63,9 @@ export async function GET(request: NextRequest) {
 
       if (decryptionSuccess && decryptedToken) {
         try {
+          const targetId = currentAcc.pageId || currentAcc.instagramAccountId;
           const subRes = await fetch(
-            `https://graph.facebook.com/v24.0/${currentAcc.pageId}/subscribed_apps?access_token=${decryptedToken}`
+            `https://graph.facebook.com/v24.0/${targetId}/subscribed_apps?access_token=${decryptedToken}`
           );
           const subData = await subRes.json();
 
@@ -72,8 +73,8 @@ export async function GET(request: NextRequest) {
             webhookSubscribed = true;
           } else {
             // Attempt auto-resubscription
-            console.log(`[Diagnostic] Re-subscribing page ${currentAcc.pageId} to webhook...`);
-            const reSubSuccess = await MetaApi.subscribePageToWebhook(currentAcc.pageId, decryptedToken);
+            console.log(`[Diagnostic] Re-subscribing page ${targetId} to webhook...`);
+            const reSubSuccess = await MetaApi.subscribePageToWebhook(targetId, decryptedToken);
             webhookSubscribed = reSubSuccess;
             if (!reSubSuccess) {
               webhookError = subData.error?.message || "Failed to subscribe page to webhook app";

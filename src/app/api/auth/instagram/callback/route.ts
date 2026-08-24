@@ -30,15 +30,33 @@ export async function GET(request: NextRequest) {
   const errorDescription = searchParams.get("error_description");
   const stateParam = searchParams.get("state");
 
-  // 1. Resolve User ID from State or Session
+  // 1. Resolve and strictly verify User ID from State or Session
   const session = await getServerSession(authOptions);
   const stateUserId = extractUserIdFromState(stateParam);
-  const resolvedUserId = stateUserId || session?.user?.id;
+  let resolvedUserId = stateUserId || session?.user?.id;
 
   if (!resolvedUserId) {
     console.error("[Instagram Callback] No authenticated user ID found in state or session.");
     return NextResponse.redirect(
       new URL("/dashboard/accounts?error=UNAUTHORIZED", request.url)
+    );
+  }
+
+  let verifiedUser = await db.user.findUnique({
+    where: { id: resolvedUserId },
+  });
+
+  if (!verifiedUser && session?.user?.id) {
+    resolvedUserId = session.user.id;
+    verifiedUser = await db.user.findUnique({
+      where: { id: resolvedUserId },
+    });
+  }
+
+  if (!verifiedUser) {
+    console.error(`[Instagram Callback] Target user ID '${resolvedUserId}' was not found in the database.`);
+    return NextResponse.redirect(
+      new URL("/dashboard/accounts?error=USER_NOT_FOUND", request.url)
     );
   }
 
@@ -185,29 +203,40 @@ export async function GET(request: NextRequest) {
 
     // 7. Encrypt token and upsert IgAccount in database
     const encryptedToken = encrypt(longLivedToken);
+    const pageIdValue = `ig_${instagramId}`;
 
-    await db.igAccount.upsert({
-      where: { instagramAccountId: instagramId },
-      update: {
-        userId: resolvedUserId,
-        pageId: instagramId,
-        pageName: username,
-        accessToken: encryptedToken,
-        tokenExpiresAt: tokenExpiresAt,
-      },
-      create: {
-        userId: resolvedUserId,
-        instagramAccountId: instagramId,
-        pageId: instagramId,
-        pageName: username,
-        accessToken: encryptedToken,
-        tokenExpiresAt: tokenExpiresAt,
-      },
-    });
+    try {
+      await db.igAccount.upsert({
+        where: { instagramAccountId: instagramId },
+        update: {
+          userId: verifiedUser.id,
+          pageId: pageIdValue,
+          pageName: username,
+          accessToken: encryptedToken,
+          tokenExpiresAt: tokenExpiresAt,
+        },
+        create: {
+          userId: verifiedUser.id,
+          instagramAccountId: instagramId,
+          pageId: pageIdValue,
+          pageName: username,
+          accessToken: encryptedToken,
+          tokenExpiresAt: tokenExpiresAt,
+        },
+      });
+      console.log(`[Instagram Callback] Successfully connected @${username} (ID: ${instagramId}) for user ${verifiedUser.id}`);
+    } catch (prismaError: any) {
+      console.error("[Instagram Callback] Prisma upsert error:", {
+        message: prismaError.message,
+        code: prismaError.code,
+        meta: prismaError.meta,
+      });
+      return NextResponse.redirect(
+        new URL(`/dashboard/accounts?error=DATABASE_ERROR&details=${encodeURIComponent(prismaError.code || "UPSERT_FAILED")}`, request.url)
+      );
+    }
 
-    console.log(`[Instagram Callback] Successfully connected @${username} (ID: ${instagramId}) for user ${resolvedUserId}`);
-
-    // Revalidate dashboard routes
+    // 8. Revalidate dashboard routes
     revalidatePath("/dashboard/accounts");
     revalidatePath("/dashboard/automations");
     revalidatePath("/dashboard");

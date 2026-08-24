@@ -28,7 +28,7 @@ model IgAccount {
   userId             String
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   instagramAccountId String   @unique
-  pageId             String   @unique
+  pageId             String?  @unique
   pageName           String
   accessToken        String   // Encrypted Page Access Token
   tokenExpiresAt     DateTime?
