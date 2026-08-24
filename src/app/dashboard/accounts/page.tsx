@@ -35,6 +35,7 @@ interface PageProps {
     message?: string;
     count?: string;
     connected?: string;
+    details?: string;
   }>;
 }
 
@@ -75,6 +76,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
       {/* Guided Connection Helper & Error Reporting Banner */}
       <GuidedConnectionHelper
         errorParam={params.error}
+        detailsParam={params.details}
         statusParam={params.status || (params.connected ? "SUCCESS" : undefined)}
         countParam={params.count}
         hasConnectedAccounts={accounts.length > 0}

@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
       codeSnippet: sanitizedCode.substring(0, 10) + "...",
     });
 
-    const tokenRes = await fetch("https://api.instagram.com/oauth/access_token", {
+    let tokenRes = await fetch("https://api.instagram.com/oauth/access_token", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -101,13 +101,47 @@ export async function GET(request: NextRequest) {
       body: formData.toString(),
     });
 
-    const rawTokenText = await tokenRes.text();
+    let rawTokenText = await tokenRes.text();
     console.log(`[Instagram Callback] Meta token response [Status: ${tokenRes.status}]: ${rawTokenText}`);
+
+    let usedSecret = clientSecret;
+
+    // Retry with META_APP_SECRET if first attempt failed with secret/client validation error
+    if (!tokenRes.ok && process.env.META_APP_SECRET && process.env.META_APP_SECRET !== clientSecret) {
+      console.log("[Instagram Callback] Retrying token exchange with alternative secret (META_APP_SECRET)...");
+      const fallbackFormData = new URLSearchParams();
+      fallbackFormData.append("client_id", clientId);
+      fallbackFormData.append("client_secret", process.env.META_APP_SECRET);
+      fallbackFormData.append("grant_type", "authorization_code");
+      fallbackFormData.append("redirect_uri", redirectUri);
+      fallbackFormData.append("code", sanitizedCode);
+
+      const retryRes = await fetch("https://api.instagram.com/oauth/access_token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: fallbackFormData.toString(),
+      });
+
+      const retryText = await retryRes.text();
+      console.log(`[Instagram Callback] Retry token response [Status: ${retryRes.status}]: ${retryText}`);
+      if (retryRes.ok) {
+        tokenRes = retryRes;
+        rawTokenText = retryText;
+        usedSecret = process.env.META_APP_SECRET;
+      }
+    }
 
     if (!tokenRes.ok) {
       console.error("[Instagram Callback] Failed to exchange code with Meta:", rawTokenText);
+      let errMsg = "EXCHANGE_FAILED";
+      try {
+        const errObj = JSON.parse(rawTokenText);
+        errMsg = errObj.error_message || errObj.message || errObj.error_type || "EXCHANGE_FAILED";
+      } catch {}
       return NextResponse.redirect(
-        new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", request.url)
+        new URL(`/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED&details=${encodeURIComponent(errMsg)}`, request.url)
       );
     }
 
@@ -117,7 +151,7 @@ export async function GET(request: NextRequest) {
     } catch (e) {
       console.error("[Instagram Callback] Invalid JSON from token endpoint:", rawTokenText);
       return NextResponse.redirect(
-        new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", request.url)
+        new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED&details=INVALID_JSON", request.url)
       );
     }
 
@@ -127,7 +161,7 @@ export async function GET(request: NextRequest) {
     if (!shortLivedToken) {
       console.error("[Instagram Callback] No access_token in Meta response:", tokenData);
       return NextResponse.redirect(
-        new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", request.url)
+        new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED&details=NO_ACCESS_TOKEN", request.url)
       );
     }
 
@@ -137,7 +171,7 @@ export async function GET(request: NextRequest) {
     let expiresIn = 5184000; // 60 days fallback
 
     try {
-      const longLivedUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(clientSecret)}&access_token=${encodeURIComponent(shortLivedToken)}`;
+      const longLivedUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(usedSecret)}&access_token=${encodeURIComponent(shortLivedToken)}`;
       const longLivedRes = await fetch(longLivedUrl);
       const rawLongLivedText = await longLivedRes.text();
       console.log(`[Instagram Callback] Long-lived token response [Status: ${longLivedRes.status}]: ${rawLongLivedText}`);
@@ -253,7 +287,7 @@ export async function GET(request: NextRequest) {
   } catch (err: any) {
     console.error("[Instagram Callback] Unexpected error during OAuth callback:", err);
     return NextResponse.redirect(
-      new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", request.url)
+      new URL(`/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED&details=${encodeURIComponent(err.message || "UNEXPECTED_ERROR")}`, request.url)
     );
   }
 }

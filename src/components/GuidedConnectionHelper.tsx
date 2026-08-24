@@ -11,6 +11,7 @@ import {
 
 interface GuidedConnectionHelperProps {
   errorParam?: string;
+  detailsParam?: string;
   statusParam?: string;
   countParam?: string;
   hasConnectedAccounts: boolean;
@@ -18,6 +19,7 @@ interface GuidedConnectionHelperProps {
 
 export function GuidedConnectionHelper({
   errorParam,
+  detailsParam,
   statusParam,
   countParam,
   hasConnectedAccounts,
@@ -87,6 +89,11 @@ export function GuidedConnectionHelper({
                 ? "The connection request was cancelled. To enable automatic DM replies, please approve the requested permissions."
                 : "Instagram was unable to complete the authorization handshake. Click below to reconnect your profile."}
             </p>
+            {detailsParam && (
+              <p className="text-[11px] font-mono text-red-400 bg-red-950/30 border border-red-900/40 px-2.5 py-1 rounded-lg">
+                Reason: {detailsParam}
+              </p>
+            )}
             <div className="pt-1">
               <button
                 onClick={handleConnectAgain}
