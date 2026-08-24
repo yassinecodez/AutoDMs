@@ -74,7 +74,7 @@ export function AccountFinder() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/facebook/url");
+      const res = await fetch("/api/auth/instagram/url");
       if (!res.ok) {
         throw new Error("Failed to generate authorization session.");
       }
@@ -86,7 +86,6 @@ export function AccountFinder() {
       }
     } catch (err: any) {
       console.error("Connection initiation error:", err);
-      // Direct Instagram URL fallback
       window.location.href = "/api/auth/instagram/url";
     } finally {
       setConnecting(false);

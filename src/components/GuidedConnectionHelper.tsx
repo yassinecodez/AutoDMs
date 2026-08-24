@@ -32,7 +32,7 @@ export function GuidedConnectionHelper({
   const handleConnectAgain = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/facebook/url");
+      const res = await fetch("/api/auth/instagram/url");
       if (!res.ok) {
         throw new Error("Failed to get authorization URL");
       }
@@ -42,7 +42,6 @@ export function GuidedConnectionHelper({
       }
     } catch (err) {
       console.error("Connect retry error:", err);
-      // Fallback to Instagram direct route if Facebook url route fails
       window.location.href = "/api/auth/instagram/url";
     } finally {
       setLoading(false);

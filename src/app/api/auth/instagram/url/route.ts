@@ -13,7 +13,7 @@ export async function GET() {
     process.env.NODE_ENV === "production" || process.env.VERCEL
       ? "https://autodms-project.vercel.app/api/auth/instagram/callback"
       : "http://localhost:3000/api/auth/instagram/callback";
-  const clientId = process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID || "954476037671354";
+  const clientId = process.env.INSTAGRAM_APP_ID || "1041048208692049";
 
   const state = Buffer.from(
     JSON.stringify({ userId, timestamp: Date.now() })
@@ -24,6 +24,8 @@ export async function GET() {
     redirect_uri: redirectUri,
     response_type: "code",
     scope: "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments",
+    force_authentication: "1",
+    enable_fb_login: "0",
     state: state,
   });
 
