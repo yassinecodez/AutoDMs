@@ -129,12 +129,12 @@ export default function AutomationsManager({
     <div className="space-y-6">
       {/* Account Warning if 0 connected accounts */}
       {connectedAccounts.length === 0 && (
-        <div className="p-4 bg-[#0A0A0A] border border-amber-900/40 text-amber-300 rounded-xl flex items-start gap-3 text-xs">
+        <div className="p-4 bg-[#0A0A0A] border border-amber-900/40 text-amber-300 rounded-2xl flex items-start gap-3 text-xs shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" strokeWidth={1.75} />
           <div className="space-y-1">
             <p className="font-semibold text-xs text-white">No Connected Instagram Accounts</p>
             <p className="text-zinc-400 leading-relaxed">
-              Connect your Meta Facebook Page & Instagram Business account to allow real-time comment and DM automation.
+              Connect your Instagram Creator or Business account to enable instant comment and DM workflows.
             </p>
             <Link
               href="/dashboard/accounts"
@@ -147,9 +147,9 @@ export default function AutomationsManager({
       )}
 
       {/* ========================================================================= */}
-      {/* 1. Search & Filter Controls */}
+      {/* 1. Filters & Search Header */}
       {/* ========================================================================= */}
-      <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-3 flex flex-wrap gap-3 items-center justify-between">
+      <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl p-3 flex flex-wrap gap-3 items-center justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
         {/* Search Input */}
         <div className="relative w-full sm:w-72">
           <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -262,7 +262,7 @@ export default function AutomationsManager({
         </div>
       ) : (
         /* Data Table */
-        <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>

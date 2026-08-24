@@ -108,49 +108,49 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
       {/* ========================================================================= */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {/* Card 1: Total Dispatches */}
-        <div className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-xl flex items-center justify-between shadow-sm">
+        <div className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-2xl flex items-center justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <div className="space-y-0.5">
             <p className="text-[11px] font-medium text-zinc-400">Total Dispatches</p>
             <p className="text-2xl font-bold text-white tracking-tight">{totalDispatches.toLocaleString()}</p>
-            <p className="text-[10px] text-zinc-500">Live webhook triggers</p>
+            <p className="text-[10px] text-zinc-500 font-mono">Live webhook triggers</p>
           </div>
-          <div className="p-2.5 rounded-lg bg-[#141414] border border-[#262626] text-white shrink-0">
+          <div className="p-2.5 rounded-xl bg-[#141414] border border-[#262626] text-white shrink-0">
             <Send className="w-4 h-4" strokeWidth={1.75} />
           </div>
         </div>
 
         {/* Card 2: Delivery Success Rate */}
-        <div className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-xl flex items-center justify-between shadow-sm">
+        <div className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-2xl flex items-center justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <div className="space-y-0.5">
             <p className="text-[11px] font-medium text-zinc-400">Delivery Success Rate</p>
             <p className="text-2xl font-bold text-white tracking-tight">{successRate}%</p>
-            <p className="text-[10px] text-zinc-500">{deliveredCount} delivered successfully</p>
+            <p className="text-[10px] text-zinc-500 font-mono">{deliveredCount} delivered</p>
           </div>
-          <div className="p-2.5 rounded-lg bg-[#141414] border border-[#262626] text-white shrink-0">
+          <div className="p-2.5 rounded-xl bg-[#141414] border border-[#262626] text-white shrink-0">
             <CheckCircle2 className="w-4 h-4" strokeWidth={1.75} />
           </div>
         </div>
 
         {/* Card 3: Leads Captured */}
-        <div className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-xl flex items-center justify-between shadow-sm">
+        <div className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-2xl flex items-center justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <div className="space-y-0.5">
             <p className="text-[11px] font-medium text-zinc-400">Leads Captured</p>
             <p className="text-2xl font-bold text-white tracking-tight">{leadsCapturedCount.toLocaleString()}</p>
-            <p className="text-[10px] text-zinc-500">Email & phone extractions</p>
+            <p className="text-[10px] text-zinc-500 font-mono">Contact extractions</p>
           </div>
-          <div className="p-2.5 rounded-lg bg-[#141414] border border-[#262626] text-white shrink-0">
+          <div className="p-2.5 rounded-xl bg-[#141414] border border-[#262626] text-white shrink-0">
             <Users className="w-4 h-4" strokeWidth={1.75} />
           </div>
         </div>
 
         {/* Card 4: Skipped / Quota */}
-        <div className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-xl flex items-center justify-between shadow-sm">
+        <div className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-2xl flex items-center justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <div className="space-y-0.5">
             <p className="text-[11px] font-medium text-zinc-400">Skipped / Filtered</p>
             <p className="text-2xl font-bold text-white tracking-tight">{skippedOrRestrictedCount.toLocaleString()}</p>
-            <p className="text-[10px] text-zinc-500">No match or quota gate</p>
+            <p className="text-[10px] text-zinc-500 font-mono">No match or quota</p>
           </div>
-          <div className="p-2.5 rounded-lg bg-[#141414] border border-[#262626] text-white shrink-0">
+          <div className="p-2.5 rounded-xl bg-[#141414] border border-[#262626] text-white shrink-0">
             <Zap className="w-4 h-4" strokeWidth={1.75} />
           </div>
         </div>
@@ -159,7 +159,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
       {/* ========================================================================= */}
       {/* 2. Search & Filter Controls */}
       {/* ========================================================================= */}
-      <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-3 flex flex-wrap gap-3 items-center justify-between">
+      <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl p-3 flex flex-wrap gap-3 items-center justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
         {/* Search Bar */}
         <div className="relative w-full sm:w-72">
           <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -250,7 +250,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
         </div>
       ) : filteredLogs.length === 0 ? (
         /* Zero Match Filter State */
-        <div className="p-12 text-center bg-[#0A0A0A] border border-[#222222] rounded-xl text-xs space-y-3">
+        <div className="p-12 text-center bg-[#0A0A0A] border border-[#222222] rounded-2xl text-xs space-y-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <Filter className="w-6 h-6 text-zinc-500 mx-auto" />
           <p className="text-zinc-200 font-medium">No activity logs match your filter criteria</p>
           <button
@@ -266,7 +266,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
         </div>
       ) : (
         /* Logs Data Table */
-        <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>

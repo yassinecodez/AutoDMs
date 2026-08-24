@@ -275,32 +275,64 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
         {/* LEFT PANEL: 4-Step Interactive Configuration */}
         <div className="flex-1 lg:w-1/2 p-6 md:p-8 flex flex-col justify-between overflow-y-auto border-r border-[#222222] bg-[#000000]">
           
-          {/* Step Pill Indicators */}
-          <div className="grid grid-cols-4 gap-2 mb-6 shrink-0">
-            {[
-              { num: 1, name: "Trigger" },
-              { num: 2, name: "Keywords" },
-              { num: 3, name: "Direct Reply" },
-              { num: 4, name: "Public Reply" },
-            ].map((s) => (
-              <button
-                key={s.num}
-                onClick={() => setStep(s.num as any)}
-                className={`p-2.5 rounded-lg border text-left transition-colors ${
-                  step === s.num
-                    ? "bg-[#111111] border-white/40 text-white"
-                    : s.num < step
-                    ? "bg-[#0A0A0A] border-[#222222] text-zinc-400 hover:border-zinc-700"
-                    : "bg-[#000000] border-[#222222]/60 text-zinc-600"
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono text-zinc-500">0{s.num}</span>
-                  {s.num < step && <span className="text-[10px] text-white font-bold">✓</span>}
-                </div>
-                <p className="text-[11px] font-medium truncate mt-0.5">{s.name}</p>
-              </button>
-            ))}
+          {/* Connected Timeline Stepper */}
+          <div className="mb-8 shrink-0">
+            <div className="relative flex items-center justify-between px-2">
+              {/* Background horizontal connecting track */}
+              <div className="absolute left-6 right-6 top-3.5 h-[2px] bg-[#1F1F1F] -z-0" />
+              
+              {/* Active progress track */}
+              <div
+                className="absolute left-6 top-3.5 h-[2px] bg-white transition-all duration-300 -z-0"
+                style={{ width: `${Math.max(0, Math.min(100, ((step - 1) / 3) * 100))}%` }}
+              />
+
+              {[
+                { num: 1, name: "Trigger" },
+                { num: 2, name: "Keywords" },
+                { num: 3, name: "Direct Reply" },
+                { num: 4, name: "Public Reply" },
+              ].map((s) => {
+                const isCurrent = step === s.num;
+                const isCompleted = s.num < step;
+
+                return (
+                  <button
+                    key={s.num}
+                    type="button"
+                    onClick={() => setStep(s.num as any)}
+                    className="relative z-10 flex flex-col items-center group cursor-pointer focus:outline-none"
+                  >
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-200 ${
+                        isCurrent
+                          ? "bg-white text-black shadow-[0_0_14px_rgba(255,255,255,0.4)] ring-4 ring-white/10"
+                          : isCompleted
+                          ? "bg-zinc-200 text-black"
+                          : "bg-[#111111] border border-[#2B2B2B] text-zinc-500 group-hover:border-zinc-500 group-hover:text-zinc-300"
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                      ) : (
+                        <span>{s.num}</span>
+                      )}
+                    </div>
+                    <span
+                      className={`text-[11px] font-medium mt-1.5 transition-colors ${
+                        isCurrent
+                          ? "text-white font-semibold"
+                          : isCompleted
+                          ? "text-zinc-300"
+                          : "text-zinc-500 group-hover:text-zinc-400"
+                      }`}
+                    >
+                      {s.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Form Step Content */}
@@ -339,18 +371,26 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
                           <div
                             key={item.id}
                             onClick={() => setTriggerSource(item.id as any)}
-                            className={`p-3.5 border rounded-xl cursor-pointer transition-colors flex flex-col justify-between h-[100px] ${
+                            className={`p-3.5 border rounded-2xl cursor-pointer transition-all duration-200 flex flex-col justify-between h-[106px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ${
                               isSelected
-                                ? "border-white bg-[#111111]"
-                                : "border-[#222222] bg-[#0A0A0A] hover:border-zinc-700"
+                                ? "border-white bg-[#141414] ring-1 ring-white/20"
+                                : "border-[#222222] bg-[#0A0A0A] hover:border-zinc-700 hover:bg-[#0D0D0D]"
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <Icon className={`w-4 h-4 ${isSelected ? "text-white" : "text-zinc-500"}`} strokeWidth={1.75} />
-                              {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                              <div className={`w-8 h-8 rounded-xl flex items-center justify-center border transition-colors ${
+                                isSelected ? "bg-white text-black border-white" : "bg-[#141414] text-zinc-400 border-[#262626]"
+                              }`}>
+                                <Icon className="w-4 h-4" strokeWidth={1.75} />
+                              </div>
+                              <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
+                                isSelected ? "border-white bg-white" : "border-zinc-700 bg-transparent"
+                              }`}>
+                                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-black" />}
+                              </div>
                             </div>
                             <div>
-                              <p className="text-xs font-medium text-white">{item.title}</p>
+                              <p className="text-xs font-semibold text-white">{item.title}</p>
                               <p className="text-[10px] text-zinc-400 mt-0.5 leading-tight">{item.desc}</p>
                             </div>
                           </div>

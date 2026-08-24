@@ -93,7 +93,7 @@ export function AccountFinder() {
   };
 
   return (
-    <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl p-6 space-y-6 shadow-sm">
+    <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl p-6 space-y-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
       {/* Box Header */}
       <div className="flex items-start gap-3.5">
         <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#262626] flex items-center justify-center text-white shrink-0">

@@ -108,51 +108,51 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. Search & Filter Controls */}
+      {/* 2. Filter & Search Controls Bar */}
       {/* ========================================================================= */}
-      <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-3 flex flex-wrap gap-3 items-center justify-between">
-        {/* Search Bar */}
-        <div className="relative w-full sm:w-72">
+      <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl p-3 flex flex-wrap gap-3 items-center justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+        {/* Search Input */}
+        <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by username, email, phone..."
-            className="bg-[#111111] border border-[#262626] rounded-lg h-9 pl-9 pr-3 text-sm text-white placeholder-zinc-500 w-full focus:outline-none focus:border-zinc-500 transition-colors"
+            placeholder="Search by @handle, email, phone, or rule..."
+            className="w-full h-9 pl-9 pr-3 bg-[#111111] border border-[#262626] rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
           />
         </div>
 
-        {/* Filter Tabs & Counter */}
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-          <div className="flex items-center bg-[#111111] border border-[#262626] rounded-lg p-0.5 text-xs font-medium text-zinc-400">
+        {/* Filter Type Pills */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-[#111111] border border-[#262626] rounded-xl p-1 text-xs font-medium text-zinc-400">
             <button
               onClick={() => setFilterType("ALL")}
-              className={`px-3 py-1.5 rounded-md transition-colors ${
-                filterType === "ALL" ? "bg-[#222222] text-white" : "hover:text-zinc-200"
+              className={`px-3 py-1.5 rounded-lg transition-colors ${
+                filterType === "ALL" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
               }`}
             >
               All Contacts
             </button>
             <button
               onClick={() => setFilterType("EMAIL")}
-              className={`px-3 py-1.5 rounded-md transition-colors ${
-                filterType === "EMAIL" ? "bg-[#222222] text-white" : "hover:text-zinc-200"
+              className={`px-3 py-1.5 rounded-lg transition-colors ${
+                filterType === "EMAIL" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
               }`}
             >
               With Email
             </button>
             <button
               onClick={() => setFilterType("PHONE")}
-              className={`px-3 py-1.5 rounded-md transition-colors ${
-                filterType === "PHONE" ? "bg-[#222222] text-white" : "hover:text-zinc-200"
+              className={`px-3 py-1.5 rounded-lg transition-colors ${
+                filterType === "PHONE" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
               }`}
             >
               With Phone
             </button>
           </div>
 
-          <span className="text-xs text-zinc-500 font-medium">
+          <span className="text-xs text-zinc-500 font-mono font-medium">
             Showing {filteredLeads.length} contact{filteredLeads.length !== 1 ? "s" : ""}
           </span>
         </div>
@@ -183,7 +183,7 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
         </div>
       ) : filteredLeads.length === 0 ? (
         /* Filter Empty State */
-        <div className="p-12 text-center bg-[#0A0A0A] border border-[#222222] rounded-xl text-xs space-y-3">
+        <div className="p-12 text-center bg-[#0A0A0A] border border-[#222222] rounded-2xl text-xs space-y-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <Filter className="w-6 h-6 text-zinc-500 mx-auto" />
           <p className="text-zinc-200 font-medium">No contacts match your current filter</p>
           <button
@@ -198,7 +198,7 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
         </div>
       ) : (
         /* Data Table */
-        <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>

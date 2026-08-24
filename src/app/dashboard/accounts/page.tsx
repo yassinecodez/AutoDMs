@@ -110,23 +110,26 @@ export default async function AccountsPage({ searchParams }: PageProps) {
             {accounts.map((acc) => (
               <div
                 key={acc.id}
-                className="p-5 bg-[#0A0A0A] border border-[#222222] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:border-zinc-700 transition-colors"
+                className="p-5 bg-[#0A0A0A] border border-[#222222] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-700 hover:bg-[#0D0D0D] transition-all duration-200"
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="w-11 h-11 rounded-xl bg-[#141414] border border-[#262626] flex items-center justify-center text-white shrink-0">
+                  <div className="w-11 h-11 rounded-2xl bg-[#141414] border border-[#262626] flex items-center justify-center text-white shrink-0 shadow-inner">
                     <InstagramIcon className="w-5 h-5" />
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-semibold text-white">@{acc.pageName}</h3>
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-[#141414] border border-[#262626] text-zinc-300">
+                      <svg className="w-3.5 h-3.5 text-[#0095F6] fill-current" viewBox="0 0 24 24">
+                        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1.9 14.7l-4.2-4.2 1.4-1.4 2.8 2.8 6.8-6.8 1.4 1.4-8.2 8.2z" />
+                      </svg>
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-[#141414] border border-[#262626] text-zinc-300">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         Live Webhook
                       </span>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
-                      <span className="text-[11px] font-mono text-zinc-500">ID: {acc.instagramAccountId}</span>
+                      <span className="text-[11px] font-mono text-zinc-500 bg-zinc-900/60 border border-zinc-800 px-1.5 py-0.5 rounded">ID: {acc.instagramAccountId}</span>
                       <span className="text-zinc-600">•</span>
                       {(() => {
                         if (!acc.tokenExpiresAt) {
@@ -160,7 +163,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                   >
                     <button
                       type="submit"
-                      className="p-2 text-zinc-400 hover:text-red-400 hover:bg-[#141414] rounded-lg transition-colors"
+                      className="p-2 text-zinc-400 hover:text-red-400 hover:bg-[#141414] rounded-lg transition-colors border border-transparent hover:border-zinc-800"
                       title="Disconnect Account"
                     >
                       <Trash2 className="w-4 h-4" strokeWidth={1.75} />

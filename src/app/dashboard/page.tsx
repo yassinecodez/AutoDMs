@@ -199,15 +199,15 @@ export default async function DashboardOverview() {
               <Link
                 key={template.id}
                 href={template.href}
-                className="bg-[#0A0A0A] hover:bg-[#111111] border border-[#222222] hover:border-zinc-700 rounded-xl p-5 transition-all cursor-pointer group flex flex-col justify-between min-h-[170px]"
+                className="bg-[#0A0A0A] hover:bg-[#0D0D0D] border border-[#222222] hover:border-zinc-700 rounded-2xl p-6 transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[180px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
               >
-                <div className="space-y-3">
+                <div className="space-y-3.5">
                   <div className="flex items-center justify-between">
-                    <div className="w-9 h-9 rounded-lg bg-[#141414] border border-[#262626] flex items-center justify-center text-zinc-300 group-hover:text-white group-hover:border-zinc-500 transition-colors">
-                      <Icon className="w-4 h-4" strokeWidth={1.75} />
+                    <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#262626] flex items-center justify-center text-zinc-300 group-hover:text-white group-hover:border-zinc-500 transition-colors">
+                      <Icon className="w-5 h-5" strokeWidth={1.75} />
                     </div>
                     {template.tag && (
-                      <span className="bg-[#181818] border border-[#2b2b2b] text-zinc-300 text-[10px] px-2 py-0.5 rounded-full font-medium">
+                      <span className="bg-[#181818] border border-[#2b2b2b] text-zinc-300 text-[10px] px-2.5 py-0.5 rounded-full font-medium font-mono">
                         {template.tag}
                       </span>
                     )}
@@ -222,9 +222,9 @@ export default async function DashboardOverview() {
                   </div>
                 </div>
 
-                <div className="pt-3 flex items-center text-xs font-medium text-zinc-500 group-hover:text-zinc-200 transition-colors">
+                <div className="pt-3 flex items-center text-xs font-medium text-zinc-400 group-hover:text-white transition-colors">
                   <span>Use template</span>
-                  <ArrowRight className="w-3.5 h-3.5 ml-1 transform group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="w-3.5 h-3.5 ml-1 transform group-hover:translate-x-1 transition-transform stroke-[2.5]" />
                 </div>
               </Link>
             );
@@ -242,7 +242,7 @@ export default async function DashboardOverview() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Card: Setup Progress Checklist */}
-          <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-6 space-y-5 flex flex-col justify-between">
+          <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl p-6 space-y-5 flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -362,7 +362,7 @@ export default async function DashboardOverview() {
           </div>
 
           {/* Right Card: Monthly Plan & DM Usage */}
-          <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-6 space-y-5 flex flex-col justify-between">
+          <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl p-6 space-y-5 flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
