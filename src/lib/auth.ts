@@ -82,7 +82,7 @@ export const authOptions: AuthOptions = {
           existingUser = await db.user.create({
             data: {
               email,
-              name: user.name || email.split("@")[0],
+              name: user.name ?? undefined,
               password: randomPassword,
               planType: "FREE",
               dmsLimit: 150,
@@ -92,7 +92,7 @@ export const authOptions: AuthOptions = {
         }
         
         user.id = existingUser.id;
-        user.planType = existingUser.planType;
+        (user as any).planType = existingUser.planType;
       }
       return true;
     },
@@ -100,14 +100,23 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.id = user.id;
         token.sub = user.id;
-        token.planType = user.planType || "FREE";
+        token.planType = (user as any).planType || "FREE";
+      } else if (!token.planType && token.sub) {
+        const dbUser = await db.user.findUnique({
+          where: { id: token.sub },
+          select: { id: true, planType: true },
+        });
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.planType = dbUser.planType;
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = (token.sub || token.id) as string;
-        session.user.planType = (token.planType as string) || "FREE";
+        (session.user as any).planType = (token.planType as string) || "FREE";
       }
       return session;
     },

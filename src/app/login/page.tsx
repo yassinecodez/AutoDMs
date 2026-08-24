@@ -93,9 +93,9 @@ export default function LoginPage() {
       {/* Centered Vercel-Style Card */}
       <div className="w-full max-w-sm mx-auto my-auto space-y-6">
         
-        <div className="space-y-1.5 text-center">
+        <div className="space-y-1 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-white">Log in to AutoDMs</h1>
-          <p className="text-xs text-zinc-400">
+          <p className="text-sm text-zinc-400 mt-1">
             Instagram Comment-to-DM SaaS Automation
           </p>
         </div>
@@ -107,7 +107,7 @@ export default function LoginPage() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={googleLoading || loading}
-            className="w-full h-10 bg-[#111111] hover:bg-[#181818] text-white border border-[#262626] rounded-lg px-4 flex items-center justify-center gap-3 text-sm font-medium transition-colors disabled:opacity-50"
+            className="w-full bg-[#111111] hover:bg-[#181818] text-white border border-[#262626] rounded-lg h-10 px-4 flex items-center justify-center gap-3 text-sm font-medium transition-colors disabled:opacity-50"
           >
             {googleLoading ? (
               <Loader2 className="w-4 h-4 animate-spin text-white" />
@@ -120,17 +120,17 @@ export default function LoginPage() {
           </button>
 
           {/* Divider */}
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex items-center justify-center my-4">
             <div className="w-full border-t border-[#1F1F1F]" />
-            <span className="absolute bg-[#0A0A0A] px-2 text-[10px] uppercase tracking-wider text-zinc-500 font-medium">
-              or continue with email
+            <span className="absolute bg-[#0A0A0A] px-2 text-xs uppercase tracking-wider text-zinc-500 font-medium">
+              OR CONTINUE WITH EMAIL
             </span>
           </div>
 
           {/* Email & Password Form */}
           <form onSubmit={handleCredentialsSubmit} className="space-y-3.5">
             <div className="space-y-1">
-              <label htmlFor="email" className="text-xs font-medium text-zinc-300 block">
+              <label htmlFor="email" className="text-xs text-zinc-400 font-medium block">
                 Email
               </label>
               <input
@@ -139,13 +139,13 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-10 px-3 bg-[#0A0A0A] border border-[#262626] rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
+                className="w-full bg-[#0A0A0A] border border-[#262626] text-white placeholder-zinc-500 rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-zinc-500 transition-colors"
                 placeholder="name@company.com"
               />
             </div>
 
             <div className="space-y-1">
-              <label htmlFor="password" className="text-xs font-medium text-zinc-300 block">
+              <label htmlFor="password" className="text-xs text-zinc-400 font-medium block">
                 Password
               </label>
               <input
@@ -154,19 +154,19 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-10 px-3 bg-[#0A0A0A] border border-[#262626] rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
+                className="w-full bg-[#0A0A0A] border border-[#262626] text-white placeholder-zinc-500 rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-zinc-500 transition-colors"
                 placeholder="••••••••"
               />
             </div>
 
             {error && (
-              <p className="text-red-400 text-xs mt-1.5">{error}</p>
+              <p className="text-red-400 text-xs mt-2 text-center">{error}</p>
             )}
 
             <button
               type="submit"
               disabled={loading || googleLoading}
-              className="w-full h-10 mt-1 bg-white text-black hover:bg-zinc-200 font-medium rounded-lg text-sm flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
+              className="w-full bg-white hover:bg-zinc-200 text-black font-medium rounded-lg h-10 text-sm transition-colors mt-2 flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin text-black" />
