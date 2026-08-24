@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   const errorDescription = searchParams.get("error_description");
   const stateParam = searchParams.get("state");
 
-  // 1. Resolve and strictly verify User ID from State or Session
+  // 1. Resolve and verify User ID from State or Session
   const session = await getServerSession(authOptions);
   const stateUserId = extractUserIdFromState(stateParam);
   let resolvedUserId = stateUserId || session?.user?.id;
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
     formData.append("redirect_uri", redirectUri);
     formData.append("code", sanitizedCode);
 
-    console.log("[Instagram Callback] Exchanging sanitized code for access token with Meta...", {
+    console.log("[Instagram Callback] Exchanging code for access token with Meta...", {
       clientId,
       redirectUri,
       codeSnippet: sanitizedCode.substring(0, 10) + "...",
@@ -133,17 +133,16 @@ export async function GET(request: NextRequest) {
 
     // 4. Exchange short-lived token for long-lived (60-day) token
     console.log("[Instagram Callback] Exchanging short-lived token for long-lived token...");
-    const longLivedUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(clientSecret)}&access_token=${encodeURIComponent(shortLivedToken)}`;
-    
-    const longLivedRes = await fetch(longLivedUrl);
-    const rawLongLivedText = await longLivedRes.text();
-    console.log(`[Instagram Callback] Long-lived token response [Status: ${longLivedRes.status}]: ${rawLongLivedText}`);
-
     let longLivedToken = shortLivedToken;
     let expiresIn = 5184000; // 60 days fallback
 
-    if (longLivedRes.ok) {
-      try {
+    try {
+      const longLivedUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(clientSecret)}&access_token=${encodeURIComponent(shortLivedToken)}`;
+      const longLivedRes = await fetch(longLivedUrl);
+      const rawLongLivedText = await longLivedRes.text();
+      console.log(`[Instagram Callback] Long-lived token response [Status: ${longLivedRes.status}]: ${rawLongLivedText}`);
+
+      if (longLivedRes.ok) {
         const longLivedData = JSON.parse(rawLongLivedText);
         if (longLivedData.access_token) {
           longLivedToken = longLivedData.access_token;
@@ -151,43 +150,48 @@ export async function GET(request: NextRequest) {
         if (typeof longLivedData.expires_in === "number") {
           expiresIn = longLivedData.expires_in;
         }
-      } catch (parseErr) {
-        console.warn("[Instagram Callback] Error parsing long-lived token response:", parseErr);
       }
-    } else {
-      console.warn("[Instagram Callback] Long-lived token exchange returned non-200, continuing with short-lived token.");
+    } catch (longLivedErr) {
+      console.warn("[Instagram Callback] Error requesting long-lived token, continuing with short-lived token:", longLivedErr);
     }
 
     const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
 
-    // 5. Fetch Instagram profile info
+    // 5. Fetch Instagram profile info without strict account_type blocking
     console.log("[Instagram Callback] Fetching Instagram profile info...");
-    const profileUrl = `https://graph.instagram.com/v24.0/me?fields=id,username,name,account_type,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
-    
-    const profileRes = await fetch(profileUrl);
-    const rawProfileText = await profileRes.text();
-    console.log(`[Instagram Callback] Profile endpoint response [Status: ${profileRes.status}]: ${rawProfileText}`);
-
     let instagramId = String(igUserId || "");
-    let username = "instagram_user";
+    let username = "Instagram Account";
 
-    if (profileRes.ok) {
-      try {
+    try {
+      const profileUrl = `https://graph.instagram.com/v24.0/me?fields=id,username,name&access_token=${encodeURIComponent(longLivedToken)}`;
+      const profileRes = await fetch(profileUrl);
+      const rawProfileText = await profileRes.text();
+      console.log(`[Instagram Callback] Profile endpoint response [Status: ${profileRes.status}]: ${rawProfileText}`);
+
+      if (profileRes.ok) {
         const profileData = JSON.parse(rawProfileText);
         if (profileData.id) instagramId = String(profileData.id);
-        if (profileData.username || profileData.name) {
-          username = profileData.username || profileData.name;
+        if (profileData.username) username = profileData.username;
+        else if (profileData.name) username = profileData.name;
+      } else {
+        // Fallback endpoint without version prefix
+        const fallbackUrl = `https://graph.instagram.com/me?fields=id,username,name&access_token=${encodeURIComponent(longLivedToken)}`;
+        const fallbackRes = await fetch(fallbackUrl);
+        const fallbackText = await fallbackRes.text();
+        console.log(`[Instagram Callback] Profile fallback response [Status: ${fallbackRes.status}]: ${fallbackText}`);
+        if (fallbackRes.ok) {
+          const fallbackData = JSON.parse(fallbackText);
+          if (fallbackData.id) instagramId = String(fallbackData.id);
+          if (fallbackData.username) username = fallbackData.username;
+          else if (fallbackData.name) username = fallbackData.name;
         }
-      } catch (err) {
-        console.warn("[Instagram Callback] Error parsing profile response:", err);
       }
+    } catch (profileErr) {
+      console.warn("[Instagram Callback] Error fetching profile details, using user_id from token:", profileErr);
     }
 
     if (!instagramId) {
-      console.error("[Instagram Callback] Could not determine Instagram ID from profile response or user_id.");
-      return NextResponse.redirect(
-        new URL("/dashboard/accounts?error=NOT_BUSINESS_ACCOUNT", request.url)
-      );
+      instagramId = String(igUserId || `ig_${Date.now()}`);
     }
 
     // 6. Register Webhook app subscriptions
