@@ -31,7 +31,7 @@ export default function LoginPage() {
       });
 
       if (res?.error) {
-        setError(res.error || "Authentication failed.");
+        setError(res.error || "Invalid email or password.");
       } else {
         router.push("/dashboard");
         router.refresh();
@@ -44,82 +44,95 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-[#0F0F0F] text-zinc-100 selection:bg-[#00DF81]/25 selection:text-white">
-      <div className="w-full max-w-sm space-y-6 bg-[#18181B] border border-[#27272A] p-7 rounded-2xl shadow-xl">
-        <div className="flex flex-col items-center text-center">
-          <Link href="/" className="flex items-center gap-2 mb-2 font-bold text-xl tracking-tight text-zinc-100 select-none">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#00DF81] inline-block shadow-[0_0_8px_rgba(0,223,129,0.5)]" />
-            AutoDMs
-          </Link>
+    <div className="min-h-screen bg-[#000000] text-zinc-100 flex flex-col justify-between p-6">
+      
+      {/* Top Header */}
+      <div className="flex items-center justify-between max-w-5xl w-full mx-auto">
+        <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-white tracking-tight">
+          <span className="w-2 h-2 rounded-full bg-white inline-block" />
+          AutoDMs
+        </Link>
+        <Link href="/" className="text-xs text-zinc-400 hover:text-white transition-colors">
+          Back to home
+        </Link>
+      </div>
+
+      {/* Centered Vercel-Style Card */}
+      <div className="w-full max-w-sm mx-auto my-auto space-y-6">
+        
+        <div className="space-y-1.5 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight text-white">Log in to AutoDMs</h1>
           <p className="text-xs text-zinc-400">
-            Instagram Comment & Story Automation Platform
+            Instagram Comment-to-DM SaaS Automation
           </p>
         </div>
 
-        {error && (
-          <div className="p-3 text-xs font-medium text-red-400 bg-red-950/30 border border-red-500/20 rounded-lg">
-            {error}
-          </div>
-        )}
-
-        <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-3">
-            <div>
-              <label htmlFor="email-address" className="text-xs font-semibold text-zinc-300 block mb-1.5">
-                Email address
+        <div className="p-6 bg-[#0A0A0A] border border-[#222222] rounded-xl shadow-2xl space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            <div className="space-y-1">
+              <label htmlFor="email" className="text-xs font-medium text-zinc-300 block">
+                Email
               </label>
               <input
-                id="email-address"
-                name="email"
+                id="email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-10 px-3 bg-[#0F0F0F] border border-[#27272A] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#00DF81] text-zinc-100 text-xs placeholder-zinc-500 transition-colors"
+                className="w-full h-10 px-3 bg-[#0A0A0A] border border-[#262626] rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
                 placeholder="name@company.com"
               />
             </div>
-            <div>
-              <label htmlFor="password" className="text-xs font-semibold text-zinc-300 block mb-1.5">
+
+            <div className="space-y-1">
+              <label htmlFor="password" className="text-xs font-medium text-zinc-300 block">
                 Password
               </label>
               <input
                 id="password"
-                name="password"
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full h-10 px-3 bg-[#0F0F0F] border border-[#27272A] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#00DF81] text-zinc-100 text-xs placeholder-zinc-500 transition-colors"
+                className="w-full h-10 px-3 bg-[#0A0A0A] border border-[#262626] rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
                 placeholder="••••••••"
               />
             </div>
-          </div>
 
-          <div>
+            {error && (
+              <p className="text-red-400 text-xs mt-1.5">{error}</p>
+            )}
+
             <button
               type="submit"
               disabled={loading}
-              className="group relative flex w-full h-10 justify-center items-center rounded-lg bg-[#00DF81] hover:bg-[#00C770] px-4 text-xs font-semibold text-[#000000] focus:outline-none transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-10 mt-2 bg-white text-black hover:bg-zinc-200 font-medium rounded-lg text-sm flex items-center justify-center gap-1.5 transition-colors disabled:opacity-50"
             >
               {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <Loader2 className="w-4 h-4 animate-spin text-black" />
               ) : (
                 <>
-                  Log in or register
-                  <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-0.5 transition-transform" />
+                  Continue with Email
+                  <ArrowRight className="w-3.5 h-3.5 ml-0.5" strokeWidth={2} />
                 </>
               )}
             </button>
-          </div>
-        </form>
+          </form>
 
-        <div className="mt-4 text-center border-t border-[#27272A] pt-4">
-          <p className="text-[11px] text-zinc-500 leading-relaxed">
-            <span className="font-semibold text-zinc-400">Note:</span> If your account does not exist, entering an email and password will automatically register your profile.
-          </p>
+          <div className="border-t border-[#1F1F1F] pt-3 text-center">
+            <p className="text-[11px] text-zinc-500 leading-relaxed">
+              New user? Entering your email and password will automatically register your account.
+            </p>
+          </div>
         </div>
+
       </div>
+
+      {/* Footer */}
+      <div className="text-center text-xs text-zinc-600">
+        © 2026 AutoDMs Inc. All rights reserved.
+      </div>
+
     </div>
   );
 }

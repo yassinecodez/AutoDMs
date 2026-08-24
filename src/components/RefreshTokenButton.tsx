@@ -35,18 +35,18 @@ export function RefreshTokenButton({ instagramAccountId }: RefreshTokenButtonPro
       <button
         onClick={handleRefresh}
         disabled={loading}
-        className="h-8 inline-flex items-center gap-1.5 px-2.5 rounded-lg bg-[#18181B] hover:bg-zinc-800 text-zinc-300 font-medium text-xs border border-[#27272A] transition-colors disabled:opacity-50 active:scale-95"
+        className="h-8 inline-flex items-center gap-1.5 px-2.5 rounded-lg bg-[#111111] hover:bg-[#181818] text-zinc-300 font-medium text-xs border border-[#262626] transition-colors disabled:opacity-50"
         title="Refresh Meta Access Token with 60-day extension"
       >
         {loading ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
         ) : (
           <Key className="w-3.5 h-3.5 text-zinc-400" strokeWidth={1.75} />
         )}
         Refresh Token
       </button>
       {status === "success" && (
-        <span className="text-[10px] text-[#00DF81] font-medium">Extended 60 days!</span>
+        <span className="text-[10px] text-zinc-300 font-medium">Extended 60 days</span>
       )}
       {status === "error" && (
         <span className="text-[10px] text-red-400 font-medium truncate max-w-[150px]" title={errorMsg}>

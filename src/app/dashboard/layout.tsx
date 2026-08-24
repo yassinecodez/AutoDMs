@@ -32,17 +32,17 @@ export default async function DashboardLayout({
   const usagePct = Math.min(Math.round((dmsCount / dmsLimit) * 100), 100);
 
   return (
-    <div className="flex h-screen bg-[#0F0F0F] overflow-hidden text-zinc-100 font-sans selection:bg-[#00DF81]/25 selection:text-white">
+    <div className="flex h-screen bg-[#000000] overflow-hidden text-zinc-100 font-sans selection:bg-white/20 selection:text-white">
       {/* 240px Fixed Sidebar */}
-      <aside className="w-[240px] bg-[#0F0F0F] border-r border-[#27272A] flex flex-col justify-between shrink-0">
+      <aside className="w-[240px] bg-[#0A0A0A] border-r border-[#222222] flex flex-col justify-between shrink-0">
         <div className="flex flex-col">
           {/* Brand Header */}
-          <div className="h-14 flex items-center justify-between px-5 border-b border-[#27272A]">
-            <Link href="/dashboard" className="flex items-center gap-2 font-bold text-zinc-100 text-sm tracking-tight select-none">
-              <span className="w-2 h-2 rounded-full bg-[#00DF81] inline-block shrink-0 shadow-[0_0_8px_rgba(0,223,129,0.5)]" />
+          <div className="h-14 flex items-center justify-between px-5 border-b border-[#222222]">
+            <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-white text-sm tracking-tight select-none">
+              <span className="w-2 h-2 rounded-full bg-white inline-block shrink-0" />
               <span>AutoDMs</span>
             </Link>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/50">
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#111111] text-zinc-400 border border-[#222222]">
               v1.0
             </span>
           </div>
@@ -55,17 +55,17 @@ export default async function DashboardLayout({
 
         <div>
           {/* Connected Profile Status & Monthly Meter */}
-          <div className="p-3 mx-3 mb-3 bg-[#18181B] border border-[#27272A] rounded-xl space-y-2.5 shrink-0">
+          <div className="p-3 mx-3 mb-3 bg-[#111111] border border-[#222222] rounded-xl space-y-2.5 shrink-0">
             {igAccount ? (
               <div className="flex items-center justify-between text-[11px]">
                 <span className="text-zinc-400 font-medium truncate">@{igAccount.pageName}</span>
-                <span className="flex items-center gap-1 text-[10px] text-[#00DF81] font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#00DF81] animate-pulse" />
+                <span className="flex items-center gap-1 text-[10px] text-zinc-300 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                   Live
                 </span>
               </div>
             ) : (
-              <div className="text-[11px] text-zinc-400">
+              <div className="text-[11px] text-zinc-500">
                 <span>No profile linked</span>
               </div>
             )}
@@ -73,30 +73,30 @@ export default async function DashboardLayout({
             {/* Quota Progress Bar */}
             <div className="space-y-1">
               <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
-                <span>DMs: <strong className="text-zinc-200">{dmsCount}</strong>/{dmsLimit}</span>
-                <span className="text-[#00DF81] font-semibold">{usagePct}%</span>
+                <span>DMs: <strong className="text-white">{dmsCount}</strong>/{dmsLimit}</span>
+                <span className="text-zinc-300">{usagePct}%</span>
               </div>
-              <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800">
+              <div className="w-full h-1.5 bg-[#000000] rounded-full overflow-hidden border border-[#222222]">
                 <div
                   style={{ width: `${usagePct}%` }}
-                  className="h-full bg-[#00DF81] rounded-full transition-all duration-300"
+                  className="h-full bg-white rounded-full transition-all duration-300"
                 />
               </div>
             </div>
 
             <Link
               href="/dashboard/settings"
-              className="block text-center text-[10px] font-semibold text-[#00DF81] hover:text-[#00C770] transition-colors"
+              className="block text-center text-[10px] font-medium text-zinc-300 hover:text-white transition-colors"
             >
               Manage Plan &rarr;
             </Link>
           </div>
 
           {/* User Footer Profile */}
-          <div className="p-3 px-4 border-t border-[#27272A] flex items-center justify-between gap-2 bg-[#0F0F0F]">
+          <div className="p-3 px-4 border-t border-[#222222] flex items-center justify-between gap-2 bg-[#0A0A0A]">
             <div className="truncate">
-              <p className="text-xs font-semibold text-zinc-200 truncate">{session.user.name || session.user.email}</p>
-              <p className="text-[10px] text-zinc-400 truncate">{session.user.email}</p>
+              <p className="text-xs font-medium text-white truncate">{session.user.name || session.user.email}</p>
+              <p className="text-[10px] text-zinc-500 truncate">{session.user.email}</p>
             </div>
             <SignOutButton />
           </div>
@@ -104,7 +104,7 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-y-auto bg-[#0F0F0F]">
+      <main className="flex-1 flex flex-col overflow-y-auto bg-[#000000]">
         {children}
       </main>
     </div>

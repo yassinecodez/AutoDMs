@@ -61,17 +61,17 @@ export default async function AccountsPage({ searchParams }: PageProps) {
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-5xl">
       {/* Header */}
-      <div className="space-y-0.5 pb-2 border-b border-[#27272A]">
-        <h1 className="text-xl font-bold text-zinc-100 tracking-tight">Meta accounts</h1>
+      <div className="space-y-0.5 pb-2 border-b border-[#222222]">
+        <h1 className="text-xl font-bold text-white tracking-tight">Meta accounts</h1>
         <p className="text-xs text-zinc-400">Connect and manage Facebook Pages linked to Instagram Business profiles</p>
       </div>
 
       {/* Query Status Banners */}
       {params.status === "success" && (
-        <div className="p-3.5 bg-[#00DF81]/10 border border-[#00DF81]/20 text-[#00DF81] rounded-xl flex items-start gap-2.5 text-xs">
+        <div className="p-3.5 bg-[#0A0A0A] border border-white/20 text-white rounded-xl flex items-start gap-2.5 text-xs">
           <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" strokeWidth={1.75} />
           <div>
-            <p className="font-bold text-xs text-zinc-100">Authentication successful</p>
+            <p className="font-semibold text-xs text-white">Authentication successful</p>
             <p className="text-zinc-400 mt-0.5">
               Successfully linked {params.count || "0"} Instagram Business profile(s).
             </p>
@@ -80,10 +80,10 @@ export default async function AccountsPage({ searchParams }: PageProps) {
       )}
 
       {params.status === "error" && (
-        <div className="p-3.5 bg-red-950/30 border border-red-500/20 text-red-400 rounded-xl flex items-start gap-2.5 text-xs">
+        <div className="p-3.5 bg-[#0A0A0A] border border-red-500/30 text-red-400 rounded-xl flex items-start gap-2.5 text-xs">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" strokeWidth={1.75} />
           <div>
-            <p className="font-bold text-xs text-zinc-100">Connection failed</p>
+            <p className="font-semibold text-xs text-white">Connection failed</p>
             <p className="text-zinc-400 mt-0.5">
               {params.message || "An unexpected error occurred during connection."}
             </p>
@@ -92,13 +92,13 @@ export default async function AccountsPage({ searchParams }: PageProps) {
       )}
 
       {/* Connect Profile Action Box */}
-      <div className="p-5 bg-[#18181B] border border-[#27272A] rounded-xl space-y-4">
+      <div className="p-5 bg-[#0A0A0A] border border-[#222222] rounded-xl space-y-4">
         <div className="flex items-start gap-3">
-          <div className="p-2 bg-[#00DF81]/10 border border-[#00DF81]/20 rounded-lg text-[#00DF81] shrink-0">
+          <div className="p-2 bg-[#111111] border border-[#222222] rounded-lg text-white shrink-0">
             <Shield className="w-4 h-4" strokeWidth={1.75} />
           </div>
           <div className="space-y-0.5">
-            <h2 className="text-xs font-bold text-zinc-100">Add new Instagram profile</h2>
+            <h2 className="text-xs font-semibold text-white">Add new Instagram profile</h2>
             <p className="text-xs text-zinc-400 leading-relaxed">
               Connect your professional profile. Ensure your Instagram account is switched to a{" "}
               <strong className="text-zinc-200">Business or Creator account</strong> and linked to a Facebook Page you manage.
@@ -106,7 +106,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
           </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3 border-t border-[#27272A]">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3 border-t border-[#222222]">
           <ConnectFacebookButton />
           <ManualConnectForm />
         </div>
@@ -114,12 +114,12 @@ export default async function AccountsPage({ searchParams }: PageProps) {
 
       {/* Accounts List */}
       <div className="space-y-3">
-        <h2 className="text-sm font-bold text-zinc-200">Linked professional profiles</h2>
+        <h2 className="text-sm font-semibold text-white">Linked professional profiles</h2>
         
         {accounts.length === 0 ? (
-          <div className="p-10 text-center bg-[#18181B] border border-[#27272A] rounded-xl text-zinc-500 text-xs space-y-2">
+          <div className="p-10 text-center bg-[#0A0A0A] border border-[#222222] rounded-xl text-zinc-500 text-xs space-y-2">
             <InstagramIcon className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-            <p className="text-zinc-200 font-semibold">No connected profiles found</p>
+            <p className="text-zinc-200 font-medium">No connected profiles found</p>
             <p className="text-zinc-500">Click the button above to link your first Instagram Business profile.</p>
           </div>
         ) : (
@@ -127,26 +127,26 @@ export default async function AccountsPage({ searchParams }: PageProps) {
             {accounts.map((acc) => (
               <div
                 key={acc.id}
-                className="p-4 bg-[#18181B] border border-[#27272A] rounded-xl flex items-center justify-between shadow-sm hover:border-zinc-700 transition-colors"
+                className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-xl flex items-center justify-between shadow-sm hover:border-zinc-700 transition-colors"
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="w-9 h-9 rounded-lg bg-[#0F0F0F] border border-[#27272A] flex items-center justify-center text-[#00DF81]">
+                  <div className="w-9 h-9 rounded-lg bg-[#111111] border border-[#222222] flex items-center justify-center text-white">
                     <InstagramIcon className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-xs font-bold text-zinc-100">@{acc.pageName}</h3>
+                    <h3 className="text-xs font-semibold text-white">@{acc.pageName}</h3>
                     <p className="text-[10px] text-zinc-400 font-mono">ID: {acc.instagramAccountId}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#0F0F0F] border border-[#27272A] text-zinc-300">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#111111] border border-[#222222] text-zinc-300">
                         Page: {acc.pageName}
                       </span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#00DF81] animate-pulse" />
-                      <span className="text-[10px] text-[#00DF81] font-semibold">Live webhook</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                      <span className="text-[10px] text-zinc-300 font-medium">Live webhook</span>
                       
                       {(() => {
                         if (!acc.tokenExpiresAt) {
                           return (
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-[#0F0F0F] text-zinc-400 font-medium border border-[#27272A]">
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-[#111111] text-zinc-400 font-medium border border-[#222222]">
                               Active (Long-Lived)
                             </span>
                           );
@@ -155,11 +155,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                         const expiryDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                         const daysLeft = expiryDays > 0 ? expiryDays : 0;
                         return (
-                          <span className={`text-[10px] px-2 py-0.5 rounded font-medium border ${
-                            daysLeft < 15 
-                              ? "bg-amber-500/10 text-amber-400 border-amber-500/20" 
-                              : "bg-[#00DF81]/10 text-[#00DF81] border-[#00DF81]/20"
-                          }`}>
+                          <span className="text-[10px] px-2 py-0.5 rounded font-medium border border-[#222222] bg-[#111111] text-zinc-300">
                             Active ({daysLeft}d left)
                           </span>
                         );
@@ -179,7 +175,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                   >
                     <button
                       type="submit"
-                      className="p-2 text-zinc-500 hover:text-red-400 hover:bg-[#0F0F0F] rounded-lg transition-colors"
+                      className="p-2 text-zinc-500 hover:text-red-400 hover:bg-[#111111] rounded-lg transition-colors"
                       title="Disconnect Account"
                     >
                       <Trash2 className="w-4 h-4" strokeWidth={1.75} />

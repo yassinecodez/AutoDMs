@@ -12,7 +12,6 @@ export default async function LeadsPage() {
   }
   const userId = session.user.id;
 
-  // Fetch all leads captured for this user's Instagram accounts
   const leads = await db.lead.findMany({
     where: {
       igAccount: {
@@ -31,7 +30,6 @@ export default async function LeadsPage() {
     },
   });
 
-  // Calculate statistics
   const totalLeads = leads.length;
 
   const sevenDaysAgo = new Date();
@@ -79,8 +77,8 @@ export default async function LeadsPage() {
   return (
     <div className="p-6 md:p-8 space-y-6 max-w-6xl">
       {/* Header */}
-      <div className="space-y-0.5 pb-2 border-b border-[#27272A]">
-        <h1 className="text-xl font-bold text-zinc-100 tracking-tight">Leads database</h1>
+      <div className="space-y-0.5 pb-2 border-b border-[#222222]">
+        <h1 className="text-xl font-bold text-white tracking-tight">Leads database</h1>
         <p className="text-xs text-zinc-400">
           Search, filter, and export contact details verified via direct message conversations
         </p>
@@ -93,16 +91,16 @@ export default async function LeadsPage() {
           return (
             <div
               key={stat.name}
-              className="p-4 bg-[#18181B] border border-[#27272A] rounded-xl flex items-center justify-between shadow-sm"
+              className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-xl flex items-center justify-between shadow-sm"
             >
               <div className="space-y-0.5">
                 <p className="text-xs font-medium text-zinc-400">{stat.name}</p>
-                <p className="text-2xl font-extrabold text-zinc-100 tracking-tight truncate max-w-[200px]" title={String(stat.value)}>
+                <p className="text-2xl font-bold text-white tracking-tight truncate max-w-[200px]" title={String(stat.value)}>
                   {stat.value}
                 </p>
                 <p className="text-[11px] text-zinc-500">{stat.subtext}</p>
               </div>
-              <div className="p-2.5 rounded-lg bg-[#0F0F0F] border border-[#27272A] text-[#00DF81] shrink-0">
+              <div className="p-2.5 rounded-lg bg-[#111111] border border-[#222222] text-white shrink-0">
                 <Icon className="w-4 h-4" strokeWidth={1.75} />
               </div>
             </div>
@@ -112,7 +110,7 @@ export default async function LeadsPage() {
 
       {/* Leads Table Section */}
       <div className="space-y-3">
-        <h2 className="text-sm font-bold text-zinc-200">All captured contacts</h2>
+        <h2 className="text-sm font-semibold text-white">All captured contacts</h2>
         <LeadsTable initialLeads={leads} />
       </div>
     </div>

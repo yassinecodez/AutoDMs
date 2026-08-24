@@ -35,7 +35,6 @@ export function ConnectFacebookButton() {
       }
       const data = await res.json();
       if (data.url) {
-        console.log("Opening OAuth URL:", data.url);
         window.location.href = data.url;
       } else {
         throw new Error("Invalid redirect response.");
@@ -47,11 +46,11 @@ export function ConnectFacebookButton() {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <button
         onClick={handleConnect}
         disabled={loading}
-        className="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-[#00DF81] hover:bg-[#00C770] font-semibold text-xs text-black transition-all active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        className="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-white hover:bg-zinc-200 font-medium text-sm text-black transition-colors shadow-sm disabled:opacity-50"
       >
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin text-black" />
@@ -60,7 +59,7 @@ export function ConnectFacebookButton() {
         )}
         Connect Instagram Account
       </button>
-      {error && <p className="text-xs text-red-400 font-medium">{error}</p>}
+      {error && <p className="text-xs text-red-400">{error}</p>}
     </div>
   );
 }

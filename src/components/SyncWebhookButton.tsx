@@ -36,18 +36,18 @@ export function SyncWebhookButton() {
       <button
         onClick={handleSync}
         disabled={loading}
-        className="h-8 inline-flex items-center gap-1.5 px-2.5 rounded-lg bg-[#18181B] hover:bg-zinc-800 text-zinc-300 font-medium text-xs border border-[#27272A] transition-colors disabled:opacity-50 active:scale-95"
+        className="h-8 inline-flex items-center gap-1.5 px-2.5 rounded-lg bg-[#111111] hover:bg-[#181818] text-zinc-300 font-medium text-xs border border-[#262626] transition-colors disabled:opacity-50"
         title="Sync Webhook Subscription with Meta App settings"
       >
         {loading ? (
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
         ) : (
           <RefreshCw className="w-3.5 h-3.5 text-zinc-400" strokeWidth={1.75} />
         )}
         Sync Webhook
       </button>
       {status === "success" && (
-        <span className="text-[10px] text-[#00DF81] font-medium">Synced with Meta!</span>
+        <span className="text-[10px] text-zinc-300 font-medium">Synced with Meta</span>
       )}
       {status === "error" && (
         <span className="text-[10px] text-red-400 font-medium truncate max-w-[150px]" title={errorMsg}>
