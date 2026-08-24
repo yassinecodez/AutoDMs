@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   if (error || !code) {
     console.error("Facebook OAuth callback error:", error);
     return NextResponse.redirect(
-      new URL("/dashboard/accounts?status=error&message=" + encodeURIComponent(error || "No authorization code provided"), request.url)
+      new URL(`/dashboard/accounts?error=${encodeURIComponent(error || "NO_CODE")}`, request.url)
     );
   }
 
@@ -28,7 +28,9 @@ export async function GET(request: NextRequest) {
   const clientSecret = process.env.META_APP_SECRET;
   
   // Must match the exact redirect_uri sent during the initial OAuth link generation
-  const redirectUri = process.env.NODE_ENV === 'production' || process.env.VERCEL ? 'https://autodms-project.vercel.app/api/auth/facebook/callback' : 'http://localhost:3000/api/auth/facebook/callback';
+  const redirectUri = process.env.NODE_ENV === 'production' || process.env.VERCEL
+    ? 'https://autodms-project.vercel.app/api/auth/facebook/callback'
+    : 'http://localhost:3000/api/auth/facebook/callback';
   const version = process.env.META_API_VERSION || "v24.0";
 
   try {
@@ -40,17 +42,32 @@ export async function GET(request: NextRequest) {
     const tokenRes = await fetch(exchangeUrl);
     if (!tokenRes.ok) {
       const errorText = await tokenRes.text();
-      throw new Error(`Failed to exchange code for token: ${errorText}`);
+      console.error("[Facebook Callback] Failed to exchange code for token:", errorText);
+      return NextResponse.redirect(
+        new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", request.url)
+      );
     }
 
     const tokenData = await tokenRes.json();
     const shortLivedToken = tokenData.access_token;
+    if (!shortLivedToken) {
+      return NextResponse.redirect(
+        new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", request.url)
+      );
+    }
 
     // 3. Exchange short-lived token for long-lived User Access Token
     const longLivedUserToken = await MetaApi.getLongLivedUserAccessToken(shortLivedToken);
 
     // 4. Retrieve Facebook Pages managed by user
     const pages = await MetaApi.getUserPages(longLivedUserToken);
+
+    if (!pages || pages.length === 0) {
+      console.warn("[Facebook Callback] No Facebook Pages found for user.");
+      return NextResponse.redirect(
+        new URL("/dashboard/accounts?error=NO_FACEBOOK_PAGES", request.url)
+      );
+    }
 
     let accountsLinkedCount = 0;
 
@@ -89,13 +106,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    if (accountsLinkedCount === 0) {
+      return NextResponse.redirect(
+        new URL("/dashboard/accounts?error=NO_INSTAGRAM_BUSINESS_ACCOUNT", request.url)
+      );
+    }
+
     return NextResponse.redirect(
-      new URL(`/dashboard/accounts?status=success&count=${accountsLinkedCount}`, request.url)
+      new URL(`/dashboard/accounts?status=SUCCESS&count=${accountsLinkedCount}`, request.url)
     );
   } catch (err: any) {
     console.error("Facebook OAuth callback processing failed:", err);
     return NextResponse.redirect(
-      new URL("/dashboard/accounts?status=error&message=" + encodeURIComponent(err.message || "Failed to link account"), request.url)
+      new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", request.url)
     );
   }
 }

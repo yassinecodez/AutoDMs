@@ -4,8 +4,9 @@ import { db } from "@/lib/db";
 import ConnectFacebookButton from "@/components/ConnectFacebookButton";
 import ManualConnectForm from "@/components/ManualConnectForm";
 import SyncWebhookButton from "@/components/SyncWebhookButton";
+import GuidedConnectionHelper from "@/components/GuidedConnectionHelper";
 import { disconnectAccount } from "./actions";
-import { Shield, AlertCircle, CheckCircle, Trash2 } from "lucide-react";
+import { Shield, Trash2, CheckCircle2 } from "lucide-react";
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -31,8 +32,10 @@ import RefreshTokenButton from "@/components/RefreshTokenButton";
 interface PageProps {
   searchParams: Promise<{
     status?: string;
+    error?: string;
     message?: string;
     count?: string;
+    connected?: string;
   }>;
 }
 
@@ -59,95 +62,90 @@ export default async function AccountsPage({ searchParams }: PageProps) {
   });
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-5xl">
+    <div className="p-6 md:p-10 space-y-6 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="space-y-0.5 pb-2 border-b border-[#222222]">
-        <h1 className="text-xl font-bold text-white tracking-tight">Meta accounts</h1>
-        <p className="text-xs text-zinc-400">Connect and manage Facebook Pages linked to Instagram Business profiles</p>
+      <div className="space-y-0.5 pb-6 border-b border-[#222222]">
+        <h1 className="text-2xl font-bold tracking-tight text-white">Meta Accounts</h1>
+        <p className="text-sm text-zinc-400 mt-0.5">
+          Connect and manage Instagram Professional & Facebook Page integrations
+        </p>
       </div>
 
-      {/* Query Status Banners */}
-      {params.status === "success" && (
-        <div className="p-3.5 bg-[#0A0A0A] border border-white/20 text-white rounded-xl flex items-start gap-2.5 text-xs">
-          <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" strokeWidth={1.75} />
-          <div>
-            <p className="font-semibold text-xs text-white">Authentication successful</p>
-            <p className="text-zinc-400 mt-0.5">
-              Successfully linked {params.count || "0"} Instagram Business profile(s).
-            </p>
-          </div>
-        </div>
-      )}
-
-      {params.status === "error" && (
-        <div className="p-3.5 bg-[#0A0A0A] border border-red-500/30 text-red-400 rounded-xl flex items-start gap-2.5 text-xs">
-          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" strokeWidth={1.75} />
-          <div>
-            <p className="font-semibold text-xs text-white">Connection failed</p>
-            <p className="text-zinc-400 mt-0.5">
-              {params.message || "An unexpected error occurred during connection."}
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Guided Connection Helper & Error Reporting Banner */}
+      <GuidedConnectionHelper
+        errorParam={params.error}
+        statusParam={params.status || (params.connected ? "SUCCESS" : undefined)}
+        countParam={params.count}
+        hasConnectedAccounts={accounts.length > 0}
+      />
 
       {/* Connect Profile Action Box */}
-      <div className="p-5 bg-[#0A0A0A] border border-[#222222] rounded-xl space-y-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2 bg-[#111111] border border-[#222222] rounded-lg text-white shrink-0">
-            <Shield className="w-4 h-4" strokeWidth={1.75} />
+      <div className="p-6 bg-[#0A0A0A] border border-[#222222] rounded-xl space-y-4 shadow-sm">
+        <div className="flex items-start gap-3.5">
+          <div className="p-2.5 bg-[#141414] border border-[#262626] rounded-lg text-white shrink-0">
+            <Shield className="w-5 h-5" strokeWidth={1.75} />
           </div>
-          <div className="space-y-0.5">
-            <h2 className="text-xs font-semibold text-white">Add new Instagram profile</h2>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Connect your professional profile. Ensure your Instagram account is switched to a{" "}
-              <strong className="text-zinc-200">Business or Creator account</strong> and linked to a Facebook Page you manage.
+          <div className="space-y-1">
+            <h2 className="text-sm font-semibold text-white">Connect Instagram Professional Profile</h2>
+            <p className="text-xs text-zinc-400 leading-relaxed max-w-2xl">
+              Link your Instagram account to enable real-time keyword comment auto-replies, story reward triggers, and direct message lead capture. Ensure your account is set to{" "}
+              <strong className="text-zinc-200">Business or Creator</strong>.
             </p>
           </div>
         </div>
-        
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-3 border-t border-[#222222]">
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t border-[#222222]">
           <ConnectFacebookButton />
           <ManualConnectForm />
         </div>
       </div>
 
       {/* Accounts List */}
-      <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-white">Linked professional profiles</h2>
-        
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+            Linked Professional Profiles ({accounts.length})
+          </h2>
+        </div>
+
         {accounts.length === 0 ? (
-          <div className="p-10 text-center bg-[#0A0A0A] border border-[#222222] rounded-xl text-zinc-500 text-xs space-y-2">
-            <InstagramIcon className="w-8 h-8 text-zinc-600 mx-auto mb-2" />
-            <p className="text-zinc-200 font-medium">No connected profiles found</p>
-            <p className="text-zinc-500">Click the button above to link your first Instagram Business profile.</p>
+          <div className="p-12 text-center bg-[#0A0A0A] border border-[#222222] rounded-xl text-zinc-500 text-xs space-y-3">
+            <InstagramIcon className="w-8 h-8 text-zinc-600 mx-auto" />
+            <div className="space-y-1">
+              <p className="text-zinc-200 font-medium text-sm">No connected profiles found</p>
+              <p className="text-zinc-500 max-w-sm mx-auto">
+                Click "Connect Instagram Account" above to link your first profile via Meta OAuth.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
             {accounts.map((acc) => (
               <div
                 key={acc.id}
-                className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-xl flex items-center justify-between shadow-sm hover:border-zinc-700 transition-colors"
+                className="p-5 bg-[#0A0A0A] border border-[#222222] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:border-zinc-700 transition-colors"
               >
                 <div className="flex items-center gap-3.5">
-                  <div className="w-9 h-9 rounded-lg bg-[#111111] border border-[#222222] flex items-center justify-center text-white">
-                    <InstagramIcon className="w-4 h-4" />
+                  <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#262626] flex items-center justify-center text-white shrink-0">
+                    <InstagramIcon className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h3 className="text-xs font-semibold text-white">@{acc.pageName}</h3>
-                    <p className="text-[10px] text-zinc-400 font-mono">ID: {acc.instagramAccountId}</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-[#111111] border border-[#222222] text-zinc-300">
-                        Page: {acc.pageName}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-white">@{acc.pageName}</h3>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-[#141414] border border-[#262626] text-zinc-300">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Live Webhook
                       </span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                      <span className="text-[10px] text-zinc-300 font-medium">Live webhook</span>
-                      
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+                      <span className="text-[11px] font-mono text-zinc-500">ID: {acc.instagramAccountId}</span>
+                      <span className="text-zinc-600">•</span>
                       {(() => {
                         if (!acc.tokenExpiresAt) {
                           return (
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-[#111111] text-zinc-400 font-medium border border-[#222222]">
-                              Active (Long-Lived)
+                            <span className="text-[11px] text-zinc-300 font-medium">
+                              Token: Permanent Page Token
                             </span>
                           );
                         }
@@ -155,8 +153,8 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                         const expiryDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                         const daysLeft = expiryDays > 0 ? expiryDays : 0;
                         return (
-                          <span className="text-[10px] px-2 py-0.5 rounded font-medium border border-[#222222] bg-[#111111] text-zinc-300">
-                            Active ({daysLeft}d left)
+                          <span className="text-[11px] text-zinc-300 font-medium">
+                            Token: Active ({daysLeft}d left)
                           </span>
                         );
                       })()}
@@ -164,7 +162,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <SyncWebhookButton />
                   <RefreshTokenButton instagramAccountId={acc.instagramAccountId} />
                   <form
@@ -175,7 +173,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                   >
                     <button
                       type="submit"
-                      className="p-2 text-zinc-500 hover:text-red-400 hover:bg-[#111111] rounded-lg transition-colors"
+                      className="p-2 text-zinc-400 hover:text-red-400 hover:bg-[#141414] rounded-lg transition-colors"
                       title="Disconnect Account"
                     >
                       <Trash2 className="w-4 h-4" strokeWidth={1.75} />

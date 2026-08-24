@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   if (error || !code) {
     console.error("Instagram OAuth callback error:", error);
     return NextResponse.redirect(
-      new URL("/dashboard/accounts?status=error&message=" + encodeURIComponent(error || "No authorization code provided"), request.url)
+      new URL(`/dashboard/accounts?error=${encodeURIComponent(error || "NO_CODE")}`, request.url)
     );
   }
 
@@ -45,11 +45,19 @@ export async function GET(request: NextRequest) {
 
     if (!tokenRes.ok) {
       const errorText = await tokenRes.text();
-      throw new Error(`Failed to exchange code: ${errorText}`);
+      console.error("[Instagram Callback] Failed to exchange code:", errorText);
+      return NextResponse.redirect(
+        new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", request.url)
+      );
     }
 
     const tokenData = await tokenRes.json();
     const shortLivedToken = tokenData.access_token;
+    if (!shortLivedToken) {
+      return NextResponse.redirect(
+        new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", request.url)
+      );
+    }
 
     // 3. Exchange short-lived token for long-lived (60-day) token
     console.log("[Instagram Callback] Exchanging for long-lived token...");
@@ -58,7 +66,10 @@ export async function GET(request: NextRequest) {
     const longLivedRes = await fetch(longLivedUrl);
     if (!longLivedRes.ok) {
       const errorText = await longLivedRes.text();
-      throw new Error(`Failed to get long-lived token: ${errorText}`);
+      console.error("[Instagram Callback] Failed to get long-lived token:", errorText);
+      return NextResponse.redirect(
+        new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", request.url)
+      );
     }
 
     const longLivedData = await longLivedRes.json();
@@ -71,12 +82,21 @@ export async function GET(request: NextRequest) {
     const profileRes = await fetch(profileUrl);
     if (!profileRes.ok) {
       const errorText = await profileRes.text();
-      throw new Error(`Failed to fetch profile: ${errorText}`);
+      console.error("[Instagram Callback] Failed to fetch profile:", errorText);
+      return NextResponse.redirect(
+        new URL("/dashboard/accounts?error=NO_INSTAGRAM_BUSINESS_ACCOUNT", request.url)
+      );
     }
 
     const profileData = await profileRes.json();
     const instagramId = profileData.id;
     const username = profileData.username;
+
+    if (!instagramId) {
+      return NextResponse.redirect(
+        new URL("/dashboard/accounts?error=NO_INSTAGRAM_BUSINESS_ACCOUNT", request.url)
+      );
+    }
 
     // 4.5 Call Webhook app subscription handshake
     try {
@@ -92,8 +112,6 @@ export async function GET(request: NextRequest) {
     // 5. Encrypt long-lived token and save/update the IgAccount in database
     const encryptedToken = encrypt(longLivedToken);
 
-    // Instagram direct login doesn't have a Facebook Page ID.
-    // We map instagramId to pageId to satisfy the database schema constraints.
     await db.igAccount.upsert({
       where: { instagramAccountId: instagramId },
       update: {
@@ -112,12 +130,12 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Instagram Callback] Account @${username} linked successfully.`);
     return NextResponse.redirect(
-      new URL("/dashboard/accounts?connected=true", request.url)
+      new URL("/dashboard/accounts?status=SUCCESS&count=1", request.url)
     );
   } catch (err: any) {
     console.error("[Instagram Callback] OAuth callback processing failed:", err);
     return NextResponse.redirect(
-      new URL("/dashboard/accounts?status=error&message=" + encodeURIComponent(err.message || "Failed to link Instagram account"), request.url)
+      new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", request.url)
     );
   }
 }
