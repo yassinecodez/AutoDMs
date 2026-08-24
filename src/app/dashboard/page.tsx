@@ -18,6 +18,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PLANS } from "@/lib/plans";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardOverview() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {

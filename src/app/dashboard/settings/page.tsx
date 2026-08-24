@@ -6,6 +6,8 @@ import { PLANS } from "@/lib/plans";
 import UpgradeButton from "@/components/UpgradeButton";
 import { CreditCard, Zap, Check } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {

@@ -3,21 +3,45 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { encrypt } from "@/lib/crypto";
 import { db } from "@/lib/db";
+import { revalidatePath } from "next/cache";
+
+function extractUserIdFromState(stateParam: string | null): string | null {
+  if (!stateParam) return null;
+  try {
+    const jsonStr = Buffer.from(stateParam, "base64url").toString("utf-8");
+    const parsed = JSON.parse(jsonStr);
+    return parsed.userId || null;
+  } catch {
+    try {
+      const jsonStr = Buffer.from(stateParam, "base64").toString("utf-8");
+      const parsed = JSON.parse(jsonStr);
+      return parsed.userId || null;
+    } catch {
+      return null;
+    }
+  }
+}
 
 export async function GET(request: NextRequest) {
-  // 1. Authenticate user session
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
-  const userId = session.user.id;
-
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const error = searchParams.get("error");
+  const stateParam = searchParams.get("state");
+
+  // 1. Resolve User ID from State or Session
+  const session = await getServerSession(authOptions);
+  const stateUserId = extractUserIdFromState(stateParam);
+  const resolvedUserId = stateUserId || session?.user?.id;
+
+  if (!resolvedUserId) {
+    console.error("[Instagram Callback] No authenticated user ID found in state or session.");
+    return NextResponse.redirect(
+      new URL("/dashboard/accounts?error=UNAUTHORIZED", request.url)
+    );
+  }
 
   if (error || !code) {
-    console.error("Instagram OAuth callback error:", error);
+    console.error("[Instagram Callback] OAuth callback error:", error);
     return NextResponse.redirect(
       new URL(`/dashboard/accounts?error=${encodeURIComponent(error || "NO_CODE")}`, request.url)
     );
@@ -25,7 +49,10 @@ export async function GET(request: NextRequest) {
 
   const clientId = process.env.INSTAGRAM_APP_ID || "1041048208692049";
   const clientSecret = process.env.INSTAGRAM_APP_SECRET || "41fed97dd8c8940e7b929984d3f16a5f";
-  const redirectUri = "https://autodms-project.vercel.app/api/auth/instagram/callback";
+  const redirectUri =
+    process.env.NODE_ENV === "production" || process.env.VERCEL
+      ? "https://autodms-project.vercel.app/api/auth/instagram/callback"
+      : "http://localhost:3000/api/auth/instagram/callback";
 
   try {
     // 2. Exchange authorization code for short-lived User Access Token
@@ -115,12 +142,13 @@ export async function GET(request: NextRequest) {
     await db.igAccount.upsert({
       where: { instagramAccountId: instagramId },
       update: {
+        userId: resolvedUserId,
         pageId: instagramId,
         pageName: username,
         accessToken: encryptedToken,
       },
       create: {
-        userId: userId,
+        userId: resolvedUserId,
         instagramAccountId: instagramId,
         pageId: instagramId,
         pageName: username,
@@ -129,6 +157,14 @@ export async function GET(request: NextRequest) {
     });
 
     console.log(`[Instagram Callback] Account @${username} linked successfully.`);
+
+    // Revalidate dashboard routes
+    revalidatePath("/dashboard/accounts");
+    revalidatePath("/dashboard/automations");
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/leads");
+    revalidatePath("/dashboard/logs");
+
     return NextResponse.redirect(
       new URL("/dashboard/accounts?status=SUCCESS&count=1", request.url)
     );

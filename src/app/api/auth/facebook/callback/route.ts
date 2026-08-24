@@ -4,21 +4,45 @@ import { authOptions } from "@/lib/auth";
 import { MetaApi } from "@/lib/meta";
 import { encrypt } from "@/lib/crypto";
 import { db } from "@/lib/db";
+import { revalidatePath } from "next/cache";
+
+function extractUserIdFromState(stateParam: string | null): string | null {
+  if (!stateParam) return null;
+  try {
+    const jsonStr = Buffer.from(stateParam, "base64url").toString("utf-8");
+    const parsed = JSON.parse(jsonStr);
+    return parsed.userId || null;
+  } catch {
+    try {
+      const jsonStr = Buffer.from(stateParam, "base64").toString("utf-8");
+      const parsed = JSON.parse(jsonStr);
+      return parsed.userId || null;
+    } catch {
+      return null;
+    }
+  }
+}
 
 export async function GET(request: NextRequest) {
-  // 1. Authenticate user session
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
-  const userId = session.user.id;
-
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const error = searchParams.get("error");
+  const stateParam = searchParams.get("state");
+
+  // 1. Resolve User ID from State or Session
+  const session = await getServerSession(authOptions);
+  const stateUserId = extractUserIdFromState(stateParam);
+  const resolvedUserId = stateUserId || session?.user?.id;
+
+  if (!resolvedUserId) {
+    console.error("[Facebook Callback] No authenticated user ID found in state or session.");
+    return NextResponse.redirect(
+      new URL("/dashboard/accounts?error=UNAUTHORIZED", request.url)
+    );
+  }
 
   if (error || !code) {
-    console.error("Facebook OAuth callback error:", error);
+    console.error("[Facebook Callback] OAuth callback error:", error);
     return NextResponse.redirect(
       new URL(`/dashboard/accounts?error=${encodeURIComponent(error || "NO_CODE")}`, request.url)
     );
@@ -27,10 +51,10 @@ export async function GET(request: NextRequest) {
   const clientId = process.env.META_APP_ID;
   const clientSecret = process.env.META_APP_SECRET;
   
-  // Must match the exact redirect_uri sent during the initial OAuth link generation
-  const redirectUri = process.env.NODE_ENV === 'production' || process.env.VERCEL
-    ? 'https://autodms-project.vercel.app/api/auth/facebook/callback'
-    : 'http://localhost:3000/api/auth/facebook/callback';
+  const redirectUri =
+    process.env.NODE_ENV === "production" || process.env.VERCEL
+      ? "https://autodms-project.vercel.app/api/auth/facebook/callback"
+      : "http://localhost:3000/api/auth/facebook/callback";
   const version = process.env.META_API_VERSION || "v24.0";
 
   try {
@@ -83,16 +107,17 @@ export async function GET(request: NextRequest) {
         // Encrypt the Page Access Token
         const encryptedToken = encrypt(page.access_token);
 
-        // Save or update account in database
+        // Save or update account in database with resolvedUserId
         await db.igAccount.upsert({
           where: { instagramAccountId: igBusinessAccount.id },
           update: {
+            userId: resolvedUserId,
             pageId: page.id,
             pageName: page.name,
             accessToken: encryptedToken,
           },
           create: {
-            userId: userId,
+            userId: resolvedUserId,
             instagramAccountId: igBusinessAccount.id,
             pageId: page.id,
             pageName: page.name,
@@ -112,11 +137,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Revalidate dashboard routes to immediately show linked account
+    revalidatePath("/dashboard/accounts");
+    revalidatePath("/dashboard/automations");
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/leads");
+    revalidatePath("/dashboard/logs");
+
     return NextResponse.redirect(
       new URL(`/dashboard/accounts?status=SUCCESS&count=${accountsLinkedCount}`, request.url)
     );
   } catch (err: any) {
-    console.error("Facebook OAuth callback processing failed:", err);
+    console.error("[Facebook Callback] OAuth callback processing failed:", err);
     return NextResponse.redirect(
       new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", request.url)
     );

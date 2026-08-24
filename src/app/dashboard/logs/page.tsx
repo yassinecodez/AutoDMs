@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import ActivityLogsViewer from "@/components/ActivityLogsViewer";
 
+export const dynamic = "force-dynamic";
+
 export default async function LogsPage() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user) {
