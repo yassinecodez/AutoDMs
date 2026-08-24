@@ -71,28 +71,31 @@ export const authOptions: AuthOptions = {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
         if (!user.email) return false;
-        const email = user.email.toLowerCase().trim();
-        
-        let existingUser = await db.user.findUnique({
-          where: { email },
-        });
-
-        if (!existingUser) {
-          const randomPassword = await bcrypt.hash(crypto.randomBytes(32).toString("hex"), 10);
-          existingUser = await db.user.create({
-            data: {
-              email,
-              name: user.name ?? undefined,
-              password: randomPassword,
-              planType: "FREE",
-              dmsLimit: 150,
-              usageResetAt: new Date(),
-            },
+        try {
+          const email = user.email.toLowerCase().trim();
+          const existingUser = await db.user.findUnique({
+            where: { email },
           });
+
+          if (!existingUser) {
+            const randomPassword = crypto.randomUUID();
+            const hashedPassword = await bcrypt.hash(randomPassword, 10);
+            await db.user.create({
+              data: {
+                email,
+                name: user.name ?? undefined,
+                password: hashedPassword,
+                planType: "FREE",
+                dmsLimit: 150,
+                usageResetAt: new Date(),
+              },
+            });
+          }
+          return true;
+        } catch (error) {
+          console.error("Error during Google signIn callback:", error);
+          return false;
         }
-        
-        user.id = existingUser.id;
-        (user as any).planType = existingUser.planType;
       }
       return true;
     },
@@ -101,21 +104,28 @@ export const authOptions: AuthOptions = {
         token.id = user.id;
         token.sub = user.id;
         token.planType = (user as any).planType || "FREE";
-      } else if (!token.planType && token.sub) {
-        const dbUser = await db.user.findUnique({
-          where: { id: token.sub },
-          select: { id: true, planType: true },
-        });
-        if (dbUser) {
-          token.id = dbUser.id;
-          token.planType = dbUser.planType;
+      }
+
+      if (token.email && (!token.id || !token.planType)) {
+        try {
+          const dbUser = await db.user.findUnique({
+            where: { email: token.email.toLowerCase().trim() },
+            select: { id: true, planType: true },
+          });
+          if (dbUser) {
+            token.id = dbUser.id;
+            token.sub = dbUser.id;
+            token.planType = dbUser.planType;
+          }
+        } catch (err) {
+          console.error("Error looking up user in jwt callback:", err);
         }
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = (token.sub || token.id) as string;
+        session.user.id = (token.id || token.sub) as string;
         (session.user as any).planType = (token.planType as string) || "FREE";
       }
       return session;
@@ -126,6 +136,7 @@ export const authOptions: AuthOptions = {
   },
   pages: {
     signIn: "/login",
+    error: "/login",
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
