@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
     if (!instagramId) {
       console.error("[Instagram Callback] Could not determine Instagram ID from profile response or user_id.");
       return NextResponse.redirect(
-        new URL("/dashboard/accounts?error=NO_INSTAGRAM_BUSINESS_ACCOUNT", request.url)
+        new URL("/dashboard/accounts?error=NOT_BUSINESS_ACCOUNT", request.url)
       );
     }
 

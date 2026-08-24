@@ -4,11 +4,8 @@ import { useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
-  Check,
-  ChevronRight,
   RefreshCw,
   X,
-  ExternalLink,
   ShieldAlert,
   Loader2,
 } from "lucide-react";
@@ -19,6 +16,23 @@ interface GuidedConnectionHelperProps {
   countParam?: string;
   hasConnectedAccounts: boolean;
 }
+
+const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.75"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+);
 
 export function GuidedConnectionHelper({
   errorParam,
@@ -53,17 +67,15 @@ export function GuidedConnectionHelper({
   // 1. Success Banner
   if (statusParam === "SUCCESS" || statusParam === "success") {
     return (
-      <div className="p-4 bg-[#0A0A0A] border border-emerald-500/30 text-white rounded-xl flex items-start justify-between gap-3 shadow-sm animate-in fade-in duration-200">
+      <div className="p-4 bg-[#0A0A0A] border border-emerald-500/30 text-white rounded-2xl flex items-start justify-between gap-3 shadow-sm animate-in fade-in duration-200">
         <div className="flex items-start gap-3">
-          <div className="w-7 h-7 rounded-lg bg-emerald-950/60 border border-emerald-800/50 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+          <div className="w-8 h-8 rounded-xl bg-emerald-950/60 border border-emerald-800/50 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
             <CheckCircle2 className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">Instagram Profile Linked Successfully</h3>
-            <p className="text-xs text-zinc-400 mt-0.5">
-              {countParam
-                ? `Successfully connected ${countParam} Instagram Business account(s). Webhook subscriptions are active.`
-                : "Your professional account is now connected and ready for automated comment and DM triggers."}
+            <h3 className="text-sm font-semibold text-white">Instagram Profile Connected Successfully</h3>
+            <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
+              Your Instagram Creator / Business profile is now linked. Webhook events for comments and direct messages are actively listened to in real-time.
             </p>
           </div>
         </div>
@@ -78,122 +90,28 @@ export function GuidedConnectionHelper({
     );
   }
 
-  // 2. Setup Required Banner (NO_INSTAGRAM_BUSINESS_ACCOUNT, NO_FACEBOOK_PAGES, or 0 accounts connected)
-  const isNoBusinessAccount =
-    errorParam === "NO_INSTAGRAM_BUSINESS_ACCOUNT" ||
-    errorParam === "NO_FACEBOOK_PAGES";
-
-  const isTokenError =
-    errorParam === "TOKEN_EXCHANGE_FAILED" ||
-    errorParam === "NO_CODE";
-
-  if (isNoBusinessAccount || (errorParam && !isTokenError)) {
+  // 2. Token Exchange / Permissions Banner
+  if (errorParam === "TOKEN_EXCHANGE_FAILED" || errorParam === "USER_DENIED" || errorParam === "NO_CODE") {
     return (
-      <div className="p-5 bg-[#0A0A0A] border border-amber-500/30 rounded-xl space-y-4 shadow-sm animate-in fade-in duration-200">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-950/60 border border-amber-800/50 flex items-center justify-center text-amber-400 shrink-0">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-white">Account Setup Required</h3>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                {errorParam === "NO_FACEBOOK_PAGES"
-                  ? "Meta returned 0 Facebook Pages for your login. Follow the 3 steps below to ensure your Instagram account is linked to a Facebook Page."
-                  : "We found your Facebook Page, but no linked Instagram Business or Creator account was detected."}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => setDismissed(true)}
-            className="text-zinc-500 hover:text-white transition-colors p-1"
-            title="Dismiss"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* 3-Step Guided Checklist */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
-          {/* Step 1 */}
-          <div className="p-3.5 bg-[#111111] border border-[#222222] rounded-lg space-y-1.5">
-            <div className="flex items-center gap-2 text-xs font-semibold text-white">
-              <span className="w-5 h-5 rounded-full bg-[#181818] border border-[#333333] flex items-center justify-center text-[10px] text-zinc-300">
-                1
-              </span>
-              <span>Creator / Business</span>
-            </div>
-            <p className="text-[11px] text-zinc-400 leading-relaxed">
-              Switch your Instagram profile to a <strong className="text-zinc-200">Creator</strong> or <strong className="text-zinc-200">Business</strong> account in <em>Settings &rarr; Account type</em>.
-            </p>
-          </div>
-
-          {/* Step 2 */}
-          <div className="p-3.5 bg-[#111111] border border-[#222222] rounded-lg space-y-1.5">
-            <div className="flex items-center gap-2 text-xs font-semibold text-white">
-              <span className="w-5 h-5 rounded-full bg-[#181818] border border-[#333333] flex items-center justify-center text-[10px] text-zinc-300">
-                2
-              </span>
-              <span>Link Facebook Page</span>
-            </div>
-            <p className="text-[11px] text-zinc-400 leading-relaxed">
-              Connect your profile to a Facebook Page you manage in <em>Edit Profile &rarr; Page</em>.
-            </p>
-          </div>
-
-          {/* Step 3 */}
-          <div className="p-3.5 bg-[#111111] border border-[#222222] rounded-lg space-y-1.5">
-            <div className="flex items-center gap-2 text-xs font-semibold text-white">
-              <span className="w-5 h-5 rounded-full bg-[#181818] border border-[#333333] flex items-center justify-center text-[10px] text-zinc-300">
-                3
-              </span>
-              <span>Allow Message Access</span>
-            </div>
-            <p className="text-[11px] text-zinc-400 leading-relaxed">
-              Enable <strong className="text-zinc-200">"Allow access to messages"</strong> in <em>Settings &rarr; Message controls &rarr; Connected tools</em>.
-            </p>
-          </div>
-        </div>
-
-        {/* Action Button */}
-        <div className="pt-2 flex items-center gap-3">
-          <button
-            onClick={handleConnectAgain}
-            disabled={loading}
-            className="h-9 px-4 rounded-lg bg-white hover:bg-zinc-200 text-black font-medium text-xs flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="w-3.5 h-3.5" />
-            )}
-            Try Connecting Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // 3. Token Exchange Failed Banner
-  if (isTokenError) {
-    return (
-      <div className="p-4 bg-[#0A0A0A] border border-red-500/30 text-white rounded-xl flex items-start justify-between gap-3 shadow-sm animate-in fade-in duration-200">
+      <div className="p-5 bg-[#0A0A0A] border border-red-500/30 text-white rounded-2xl flex items-start justify-between gap-3 shadow-sm animate-in fade-in duration-200">
         <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-lg bg-red-950/60 border border-red-800/50 flex items-center justify-center text-red-400 shrink-0">
-            <ShieldAlert className="w-4 h-4" />
+          <div className="w-9 h-9 rounded-xl bg-red-950/60 border border-red-800/50 flex items-center justify-center text-red-400 shrink-0">
+            <ShieldAlert className="w-5 h-5" />
           </div>
-          <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-white">Authentication Failed</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Meta was unable to exchange the authorization code. Please ensure you have accepted all required permissions during Facebook/Instagram login.
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-white">Instagram Authorization Incomplete</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed max-w-xl">
+              {errorParam === "USER_DENIED"
+                ? "The connection request was cancelled. To enable automatic DM replies, please approve the requested permissions."
+                : "Instagram was unable to complete the authorization token exchange. Please retry connecting your professional account."}
             </p>
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 onClick={handleConnectAgain}
                 disabled={loading}
-                className="h-8 px-3 rounded-lg bg-white hover:bg-zinc-200 text-black font-medium text-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                className="h-9 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-medium text-xs inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-sm"
               >
-                {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                 Try Connecting Again
               </button>
             </div>
@@ -206,6 +124,62 @@ export function GuidedConnectionHelper({
         >
           <X className="w-4 h-4" />
         </button>
+      </div>
+    );
+  }
+
+  // 3. Single Creator/Business Requirement Reminder (when general error or explicit request)
+  if (errorParam && errorParam !== "SUCCESS") {
+    return (
+      <div className="p-5 bg-[#0A0A0A] border border-amber-500/30 rounded-2xl space-y-4 shadow-sm animate-in fade-in duration-200">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-950/60 border border-amber-800/50 flex items-center justify-center text-amber-400 shrink-0">
+              <InstagramIcon className="w-5 h-5 text-amber-400" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-semibold text-white">Creator or Business Account Required</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed max-w-xl">
+                Instagram DM and comment automations require a professional account.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setDismissed(true)}
+            className="text-zinc-500 hover:text-white transition-colors p-1"
+            title="Dismiss"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Single Pure Instagram Requirement Card */}
+        <div className="p-4 bg-[#111111] border border-[#222222] rounded-xl flex items-start gap-3">
+          <div className="w-6 h-6 rounded-full bg-[#181818] border border-[#333333] flex items-center justify-center text-xs text-white font-medium shrink-0 mt-0.5">
+            ✓
+          </div>
+          <div className="space-y-0.5">
+            <p className="text-xs font-medium text-white">Switch to Professional Account</p>
+            <p className="text-[11px] text-zinc-400 leading-relaxed">
+              Ensure your Instagram profile is switched to a <strong className="text-zinc-200">Creator</strong> or <strong className="text-zinc-200">Business</strong> account in <em>Instagram App &rarr; Settings &rarr; Account type & tools</em>.
+            </p>
+          </div>
+        </div>
+
+        <div className="pt-1 flex items-center gap-3">
+          <button
+            onClick={handleConnectAgain}
+            disabled={loading}
+            className="h-9 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-medium text-xs inline-flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50"
+          >
+            {loading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5" />
+            )}
+            <span>Connect Instagram Profile</span>
+          </button>
+        </div>
       </div>
     );
   }

@@ -66,7 +66,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
     <div className="p-6 md:p-10 space-y-8 max-w-5xl mx-auto">
       {/* Header */}
       <div className="space-y-1 pb-6 border-b border-[#222222]">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Meta Accounts</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-white">Instagram Accounts</h1>
         <p className="text-sm text-zinc-400">
           Connect, verify permissions, and manage your Instagram Professional profile integrations
         </p>

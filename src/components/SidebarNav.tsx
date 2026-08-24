@@ -47,7 +47,7 @@ export function SidebarNav() {
       icon: Users,
     },
     {
-      name: "Meta Accounts",
+      name: "Instagram Accounts",
       href: "/dashboard/accounts",
       icon: InstagramNavIcon,
     },
