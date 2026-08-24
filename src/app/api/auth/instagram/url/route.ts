@@ -13,7 +13,7 @@ export async function GET() {
     process.env.NODE_ENV === "production" || process.env.VERCEL
       ? "https://autodms-project.vercel.app/api/auth/instagram/callback"
       : "http://localhost:3000/api/auth/instagram/callback";
-  const clientId = process.env.INSTAGRAM_APP_ID || "1041048208692049";
+  const clientId = process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID || "954476037671354";
 
   const state = Buffer.from(
     JSON.stringify({ userId, timestamp: Date.now() })
