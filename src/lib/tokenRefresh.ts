@@ -1,82 +1,104 @@
 import { db } from "@/lib/db";
-import { decrypt, encrypt } from "@/lib/crypto";
+import { decrypt } from "@/lib/crypto";
+import { MetaApi } from "@/lib/meta";
 
-/**
- * Manually refreshes a long-lived Instagram Page token with Meta API
- */
-export async function refreshLongLivedToken(instagramAccountId: string) {
+export interface TokenDebugResult {
+  isValid: boolean;
+  type?: string;
+  isPermanent: boolean;
+  expiresAt: Date | null;
+  scopes: string[];
+  missingScopes: string[];
+  error?: string;
+}
+
+const REQUIRED_SCOPES = [
+  "instagram_basic",
+  "instagram_manage_messages",
+  "instagram_manage_comments",
+  "pages_show_list",
+];
+
+export async function inspectAndRefreshAccountToken(instagramAccountId: string): Promise<TokenDebugResult> {
   try {
     const igAccount = await db.igAccount.findFirst({
       where: {
         OR: [
           { instagramAccountId: String(instagramAccountId) },
-          { pageId: String(instagramAccountId) }
-        ]
-      }
-    });
-
-    if (!igAccount) {
-      throw new Error(`Account with ID ${instagramAccountId} not found in database.`);
-    }
-
-    const decryptedToken = decrypt(igAccount.accessToken);
-    const refreshUrl = `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${decryptedToken}`;
-
-    console.log(`[Token Refresh] Refreshing token for Instagram Account ${igAccount.pageName}...`);
-    const res = await fetch(refreshUrl);
-    const data = await res.json();
-
-    if (!res.ok || data.error) {
-      throw new Error(data.error?.message || JSON.stringify(data) || "Failed to refresh token with Meta API");
-    }
-
-    const newAccessToken = data.access_token;
-    const expiresIn = data.expires_in || 5184000; // Default to 60 days
-    const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
-    const encryptedToken = encrypt(newAccessToken);
-
-    await db.igAccount.update({
-      where: { id: igAccount.id },
-      data: {
-        accessToken: encryptedToken,
-        tokenExpiresAt,
+          { pageId: String(instagramAccountId) },
+        ],
       },
     });
 
-    console.log(`[Token Refresh] Token refreshed successfully for @${igAccount.pageName}. Expires at: ${tokenExpiresAt}`);
-    return { success: true, tokenExpiresAt };
+    if (!igAccount) {
+      throw new Error(`Account ${instagramAccountId} not found in database.`);
+    }
+
+    const decryptedToken = decrypt(igAccount.accessToken);
+    const debugData = await MetaApi.debugToken(decryptedToken);
+
+    if (!debugData?.data) {
+      throw new Error(debugData?.error?.message || "Failed to inspect token with Meta API");
+    }
+
+    const info = debugData.data;
+    const isValid = Boolean(info.is_valid);
+    const scopes: string[] = info.scopes || [];
+    const missingScopes = REQUIRED_SCOPES.filter((s) => !scopes.includes(s));
+    const isPermanent = info.type === "PAGE" || info.expires_at === 0;
+
+    let expiresAt: Date | null = null;
+    if (!isPermanent && info.expires_at && info.expires_at > 0) {
+      expiresAt = new Date(info.expires_at * 1000);
+    }
+
+    // Update database record with fresh expiration details
+    await db.igAccount.update({
+      where: { id: igAccount.id },
+      data: {
+        tokenExpiresAt: expiresAt,
+      },
+    });
+
+    return {
+      isValid,
+      type: info.type,
+      isPermanent,
+      expiresAt,
+      scopes,
+      missingScopes,
+    };
   } catch (err: any) {
-    console.error(`[Token Refresh Failed] for ${instagramAccountId}:`, err);
-    return { success: false, error: err.message || String(err) };
+    console.error(`[Token Inspection Error] for ${instagramAccountId}:`, err);
+    return {
+      isValid: false,
+      isPermanent: false,
+      expiresAt: null,
+      scopes: [],
+      missingScopes: REQUIRED_SCOPES,
+      error: err.message || String(err),
+    };
   }
 }
 
 /**
- * Automatically triggers token refresh if expiry date is null or within 20 days
+ * Manually inspects and updates token expiration with Meta debug_token
+ */
+export async function refreshLongLivedToken(instagramAccountId: string) {
+  const result = await inspectAndRefreshAccountToken(instagramAccountId);
+  return {
+    success: result.isValid,
+    tokenExpiresAt: result.expiresAt,
+    error: result.error,
+  };
+}
+
+/**
+ * Backwards compatibility helper for automated routines
  */
 export async function refreshLongLivedTokenIfNeeded(igAccount: {
   instagramAccountId: string;
-  tokenExpiresAt: Date | null;
+  tokenExpiresAt?: Date | null;
 }) {
-  const now = new Date();
-  const thresholdDays = 20;
-  const thresholdMs = thresholdDays * 24 * 60 * 60 * 1000;
-
-  let shouldRefresh = false;
-
-  if (!igAccount.tokenExpiresAt) {
-    shouldRefresh = true;
-  } else {
-    const timeUntilExpiry = new Date(igAccount.tokenExpiresAt).getTime() - now.getTime();
-    if (timeUntilExpiry < thresholdMs) {
-      shouldRefresh = true;
-    }
-  }
-
-  if (shouldRefresh) {
-    console.log(`[Token Auto-Refresh] Token for ${igAccount.instagramAccountId} is expiring within ${thresholdDays} days or null. refreshing...`);
-    return await refreshLongLivedToken(igAccount.instagramAccountId);
-  }
-
-  return { success: true, skipped: true };
+  return await inspectAndRefreshAccountToken(igAccount.instagramAccountId);
 }

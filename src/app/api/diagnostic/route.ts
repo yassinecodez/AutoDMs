@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
-import { refreshLongLivedTokenIfNeeded } from "@/lib/tokenRefresh";
+import { inspectAndRefreshAccountToken } from "@/lib/tokenRefresh";
 import { MetaApi } from "@/lib/meta";
 
 export async function GET(request: NextRequest) {
@@ -32,10 +32,10 @@ export async function GET(request: NextRequest) {
     const accountsReport = [];
 
     for (const acc of rawAccounts) {
-      // 1. Proactive auto-refresh check
-      await refreshLongLivedTokenIfNeeded(acc);
+      // 1. Deep token inspection via Meta debug_token
+      const debugResult = await inspectAndRefreshAccountToken(acc.instagramAccountId);
 
-      // Re-fetch account in case token was refreshed
+      // Re-fetch account to get updated tokenExpiresAt timestamp
       const currentAcc = (await db.igAccount.findUnique({ where: { id: acc.id } })) || acc;
 
       let decryptedToken = "";
@@ -49,38 +49,19 @@ export async function GET(request: NextRequest) {
         decryptionError = err.message || "Failed to decrypt token";
       }
 
-      let metaProfile = null;
-      let metaProfileError: string | null = null;
+      // Determine Token Status
+      let tokenStatus: "HEALTHY" | "EXPIRED" | "MISSING_SCOPES" = "HEALTHY";
+      if (!debugResult.isValid) {
+        tokenStatus = "EXPIRED";
+      } else if (debugResult.missingScopes.length > 0) {
+        tokenStatus = "MISSING_SCOPES";
+      }
+
+      // Check Webhook Subscribed Apps
       let webhookSubscribed = false;
       let webhookError: string | null = null;
 
       if (decryptionSuccess && decryptedToken) {
-        // 2. Query Meta API to test token validity
-        try {
-          const profileRes = await fetch(
-            `https://graph.facebook.com/v24.0/me?fields=id,name&access_token=${decryptedToken}`
-          );
-          const profileData = await profileRes.json();
-
-          if (profileRes.ok && !profileData.error) {
-            metaProfile = profileData;
-          } else {
-            // Try Instagram Graph API endpoint fallback
-            const igRes = await fetch(
-              `https://graph.instagram.com/v24.0/me?fields=id,username&access_token=${decryptedToken}`
-            );
-            const igData = await igRes.json();
-            if (igRes.ok && !igData.error) {
-              metaProfile = igData;
-            } else {
-              metaProfileError = profileData.error?.message || igData.error?.message || "Token verification failed";
-            }
-          }
-        } catch (profErr: any) {
-          metaProfileError = profErr.message || "Network error checking Meta profile";
-        }
-
-        // 3. Query Webhook Subscribed Apps
         try {
           const subRes = await fetch(
             `https://graph.facebook.com/v24.0/${currentAcc.pageId}/subscribed_apps?access_token=${decryptedToken}`
@@ -103,35 +84,37 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Calculate token expiration days
-      let tokenDaysRemaining: number | null = null;
-      if (currentAcc.tokenExpiresAt) {
-        const diff = new Date(currentAcc.tokenExpiresAt).getTime() - Date.now();
-        tokenDaysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-      }
+      // Format expiresAt display string
+      const expiresAtDisplay = debugResult.isPermanent
+        ? "Never (Permanent Page Token)"
+        : debugResult.expiresAt
+        ? debugResult.expiresAt.toISOString()
+        : "Unknown / Expired";
 
       accountsReport.push({
         id: currentAcc.id,
+        handle: `@${currentAcc.pageName}`,
         pageName: currentAcc.pageName,
         pageId: currentAcc.pageId,
         instagramAccountId: currentAcc.instagramAccountId,
         user: acc.user,
+        tokenStatus,
+        isPermanent: debugResult.isPermanent,
+        expiresAt: expiresAtDisplay,
+        verifiedScopes: debugResult.scopes,
+        missingScopes: debugResult.missingScopes,
+        tokenDebug: {
+          isValid: debugResult.isValid,
+          tokenType: debugResult.type || "UNKNOWN",
+          error: debugResult.error || null,
+        },
         decryption: {
           success: decryptionSuccess,
           error: decryptionError,
         },
-        metaConnectivity: {
-          connected: !!metaProfile,
-          profile: metaProfile,
-          error: metaProfileError,
-        },
         webhookSubscription: {
           active: webhookSubscribed,
           error: webhookError,
-        },
-        tokenExpiry: {
-          expiresAt: currentAcc.tokenExpiresAt,
-          daysRemaining: tokenDaysRemaining,
         },
       });
     }
