@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Plus, Send, ChevronRight, ChevronLeft, MessageSquare, Trash2, Camera, Sparkles } from "lucide-react";
+import { Loader2, Plus, Send, ChevronRight, ChevronLeft, MessageSquare, Trash2, Camera, Sparkles, Image as ImageIcon, Video, Film, Check, ExternalLink } from "lucide-react";
 import { createAutomation } from "@/app/dashboard/automations/actions";
 import Link from "next/link";
 import InstagramPreview from "@/components/InstagramPreview";
+import PostPickerModal, { InstagramMediaItem } from "@/components/PostPickerModal";
 
 interface IgAccount {
   id: string;
@@ -20,11 +21,15 @@ interface AutomationBuilderProps {
 
 export default function AutomationBuilderClient({ connectedAccounts }: AutomationBuilderProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const templateParam = searchParams.get("template");
+
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [direction, setDirection] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isSavedDot, setIsSavedDot] = useState(true);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   // Core Automation States
   const [ruleName, setRuleName] = useState("Instagram Comment-to-DM");
@@ -47,6 +52,74 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
   const [buttonUrl, setButtonUrl] = useState("https://example.com/shop");
   const [secondaryButtonTitle, setSecondaryButtonTitle] = useState("");
   const [secondaryButtonUrl, setSecondaryButtonUrl] = useState("");
+
+  // Apply template on mount if template query param is present
+  useEffect(() => {
+    if (!templateParam) return;
+
+    if (templateParam === "comment_to_dm" || templateParam === "send_link") {
+      setRuleName("Send Product Link on Comment");
+      setTriggerSource("COMMENTS");
+      setTriggerScope("ALL_POSTS");
+      setTriggerType("KEYWORD");
+      setMatchMode("CONTAINS");
+      setTriggerKeyword("LINK, BUY, PRICE");
+      setReplyDmMessage("Hey {{username}}! Here is the direct link to the product you saw in the post 🚀 Tap below to view details and order:");
+      setButtonTitle("View Product & Order");
+      setButtonUrl("https://example.com/product");
+      setEnableButtons(true);
+      setEnableLeadCapture(false);
+    } else if (templateParam === "lead_magnet") {
+      setRuleName("Deliver Lead Magnet (PDF / Guide)");
+      setTriggerSource("COMMENTS");
+      setTriggerScope("ALL_POSTS");
+      setTriggerType("KEYWORD");
+      setMatchMode("CONTAINS");
+      setTriggerKeyword("GUIDE, FREE, PDF");
+      setReplyDmMessage("Hey {{username}}! Drop your email or WhatsApp number below and I'll send you the free guide right away 🎁");
+      setEnableLeadCapture(true);
+      setLeadConfirmationDm("Thanks {{username}}! Here is your free download link: https://example.com/guide.pdf 🚀");
+      setButtonTitle("Download Free Guide");
+      setButtonUrl("https://example.com/guide.pdf");
+      setEnableButtons(true);
+    } else if (templateParam === "story_mention") {
+      setRuleName("Reward Story Mentions (15% OFF)");
+      setTriggerSource("STORY_MENTIONS");
+      setTriggerScope("ALL_POSTS");
+      setTriggerType("ALL");
+      setTriggerKeyword("");
+      setReplyDmMessage("Thank you for tagging us in your story {{username}}! ❤️ Here is an exclusive 15% OFF discount code for your next order: 'STORY15'");
+      setButtonTitle("Use 15% Discount");
+      setButtonUrl("https://example.com/shop");
+      setEnableButtons(true);
+      setEnableLeadCapture(false);
+    } else if (templateParam === "direct_dm") {
+      setRuleName("Auto-Reply to Inbound DMs & Pricing");
+      setTriggerSource("DIRECT_MESSAGES");
+      setTriggerScope("ALL_POSTS");
+      setTriggerType("KEYWORD");
+      setMatchMode("CONTAINS");
+      setTriggerKeyword("PRICING, COST, SERVICES");
+      setReplyDmMessage("Hey {{username}}! Thanks for reaching out about our services. Here is our full pricing sheet and consultation link:");
+      setButtonTitle("Book Free Consultation");
+      setButtonUrl("https://wa.me/212600000000");
+      setEnableButtons(true);
+      setEnableLeadCapture(false);
+    } else if (templateParam === "waitlist") {
+      setRuleName("Grow VIP Waitlist");
+      setTriggerSource("COMMENTS");
+      setTriggerScope("ALL_POSTS");
+      setTriggerType("KEYWORD");
+      setMatchMode("CONTAINS");
+      setTriggerKeyword("WAITLIST, JOIN, ACCESS");
+      setReplyDmMessage("You're in! Drop your email or phone number to lock in your VIP early-bird access and special pricing 🚀");
+      setEnableLeadCapture(true);
+      setLeadConfirmationDm("Confirmed! You're on the VIP waitlist {{username}}. We will notify you first when doors open ✨");
+      setButtonTitle("VIP Launch Details");
+      setButtonUrl("https://example.com/launch");
+      setEnableButtons(true);
+    }
+  }, [templateParam]);
 
   const [leavePublicReply, setLeavePublicReply] = useState(true);
   const [replyCommentOptions, setReplyCommentOptions] = useState<string[]>([
@@ -316,46 +389,122 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
                         </div>
 
                         {triggerScope === "SPECIFIC_POSTS" && (
-                          <div className="space-y-2 pt-2">
-                            <input
-                              type="text"
-                              placeholder="Paste Instagram post URL (optional)..."
-                              value={postUrlInput}
-                              onChange={(e) => setPostUrlInput(e.target.value)}
-                              className="w-full h-10 px-3 bg-[#0A0A0A] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
-                            />
-
-                            {mediaLoading && (
-                              <div className="flex items-center justify-center py-4 text-xs text-zinc-500 gap-2">
-                                <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
-                                Loading feed thumbnails...
-                              </div>
-                            )}
-
-                            {!mediaLoading && mediaItems.length > 0 && (
-                              <div className="grid grid-cols-4 gap-2 max-h-[140px] overflow-y-auto pr-1">
-                                {mediaItems.map((item) => {
-                                  const isSelected = targetMediaIds.includes(item.id);
-                                  const img = item.thumbnail_url || item.media_url;
-                                  return (
-                                    <div
-                                      key={item.id}
-                                      onClick={() => handleToggleMediaSelect(item.id)}
-                                      className={`relative aspect-square bg-[#111111] border rounded-lg overflow-hidden cursor-pointer transition-colors ${
-                                        isSelected
-                                          ? "border-white"
-                                          : "border-[#222222] hover:border-zinc-700"
-                                      }`}
+                          <div className="space-y-3 pt-2">
+                            {/* Selected Posts Preview Cards */}
+                            {targetMediaIds.length > 0 ? (
+                              <div className="space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-medium text-white">
+                                    Selected Publications ({targetMediaIds.length})
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setIsPickerOpen(true)}
+                                      className="text-xs font-medium text-white hover:underline flex items-center gap-1"
                                     >
-                                      {img && <img src={img} alt="Post" className="w-full h-full object-cover" />}
-                                      {isSelected && (
-                                        <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-white text-black flex items-center justify-center text-[8px] font-bold">✓</div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
+                                      <Plus className="w-3.5 h-3.5" />
+                                      Change / Add More
+                                    </button>
+                                    <span className="text-zinc-600">•</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setTargetMediaIds([])}
+                                      className="text-xs text-zinc-500 hover:text-red-400 transition-colors"
+                                    >
+                                      Clear
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[190px] overflow-y-auto pr-1">
+                                  {targetMediaIds.map((mediaId) => {
+                                    const mediaItem = mediaItems.find((m) => m.id === mediaId);
+                                    const thumbnail = mediaItem?.thumbnail || mediaItem?.thumbnail_url || mediaItem?.media_url;
+                                    const isVideo = mediaItem?.type === "VIDEO" || mediaItem?.media_type === "VIDEO";
+                                    const caption = mediaItem?.caption || "Instagram publication";
+
+                                    return (
+                                      <div
+                                        key={mediaId}
+                                        className="p-2.5 bg-[#0A0A0A] border border-[#222222] rounded-xl flex items-center justify-between gap-3 group hover:border-zinc-700 transition-colors"
+                                      >
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                          <div className="relative w-11 h-11 rounded-lg bg-[#141414] border border-[#262626] overflow-hidden shrink-0">
+                                            {thumbnail ? (
+                                              <img
+                                                src={thumbnail}
+                                                alt="Post thumbnail"
+                                                className="w-full h-full object-cover"
+                                                crossOrigin="anonymous"
+                                              />
+                                            ) : (
+                                              <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                                                <ImageIcon className="w-4 h-4" />
+                                              </div>
+                                            )}
+                                            {isVideo && (
+                                              <div className="absolute bottom-0.5 right-0.5 p-0.5 rounded bg-black/80 text-[7px] text-white">
+                                                <Video className="w-2.5 h-2.5" />
+                                              </div>
+                                            )}
+                                          </div>
+                                          <div className="min-w-0 space-y-0.5">
+                                            <p className="text-xs font-medium text-white truncate max-w-[140px]">
+                                              {caption}
+                                            </p>
+                                            <p className="text-[10px] text-zinc-500 font-mono">
+                                              ID: {mediaId.slice(-8)}
+                                            </p>
+                                          </div>
+                                        </div>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => handleToggleMediaSelect(mediaId)}
+                                          className="p-1 text-zinc-500 hover:text-red-400 transition-colors rounded"
+                                          title="Remove"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ) : (
+                              /* Empty Trigger Callout */
+                              <div className="border border-dashed border-[#262626] rounded-xl p-5 text-center space-y-3 bg-[#050505]">
+                                <div className="w-9 h-9 rounded-full bg-[#111111] border border-[#222222] flex items-center justify-center mx-auto text-zinc-400">
+                                  <ImageIcon className="w-4 h-4" />
+                                </div>
+                                <div className="space-y-0.5">
+                                  <p className="text-xs font-medium text-white">No publications selected</p>
+                                  <p className="text-[11px] text-zinc-500 max-w-xs mx-auto">
+                                    Pick the specific Reels or Posts from your Instagram feed where comments will trigger this rule.
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setIsPickerOpen(true)}
+                                  className="h-8 px-3.5 bg-white hover:bg-zinc-200 text-black font-medium rounded-lg text-xs inline-flex items-center gap-1.5 transition-colors shadow-sm"
+                                >
+                                  <Plus className="w-3.5 h-3.5" strokeWidth={2} />
+                                  Select Post or Reel
+                                </button>
                               </div>
                             )}
+
+                            {/* Optional Direct URL Input */}
+                            <div className="pt-1">
+                              <input
+                                type="text"
+                                placeholder="Or paste Instagram post URL (optional)..."
+                                value={postUrlInput}
+                                onChange={(e) => setPostUrlInput(e.target.value)}
+                                className="w-full h-9 px-3 bg-[#0A0A0A] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
+                              />
+                            </div>
                           </div>
                         )}
                       </div>
@@ -706,6 +855,16 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
         </div>
 
       </div>
+
+      {/* Visual Instagram Post & Reel Picker Modal */}
+      <PostPickerModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        mediaItems={mediaItems}
+        selectedMediaIds={targetMediaIds}
+        onSelectMediaIds={setTargetMediaIds}
+        isLoading={mediaLoading}
+      />
 
     </div>
   );

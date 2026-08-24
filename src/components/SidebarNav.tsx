@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Zap, Users, ScrollText, Settings } from "lucide-react";
+import { LayoutDashboard, Zap, LayoutTemplate, Users, ScrollText, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const InstagramNavIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -37,6 +37,11 @@ export function SidebarNav() {
       icon: Zap,
     },
     {
+      name: "Templates",
+      href: "/dashboard/templates",
+      icon: LayoutTemplate,
+    },
+    {
       name: "Leads Database",
       href: "/dashboard/leads",
       icon: Users,
@@ -61,8 +66,12 @@ export function SidebarNav() {
   return (
     <div className="space-y-1">
       {navItems.map((item) => {
-        const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+        const isActive =
+          item.href === "/dashboard"
+            ? pathname === "/dashboard"
+            : pathname.startsWith(item.href);
         const Icon = item.icon;
+
         return (
           <Link
             key={item.href}
@@ -75,7 +84,12 @@ export function SidebarNav() {
             )}
           >
             <div className="flex items-center gap-2.5">
-              <Icon className={cn("w-4 h-4 transition-colors", isActive ? "text-white" : "text-zinc-500 group-hover:text-zinc-300")} />
+              <Icon
+                className={cn(
+                  "w-4 h-4 transition-colors",
+                  isActive ? "text-white" : "text-zinc-500 group-hover:text-zinc-300"
+                )}
+              />
               <span>{item.name}</span>
             </div>
             {isActive && (
@@ -87,4 +101,5 @@ export function SidebarNav() {
     </div>
   );
 }
+
 export default SidebarNav;

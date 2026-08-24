@@ -13,32 +13,74 @@ export async function GET(request: NextRequest) {
   const userId = session.user.id;
 
   try {
-    // Fetch the connected Instagram account for this user
+    // 1. Fetch connected Instagram account for this user
     const igAccount = await db.igAccount.findFirst({
       where: { userId },
+      orderBy: { createdAt: "desc" },
     });
 
     if (!igAccount) {
-      return NextResponse.json({ media: [] });
+      return NextResponse.json({
+        media: [],
+        message: "No connected Instagram account found.",
+      });
     }
 
-    // Decrypt the token
+    // 2. Decrypt token
     const decryptedToken = decrypt(igAccount.accessToken);
+    const igAccountId = igAccount.instagramAccountId;
 
-    // Call Instagram Graph API to retrieve recent media
-    const mediaUrl = `https://graph.instagram.com/v24.0/me/media?fields=id,caption,media_type,media_url,permalink,thumbnail_url,timestamp&access_token=${decryptedToken}`;
-    
-    const res = await fetch(mediaUrl);
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("[Instagram Media API] Failed to fetch media from Meta:", errorText);
-      return NextResponse.json({ error: "Failed to fetch media from Meta" }, { status: res.status });
+    // 3. Query Meta Graph API (or Instagram Graph API fallback)
+    const fields = "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count";
+    let mediaUrl = `https://graph.facebook.com/v24.0/${igAccountId}/media?fields=${fields}&limit=30&access_token=${decryptedToken}`;
+
+    let res = await fetch(mediaUrl);
+    let data = await res.json();
+
+    // Fallback to Instagram Graph endpoint if Facebook node call fails
+    if (!res.ok || data.error) {
+      console.warn("[Instagram Media API] Facebook endpoint fallback to Instagram node:", data.error?.message);
+      mediaUrl = `https://graph.instagram.com/v24.0/me/media?fields=${fields}&limit=30&access_token=${decryptedToken}`;
+      res = await fetch(mediaUrl);
+      data = await res.json();
     }
 
-    const data = await res.json();
-    return NextResponse.json({ media: data.data || [] });
+    if (!res.ok || data.error) {
+      console.error("[Instagram Media API] Meta API Error:", data.error);
+      return NextResponse.json({
+        media: [],
+        error: data.error?.message || "Failed to fetch Instagram media from Meta API.",
+      }, { status: res.status >= 400 ? res.status : 500 });
+    }
+
+    const rawList = Array.isArray(data.data) ? data.data : [];
+
+    // Format list into clean typed items
+    const formattedMedia = rawList.map((item: any) => ({
+      id: item.id,
+      caption: item.caption || "",
+      thumbnail: item.thumbnail_url || item.media_url || "",
+      mediaUrl: item.media_url || item.thumbnail_url || "",
+      permalink: item.permalink || "",
+      type: item.media_type || "IMAGE",
+      likeCount: item.like_count ?? 0,
+      commentCount: item.comments_count ?? 0,
+      timestamp: item.timestamp || new Date().toISOString(),
+    }));
+
+    return NextResponse.json({
+      media: formattedMedia,
+      account: {
+        id: igAccount.id,
+        pageName: igAccount.pageName,
+        instagramAccountId: igAccount.instagramAccountId,
+      },
+    });
   } catch (err: any) {
-    console.error("[Instagram Media API] Internal Server Error:", err);
-    return NextResponse.json({ error: err.message || "Failed to retrieve media items" }, { status: 500 });
+    console.error("[Instagram Media API] Server Error:", err);
+    return NextResponse.json(
+      { media: [], error: err.message || "Failed to retrieve media items" },
+      { status: 500 }
+    );
   }
 }
