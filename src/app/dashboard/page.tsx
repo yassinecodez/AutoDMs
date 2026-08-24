@@ -1,9 +1,22 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { Send, CheckCircle2, Users, Zap, Plus, ArrowUpRight, ChevronRight, MessageSquare } from "lucide-react";
+import {
+  MessageCircle,
+  Sparkles,
+  Inbox,
+  CheckCircle2,
+  Circle,
+  ArrowRight,
+  ChevronRight,
+  Send,
+  Zap,
+  Users,
+  Plus,
+} from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { PLANS } from "@/lib/plans";
 
 export default async function DashboardOverview() {
   const session = await getServerSession(authOptions);
@@ -14,11 +27,10 @@ export default async function DashboardOverview() {
 
   const [
     accounts,
-    activeAutomationsCount,
-    totalDmsCount,
+    automationsCount,
     totalLogsCount,
+    totalDmsCount,
     capturedLeadsCount,
-    recentLogs,
     user,
   ] = await Promise.all([
     db.igAccount.findMany({
@@ -31,7 +43,12 @@ export default async function DashboardOverview() {
       },
     }),
     db.automation.count({
-      where: { userId, active: true },
+      where: { userId },
+    }),
+    db.executionLog.count({
+      where: {
+        automation: { userId },
+      },
     }),
     db.executionLog.count({
       where: {
@@ -39,31 +56,16 @@ export default async function DashboardOverview() {
         dmStatus: "SUCCESS",
       },
     }),
-    db.executionLog.count({
-      where: {
-        automation: { userId },
-      },
-    }),
     db.lead.count({
       where: {
         igAccount: { userId },
       },
     }),
-    db.executionLog.findMany({
-      where: {
-        automation: { userId },
-      },
-      orderBy: {
-        timestamp: "desc",
-      },
-      take: 10,
-      include: {
-        automation: true,
-      },
-    }),
     db.user.findUnique({
       where: { id: userId },
       select: {
+        name: true,
+        email: true,
         dmsCountThisMonth: true,
         dmsLimit: true,
         planType: true,
@@ -71,207 +73,360 @@ export default async function DashboardOverview() {
     }),
   ]);
 
-  const successRate = totalLogsCount > 0 ? Math.round((totalDmsCount / totalLogsCount) * 100) : 100;
   const primaryAccount = accounts[0];
+  const userName =
+    user?.name ||
+    session.user.name ||
+    user?.email?.split("@")[0] ||
+    session.user.email?.split("@")[0] ||
+    "Creator";
+
   const dmsUsed = user?.dmsCountThisMonth || 0;
   const dmsLimit = user?.dmsLimit || 150;
+  const usagePercent = Math.min(100, Math.round((dmsUsed / dmsLimit) * 100));
+  const planDetails = PLANS[user?.planType || "FREE"] || PLANS.FREE;
 
-  const kpis = [
+  // Checklist calculations
+  const step1Done = accounts.length > 0;
+  const step2Done = automationsCount > 0;
+  const step3Done = totalLogsCount > 0;
+  const completedSteps = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (step3Done ? 1 : 0);
+  const checklistPercent = Math.round((completedSteps / 3) * 100);
+
+  const quickTemplates = [
     {
-      title: "Total DMs Delivered",
-      value: totalDmsCount.toLocaleString(),
-      subtext: `${dmsUsed} of ${dmsLimit} monthly quota`,
-      icon: Send,
-      href: "/dashboard/logs",
+      id: "comments",
+      title: "Auto-DM links from comments",
+      tag: "Popular",
+      description: "Send links, discounts, or prices when followers comment on your Reels or Posts.",
+      icon: MessageCircle,
+      href: "/dashboard/automations/builder?template=comment_to_dm",
     },
     {
-      title: "Success Rate",
-      value: `${successRate}%`,
-      subtext: "API delivery reliability",
-      icon: CheckCircle2,
-      href: "/dashboard/logs",
+      id: "stories",
+      title: "Generate leads with stories",
+      description: "Automatically reward followers with coupon codes or links when they mention you in stories.",
+      icon: Sparkles,
+      href: "/dashboard/automations/builder?template=story_mention",
     },
     {
-      title: "Captured Leads",
-      value: capturedLeadsCount.toLocaleString(),
-      subtext: "Emails & phone contacts",
-      icon: Users,
-      href: "/dashboard/leads",
-      badge: "View DB &rarr;",
-    },
-    {
-      title: "Active Automations",
-      value: activeAutomationsCount.toLocaleString(),
-      subtext: "Real-time trigger rules",
-      icon: Zap,
-      href: "/dashboard/automations",
+      id: "dms",
+      title: "Respond to all your DMs",
+      description: "Send instant automated replies and lead capture forms to direct message inquiries.",
+      icon: Inbox,
+      href: "/dashboard/automations/builder?template=direct_dm",
     },
   ];
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-6xl">
-      {/* Top Header Row */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-[#222222]">
-        <div>
-          <h1 className="text-xl font-bold text-white tracking-tight">Overview</h1>
-          <p className="text-xs text-zinc-400">Real-time automation activity and contact conversions</p>
+    <div className="p-6 md:p-10 space-y-10 max-w-6xl mx-auto">
+      {/* ========================================================================= */}
+      {/* SECTION 1: Personalized Greeting & Channel Status */}
+      {/* ========================================================================= */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-6 border-b border-[#222222]">
+        <div className="space-y-1.5">
+          <h1 className="text-3xl font-bold tracking-tight text-white">
+            Hello, {userName}!
+          </h1>
+          <div className="flex items-center gap-2 text-xs text-zinc-400">
+            {primaryAccount ? (
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#111111] border border-[#222222] font-medium text-zinc-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  @{primaryAccount.pageName}
+                  <span className="text-zinc-500">•</span>
+                  <span className="text-emerald-400">Connected</span>
+                </span>
+                <Link
+                  href="/dashboard/logs"
+                  className="text-zinc-400 hover:text-white transition-colors underline-offset-4 hover:underline ml-1"
+                >
+                  View Activity Logs &rarr;
+                </Link>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#111111] border border-amber-900/40 text-amber-300 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  No Instagram account connected
+                </span>
+                <span className="text-zinc-600">•</span>
+                <Link
+                  href="/dashboard/accounts"
+                  className="text-white hover:text-zinc-300 font-medium transition-colors underline-offset-4 hover:underline"
+                >
+                  Connect Profile &rarr;
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {primaryAccount ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0A0A0A] border border-[#222222] text-xs font-medium text-zinc-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              <span>@{primaryAccount.pageName}</span>
-            </div>
-          ) : (
-            <Link
-              href="/dashboard/accounts"
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0A0A0A] border border-zinc-700 text-xs font-medium text-zinc-300 hover:border-zinc-500 transition-colors"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 inline-block" />
-              Connect Instagram Profile
-            </Link>
-          )}
-
+        <div className="flex items-center gap-3 shrink-0">
           <Link
             href="/dashboard/automations/builder"
-            className="inline-flex items-center gap-1.5 h-9 px-3.5 bg-white hover:bg-zinc-200 text-black font-medium rounded-lg text-xs transition-colors shrink-0 shadow-sm"
+            className="inline-flex items-center gap-2 h-10 px-4 bg-white hover:bg-zinc-200 text-black font-medium rounded-lg text-sm transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" strokeWidth={2} />
-            Create automation
+            New automation
           </Link>
         </div>
       </div>
 
-      {/* 4 Compact KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {kpis.map((kpi) => {
-          const Icon = kpi.icon;
-          return (
-            <Link
-              key={kpi.title}
-              href={kpi.href}
-              className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-xl hover:border-zinc-700 transition-colors flex flex-col justify-between h-[115px] group"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-300 transition-colors">{kpi.title}</span>
-                <Icon className="w-4 h-4 text-zinc-500 group-hover:text-white transition-colors" strokeWidth={1.75} />
-              </div>
-              <div className="space-y-0.5">
-                <div className="flex items-baseline justify-between">
-                  <p className="text-2xl font-bold text-white tracking-tight">{kpi.value}</p>
-                  {kpi.badge && (
-                    <span className="text-[10px] text-zinc-400 font-medium group-hover:underline">
-                      {kpi.badge}
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] text-zinc-500 truncate">{kpi.subtext}</p>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Activity Table */}
-      <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-5 space-y-4">
-        <div className="flex items-center justify-between border-b border-[#222222] pb-3">
-          <div>
-            <h2 className="text-sm font-semibold text-white">Recent execution activity</h2>
-            <p className="text-xs text-zinc-400">Live stream of incoming comments and direct message responses</p>
-          </div>
+      {/* ========================================================================= */}
+      {/* SECTION 2: "Quick Automations" (Starter Templates Grid) */}
+      {/* ========================================================================= */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+            Start here
+          </h2>
           <Link
-            href="/dashboard/logs"
+            href="/dashboard/automations"
             className="text-xs font-medium text-zinc-400 hover:text-white flex items-center gap-1 transition-colors"
           >
-            View all logs
-            <ChevronRight className="w-3.5 h-3.5" strokeWidth={2} />
+            View all rules ({automationsCount})
+            <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        {recentLogs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center space-y-2">
-            <div className="w-9 h-9 rounded-lg bg-[#111111] border border-[#222222] flex items-center justify-center text-zinc-500">
-              <MessageSquare className="w-4 h-4" strokeWidth={1.75} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {quickTemplates.map((template) => {
+            const Icon = template.icon;
+            return (
+              <Link
+                key={template.id}
+                href={template.href}
+                className="bg-[#0A0A0A] hover:bg-[#111111] border border-[#222222] hover:border-zinc-700 rounded-xl p-5 transition-all cursor-pointer group flex flex-col justify-between min-h-[170px]"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="w-9 h-9 rounded-lg bg-[#141414] border border-[#262626] flex items-center justify-center text-zinc-300 group-hover:text-white group-hover:border-zinc-500 transition-colors">
+                      <Icon className="w-4 h-4" strokeWidth={1.75} />
+                    </div>
+                    {template.tag && (
+                      <span className="bg-[#181818] border border-[#2b2b2b] text-zinc-300 text-[10px] px-2 py-0.5 rounded-full font-medium">
+                        {template.tag}
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-semibold text-white group-hover:text-white transition-colors">
+                      {template.title}
+                    </h3>
+                    <p className="text-xs text-zinc-400 leading-relaxed">
+                      {template.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-3 flex items-center text-xs font-medium text-zinc-500 group-hover:text-zinc-200 transition-colors">
+                  <span>Use template</span>
+                  <ArrowRight className="w-3.5 h-3.5 ml-1 transform group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* SECTION 3: "Your Next Steps" (2-Column Grid) */}
+      {/* ========================================================================= */}
+      <div className="space-y-4">
+        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+          Your next steps
+        </h2>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Card: Setup Progress Checklist */}
+          <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-6 space-y-5 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Getting Started</h3>
+                  <p className="text-xs text-zinc-400">Complete setup to launch your Instagram pipeline</p>
+                </div>
+                <span className="text-xs font-medium text-zinc-400 bg-[#141414] border border-[#222222] px-2.5 py-1 rounded-full">
+                  {completedSteps} of 3 completed
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full bg-[#181818] h-1.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-white h-full transition-all duration-500 rounded-full"
+                  style={{ width: `${checklistPercent}%` }}
+                />
+              </div>
+
+              {/* Checklist Items */}
+              <div className="space-y-3 pt-2">
+                {/* Step 1: Connect Account */}
+                <div className="flex items-start justify-between p-3 rounded-lg bg-[#111111]/70 border border-[#222222]/80">
+                  <div className="flex items-start gap-3">
+                    {step1Done ? (
+                      <CheckCircle2 className="w-4 h-4 text-white shrink-0 mt-0.5" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-zinc-600 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <p className={`text-xs font-medium ${step1Done ? "text-zinc-200 line-through" : "text-white"}`}>
+                        Connect Instagram Business Account
+                      </p>
+                      <p className="text-[11px] text-zinc-500">
+                        {step1Done
+                          ? `Connected as @${primaryAccount?.pageName}`
+                          : "Link your Meta Facebook Page & Instagram account"}
+                      </p>
+                    </div>
+                  </div>
+                  {!step1Done && (
+                    <Link
+                      href="/dashboard/accounts"
+                      className="text-xs font-medium text-white hover:underline shrink-0 ml-2"
+                    >
+                      Connect &rarr;
+                    </Link>
+                  )}
+                </div>
+
+                {/* Step 2: Create Automation */}
+                <div className="flex items-start justify-between p-3 rounded-lg bg-[#111111]/70 border border-[#222222]/80">
+                  <div className="flex items-start gap-3">
+                    {step2Done ? (
+                      <CheckCircle2 className="w-4 h-4 text-white shrink-0 mt-0.5" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-zinc-600 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <p className={`text-xs font-medium ${step2Done ? "text-zinc-200 line-through" : "text-white"}`}>
+                        Create your first Automation rule
+                      </p>
+                      <p className="text-[11px] text-zinc-500">
+                        {step2Done
+                          ? `${automationsCount} active automation${automationsCount > 1 ? "s" : ""} configured`
+                          : "Set keyword triggers, instant DMs, and public replies"}
+                      </p>
+                    </div>
+                  </div>
+                  {!step2Done && (
+                    <Link
+                      href="/dashboard/automations/builder"
+                      className="text-xs font-medium text-white hover:underline shrink-0 ml-2"
+                    >
+                      Build &rarr;
+                    </Link>
+                  )}
+                </div>
+
+                {/* Step 3: Test Live */}
+                <div className="flex items-start justify-between p-3 rounded-lg bg-[#111111]/70 border border-[#222222]/80">
+                  <div className="flex items-start gap-3">
+                    {step3Done ? (
+                      <CheckCircle2 className="w-4 h-4 text-white shrink-0 mt-0.5" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-zinc-600 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <p className={`text-xs font-medium ${step3Done ? "text-zinc-200 line-through" : "text-white"}`}>
+                        Test on a live Reel or Post
+                      </p>
+                      <p className="text-[11px] text-zinc-500">
+                        {step3Done
+                          ? `${totalLogsCount} total dispatches recorded`
+                          : "Leave a test comment on your Instagram post to verify delivery"}
+                      </p>
+                    </div>
+                  </div>
+                  {step3Done ? (
+                    <Link
+                      href="/dashboard/logs"
+                      className="text-xs font-medium text-zinc-400 hover:text-white shrink-0 ml-2"
+                    >
+                      Logs &rarr;
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/dashboard/logs"
+                      className="text-xs font-medium text-zinc-400 hover:text-white shrink-0 ml-2"
+                    >
+                      View stream &rarr;
+                    </Link>
+                  )}
+                </div>
+              </div>
             </div>
-            <p className="text-xs font-medium text-zinc-200">No automation triggers recorded yet</p>
-            <p className="text-[11px] text-zinc-500 max-w-xs leading-relaxed">
-              When followers comment trigger keywords, dispatches will appear here.
-            </p>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="text-[11px] text-zinc-500 border-b border-[#222222]">
-                  <th className="pb-2.5 font-medium">Time</th>
-                  <th className="pb-2.5 font-medium">Source</th>
-                  <th className="pb-2.5 font-medium">User</th>
-                  <th className="pb-2.5 font-medium">Input message</th>
-                  <th className="pb-2.5 font-medium">Matched rule</th>
-                  <th className="pb-2.5 font-medium text-right">Status</th>
-                  <th className="pb-2.5 font-medium text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#222222]/80 text-xs">
-                {recentLogs.map((log) => (
-                  <tr key={log.id} className="group hover:bg-[#111111]/50 transition-colors">
-                    <td className="py-2.5 text-zinc-500 font-mono text-[11px] whitespace-nowrap">
-                      {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                    </td>
-                    <td className="py-2.5">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-[#111111] border border-[#222222] text-zinc-300">
-                        {log.triggerSource === "COMMENT" ? "Comment" : log.triggerSource === "STORY_MENTION" ? "Story" : "Direct DM"}
-                      </span>
-                    </td>
-                    <td className="py-2.5 font-medium text-zinc-200">
-                      @{log.commenterUsername}
-                    </td>
-                    <td className="py-2.5 text-zinc-400 max-w-[180px] truncate font-mono text-[11px]" title={log.commentText}>
-                      "{log.commentText}"
-                    </td>
-                    <td className="py-2.5 text-zinc-400 max-w-[140px] truncate">
-                      {log.automation?.name || "Automation rule"}
-                    </td>
-                    <td className="py-2.5 text-right whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-medium">
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            log.dmStatus === "SUCCESS"
-                              ? "bg-white"
-                              : log.dmStatus === "LEAD_CAPTURED"
-                              ? "bg-zinc-400"
-                              : log.dmStatus === "PROCESSING"
-                              ? "bg-zinc-500 animate-pulse"
-                              : "bg-zinc-600"
-                          }`}
-                        />
-                        <span
-                          className={
-                            log.dmStatus === "SUCCESS"
-                              ? "text-white"
-                              : "text-zinc-400"
-                          }
-                        >
-                          {log.dmStatus}
-                        </span>
-                      </span>
-                    </td>
-                    <td className="py-2.5 text-right">
-                      <Link
-                        href="/dashboard/logs"
-                        className="inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-white transition-colors"
-                      >
-                        Details
-                        <ArrowUpRight className="w-3 h-3 text-zinc-600 group-hover:text-zinc-300" strokeWidth={1.75} />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+          {/* Right Card: Monthly Plan & DM Usage */}
+          <div className="bg-[#0A0A0A] border border-[#222222] rounded-xl p-6 space-y-5 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Monthly DM Usage</h3>
+                  <p className="text-xs text-zinc-400">Current cycle automation dispatches</p>
+                </div>
+                <span className="text-xs font-semibold text-white bg-[#141414] border border-[#262626] px-2.5 py-1 rounded-md">
+                  {planDetails.name}
+                </span>
+              </div>
+
+              {/* Quota Progress */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-baseline justify-between text-xs">
+                  <span className="text-2xl font-bold text-white tracking-tight">
+                    {dmsUsed.toLocaleString()}
+                    <span className="text-sm font-normal text-zinc-500 ml-1.5">
+                      / {dmsLimit.toLocaleString()} DMs
+                    </span>
+                  </span>
+                  <span className="text-xs font-medium text-zinc-400">
+                    {usagePercent}% used
+                  </span>
+                </div>
+
+                <div className="w-full bg-[#181818] h-2 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-500 rounded-full ${
+                      usagePercent >= 90
+                        ? "bg-red-500"
+                        : usagePercent >= 75
+                        ? "bg-amber-500"
+                        : "bg-white"
+                    }`}
+                    style={{ width: `${usagePercent}%` }}
+                  />
+                </div>
+
+                <p className="text-[11px] text-zinc-500 pt-1">
+                  Usage resets automatically every 30 days. No hidden overage charges.
+                </p>
+              </div>
+
+              {/* Key Quick Stats */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div className="p-3 rounded-lg bg-[#111111] border border-[#222222]">
+                  <p className="text-[11px] text-zinc-500 font-medium">Delivered DMs</p>
+                  <p className="text-lg font-bold text-white mt-0.5">{totalDmsCount.toLocaleString()}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-[#111111] border border-[#222222]">
+                  <p className="text-[11px] text-zinc-500 font-medium">Captured Leads</p>
+                  <p className="text-lg font-bold text-white mt-0.5">{capturedLeadsCount.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <Link
+                href="/dashboard/settings"
+                className="w-full inline-flex items-center justify-center gap-1.5 h-10 bg-white hover:bg-zinc-200 text-black font-medium rounded-lg text-xs transition-colors shadow-sm"
+              >
+                Upgrade Plan &rarr;
+              </Link>
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
