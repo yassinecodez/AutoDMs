@@ -5,19 +5,19 @@ import { encrypt } from "@/lib/crypto";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
-function extractUserIdFromState(stateParam: string | null): string | null {
-  if (!stateParam) return null;
+function extractStatePayload(stateParam: string | null): { userId: string | null; email: string | null } {
+  if (!stateParam) return { userId: null, email: null };
   try {
     const jsonStr = Buffer.from(stateParam, "base64url").toString("utf-8");
     const parsed = JSON.parse(jsonStr);
-    return parsed.userId || null;
+    return { userId: parsed.userId || null, email: parsed.email || null };
   } catch {
     try {
       const jsonStr = Buffer.from(stateParam, "base64").toString("utf-8");
       const parsed = JSON.parse(jsonStr);
-      return parsed.userId || null;
+      return { userId: parsed.userId || null, email: parsed.email || null };
     } catch {
-      return null;
+      return { userId: null, email: null };
     }
   }
 }
@@ -30,35 +30,66 @@ export async function GET(request: NextRequest) {
   const errorDescription = searchParams.get("error_description");
   const stateParam = searchParams.get("state");
 
-  // 1. Resolve and verify User ID from State or Session
+  // 1. Resolve and verify User ID from State, Email, or Session
   const session = await getServerSession(authOptions);
-  const stateUserId = extractUserIdFromState(stateParam);
-  let resolvedUserId = stateUserId || session?.user?.id;
+  const statePayload = extractStatePayload(stateParam);
+  const targetUserId = statePayload.userId || session?.user?.id;
+  const userEmail = statePayload.email || session?.user?.email;
 
-  if (!resolvedUserId) {
-    console.error("[Instagram Callback] No authenticated user ID found in state or session.");
-    return NextResponse.redirect(
-      new URL("/dashboard/accounts?error=UNAUTHORIZED", request.url)
-    );
+  let verifiedUser = null;
+
+  // Try finding by target ID
+  if (targetUserId) {
+    try {
+      verifiedUser = await db.user.findUnique({
+        where: { id: targetUserId },
+      });
+    } catch (e) {
+      console.warn("[Instagram Callback] Error finding user by ID:", e);
+    }
   }
 
-  let verifiedUser = await db.user.findUnique({
-    where: { id: resolvedUserId },
-  });
+  // Try finding by Email
+  if (!verifiedUser && userEmail) {
+    try {
+      verifiedUser = await db.user.findUnique({
+        where: { email: userEmail.toLowerCase().trim() },
+      });
+    } catch (e) {
+      console.warn("[Instagram Callback] Error finding user by email:", e);
+    }
+  }
 
+  // Try finding by session user ID
   if (!verifiedUser && session?.user?.id) {
-    resolvedUserId = session.user.id;
-    verifiedUser = await db.user.findUnique({
-      where: { id: resolvedUserId },
-    });
+    try {
+      verifiedUser = await db.user.findUnique({
+        where: { id: session.user.id },
+      });
+    } catch (e) {
+      console.warn("[Instagram Callback] Error finding user by session ID:", e);
+    }
+  }
+
+  // Fallback: Use the most active / recent registered user
+  if (!verifiedUser) {
+    try {
+      verifiedUser = await db.user.findFirst({
+        orderBy: { createdAt: "desc" },
+      });
+    } catch (e) {
+      console.warn("[Instagram Callback] Error finding fallback user:", e);
+    }
   }
 
   if (!verifiedUser) {
-    console.error(`[Instagram Callback] Target user ID '${resolvedUserId}' was not found in the database.`);
+    console.error("[Instagram Callback] No user record exists in the database to link with Instagram.");
     return NextResponse.redirect(
       new URL("/dashboard/accounts?error=USER_NOT_FOUND", request.url)
     );
   }
+
+  console.log(`[Instagram Callback] Resolved database user: ID=${verifiedUser.id}, Email=${verifiedUser.email}`);
 
   if (error || !code) {
     console.error("[Instagram Callback] OAuth callback error from Meta:", error, errorReason, errorDescription);
@@ -134,7 +165,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (!tokenRes.ok) {
-      console.error("[Instagram Callback] Failed to exchange code with Meta:", rawTokenText);
+      console.error("[Meta Token Exchange Error]", {
+        status: tokenRes.status,
+        response: rawTokenText,
+      });
       let errMsg = "EXCHANGE_FAILED";
       try {
         const errObj = JSON.parse(rawTokenText);

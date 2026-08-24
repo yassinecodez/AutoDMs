@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -8,7 +9,23 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = session.user.id;
+  let resolvedUserId = session.user.id;
+  const userEmail = session.user.email;
+
+  if (userEmail) {
+    try {
+      const dbUser = await db.user.findUnique({
+        where: { email: userEmail.toLowerCase().trim() },
+        select: { id: true },
+      });
+      if (dbUser) {
+        resolvedUserId = dbUser.id;
+      }
+    } catch (err) {
+      console.warn("[Instagram URL] Could not resolve user by email:", err);
+    }
+  }
+
   const redirectUri =
     process.env.NODE_ENV === "production" || process.env.VERCEL
       ? "https://autodms-project.vercel.app/api/auth/instagram/callback"
@@ -16,7 +33,7 @@ export async function GET() {
   const clientId = process.env.INSTAGRAM_APP_ID || "1041048208692049";
 
   const state = Buffer.from(
-    JSON.stringify({ userId, timestamp: Date.now() })
+    JSON.stringify({ userId: resolvedUserId, email: userEmail, timestamp: Date.now() })
   ).toString("base64url");
 
   const params = new URLSearchParams({

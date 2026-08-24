@@ -100,13 +100,7 @@ export const authOptions: AuthOptions = {
       return true;
     },
     async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.sub = user.id;
-        token.planType = (user as any).planType || "FREE";
-      }
-
-      if (token.email && (!token.id || !token.planType)) {
+      if (token.email) {
         try {
           const dbUser = await db.user.findUnique({
             where: { email: token.email.toLowerCase().trim() },
@@ -120,6 +114,10 @@ export const authOptions: AuthOptions = {
         } catch (err) {
           console.error("Error looking up user in jwt callback:", err);
         }
+      } else if (user) {
+        token.id = user.id;
+        token.sub = user.id;
+        token.planType = (user as any).planType || "FREE";
       }
       return token;
     },
