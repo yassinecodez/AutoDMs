@@ -120,7 +120,7 @@ async function processWebhookPayload(payload: any) {
         }
 
         try {
-          // 2. Fetch linked Instagram Account flexibly
+          // 2. Fetch linked Instagram Account strictly to prevent cross-tenant leaks
           let igAccount = await db.igAccount.findFirst({
             where: {
               OR: [
@@ -130,21 +130,21 @@ async function processWebhookPayload(payload: any) {
             },
           });
 
-          // Fallback for Meta Dashboard Test Events (entry.id === "0")
-          if (!igAccount) {
-            console.log(`[Webhook Comments] Account ${instagramAccountId} not found. Falling back to first database account.`);
+          // Only allow fallback for local development test events with ID "0"
+          if (!igAccount && process.env.NODE_ENV !== "production" && (instagramAccountId === "0" || String(instagramAccountId) === "0")) {
+            console.log(`[Webhook Comments Dev Fallback] Test event detected (ID 0). Falling back to first database account.`);
             igAccount = await db.igAccount.findFirst();
           }
 
           if (!igAccount) {
-            console.warn(`[Webhook Comments] No Instagram Account found in database.`);
+            console.warn(`[Webhook Comments] Account ${instagramAccountId} not linked in database. Skipping event to prevent cross-tenant leaks.`);
             await db.executionLog.update({
               where: { commentId },
               data: {
-                dmStatus: "FAILED",
-                dmError: "No accounts linked in system database",
-                commentStatus: "FAILED",
-                commentError: "No accounts linked in system database",
+                dmStatus: "SKIPPED",
+                dmError: `Account ${instagramAccountId} not linked in database`,
+                commentStatus: "SKIPPED",
+                commentError: `Account ${instagramAccountId} not linked in database`,
               },
             });
             continue;
@@ -370,7 +370,7 @@ async function processWebhookPayload(payload: any) {
       }
 
       try {
-        // 2. Fetch linked Instagram Account flexibly
+        // 2. Fetch linked Instagram Account strictly to prevent cross-tenant leaks
         let igAccount = await db.igAccount.findFirst({
           where: {
             OR: [
@@ -380,18 +380,19 @@ async function processWebhookPayload(payload: any) {
           },
         });
 
-        if (!igAccount) {
-          console.log(`[Webhook Messaging] Account ${instagramAccountId} not found. Falling back to first database account.`);
+        // Only allow fallback for local development test events with ID "0"
+        if (!igAccount && process.env.NODE_ENV !== "production" && (instagramAccountId === "0" || String(instagramAccountId) === "0")) {
+          console.log(`[Webhook Messaging Dev Fallback] Test event detected (ID 0). Falling back to first database account.`);
           igAccount = await db.igAccount.findFirst();
         }
 
         if (!igAccount) {
-          console.warn(`[Webhook Messaging] No Instagram Account found in database.`);
+          console.warn(`[Webhook Messaging] Account ${instagramAccountId} not linked in database. Skipping event to prevent cross-tenant leaks.`);
           await db.executionLog.update({
             where: { commentId: messageId },
             data: {
-              dmStatus: "FAILED",
-              dmError: "No accounts linked in system database",
+              dmStatus: "SKIPPED",
+              dmError: `Account ${instagramAccountId} not linked in database`,
             },
           });
           continue;
@@ -441,9 +442,11 @@ async function processWebhookPayload(payload: any) {
           console.warn("[Webhook Messaging] Could not resolve sender profile info:", profErr);
         }
 
-        // 3.5 Inbound Email & Phone Detection for Lead Capture Guard
+        // 3.5 Inbound Email & International/Moroccan Phone Detection for Lead Capture Guard
         const emailMatch = messageText ? messageText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/) : null;
-        const phoneMatch = messageText ? messageText.match(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/) : null;
+        // Supports Moroccan formats (06..., 07..., +212..., 05...) and global international formats
+        const phoneRegex = /(?:(?:\+|00)212[\s.-]?|0)[5-7](?:[\s.-]?\d{2}){4}|(?:\+?\d{1,4}[\s.-]?)?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}/;
+        const phoneMatch = messageText ? messageText.match(phoneRegex) : null;
 
         const email = emailMatch ? emailMatch[0] : null;
         const phone = phoneMatch ? phoneMatch[0] : null;
@@ -692,7 +695,12 @@ export async function POST(request: NextRequest) {
 
   const signatureHash = parts[1];
   const rawBody = await request.text();
-  const appSecret = process.env.META_APP_SECRET || process.env.INSTAGRAM_APP_SECRET || "41fed97dd8c8940e7b929984d3f16a5f";
+  const appSecret = process.env.META_APP_SECRET || process.env.INSTAGRAM_APP_SECRET;
+
+  if (!appSecret) {
+    console.error("[Webhook] Configuration error: META_APP_SECRET or INSTAGRAM_APP_SECRET is not configured.");
+    return new NextResponse("Server configuration error: missing App Secret", { status: 500 });
+  }
 
   // Verify HMAC-SHA256 signature using timingSafeEqual
   const expectedHash = crypto
