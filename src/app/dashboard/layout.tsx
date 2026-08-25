@@ -2,9 +2,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import SidebarNav from "@/components/SidebarNav";
-import SignOutButton from "@/components/SignOutButton";
 import AccountSwitcher from "@/components/AccountSwitcher";
 import Link from "next/link";
+import { Settings } from "lucide-react";
 import { db } from "@/lib/db";
 import { getActiveAccount, getAllUserAccounts } from "@/lib/activeAccount";
 import OnboardingModal from "@/components/OnboardingModal";
@@ -103,12 +103,9 @@ export default async function DashboardLayout({
           </div>
 
           {/* User Footer Profile */}
-          <div className="p-3 px-4 border-t border-border flex items-center justify-between gap-2.5 bg-card-footer">
-            <Link
-              href="/dashboard/settings"
-              className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-80 transition-opacity"
-              title="Account settings"
-            >
+          <div className="p-3 px-4 border-t border-border flex items-center justify-between gap-2 bg-card-footer">
+            {/* Profile Display (Left) */}
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
               {/* 32px Circular Google / User Avatar */}
               <div className="w-8 h-8 rounded-full overflow-hidden bg-secondary border border-border flex items-center justify-center font-semibold text-xs text-foreground shrink-0 shadow-inner">
                 {userAvatar ? (
@@ -122,12 +119,20 @@ export default async function DashboardLayout({
                   <span>{(displayName && displayName.length > 0 ? displayName[0] : "U").toUpperCase()}</span>
                 )}
               </div>
-              <div className="truncate">
+              <div className="truncate min-w-0 flex-1">
                 <p className="text-xs font-semibold text-foreground truncate">{displayName || "User"}</p>
-                <p className="text-xs text-muted-foreground truncate">{displayEmail || ""}</p>
+                <p className="text-[11px] text-muted-foreground truncate">{displayEmail || ""}</p>
               </div>
+            </div>
+
+            {/* Settings Action (Right) */}
+            <Link
+              href="/dashboard/settings"
+              className="text-muted-foreground hover:text-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg p-2 transition-colors shrink-0"
+              title="Settings"
+            >
+              <Settings className="w-4 h-4" />
             </Link>
-            <SignOutButton />
           </div>
         </div>
       </aside>
