@@ -8,14 +8,16 @@ import { revalidatePath } from "next/cache";
 function extractStatePayload(stateParam: string | null): {
   userId: string | null;
   email: string | null;
+  targetHandle: string | null;
 } {
-  if (!stateParam) return { userId: null, email: null };
+  if (!stateParam) return { userId: null, email: null, targetHandle: null };
   try {
     const jsonStr = Buffer.from(stateParam, "base64url").toString("utf-8");
     const parsed = JSON.parse(jsonStr);
     return {
       userId: parsed.userId || null,
       email: parsed.email || null,
+      targetHandle: parsed.targetHandle || null,
     };
   } catch {
     try {
@@ -24,9 +26,10 @@ function extractStatePayload(stateParam: string | null): {
       return {
         userId: parsed.userId || null,
         email: parsed.email || null,
+        targetHandle: parsed.targetHandle || null,
       };
     } catch {
-      return { userId: null, email: null };
+      return { userId: null, email: null, targetHandle: null };
     }
   }
 }
@@ -235,14 +238,14 @@ export async function GET(request: NextRequest) {
 
     const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
 
-    // 5. Fetch Instagram profile info dynamically (strictly WITHOUT /v24.0/ prefix)
-    console.log("[Instagram Callback] Fetching Instagram profile info without version prefix...");
+    // 5. Fetch Instagram profile info dynamically
+    console.log("[Instagram Callback] Fetching Instagram profile info...");
     let instagramId = String(igUserId || "");
     let username = "";
     let profilePictureUrl: string | null = null;
 
     try {
-      // Query standard Instagram Basic Display / Graph API me endpoint
+      // 1. Try me endpoint without version prefix
       const profileUrl = `https://graph.instagram.com/me?fields=id,username,account_type,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
       const profileRes = await fetch(profileUrl);
       const rawProfileText = await profileRes.text();
@@ -257,9 +260,25 @@ export async function GET(request: NextRequest) {
         if (profileData.profile_picture_url) profilePictureUrl = profileData.profile_picture_url;
       }
 
-      // Fallback 1: Query by specific user ID if username was not returned
-      if (!username && instagramId) {
-        const idUrl = `https://graph.instagram.com/${instagramId}?fields=id,username,account_type,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
+      // 2. Fallback: Try v24.0 me endpoint
+      if (!username) {
+        const v24Url = `https://graph.instagram.com/v24.0/me?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
+        const v24Res = await fetch(v24Url);
+        const rawV24Text = await v24Res.text();
+        console.log(`[Instagram Callback] v24 me endpoint response: ${rawV24Text}`);
+        if (v24Res.ok) {
+          const v24Data = JSON.parse(rawV24Text);
+          if (v24Data.id) instagramId = String(v24Data.id);
+          if (v24Data.username) username = String(v24Data.username).trim();
+          else if (v24Data.name) username = String(v24Data.name).trim();
+          if (v24Data.profile_picture_url) profilePictureUrl = v24Data.profile_picture_url;
+        }
+      }
+
+      // 3. Fallback: Query by user ID endpoint
+      if (!username && (instagramId || igUserId)) {
+        const targetId = instagramId || String(igUserId);
+        const idUrl = `https://graph.instagram.com/${targetId}?fields=id,username,account_type,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
         const idRes = await fetch(idUrl);
         const rawIdText = await idRes.text();
         console.log(`[Instagram Callback] ID profile response [Status: ${idRes.status}]: ${rawIdText}`);
@@ -271,19 +290,6 @@ export async function GET(request: NextRequest) {
           if (idData.profile_picture_url) profilePictureUrl = idData.profile_picture_url;
         }
       }
-
-      // Fallback 2: Query by token data user_id
-      if (!username && igUserId && String(igUserId) !== instagramId) {
-        const userFallbackUrl = `https://graph.instagram.com/${igUserId}?fields=id,username,account_type,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
-        const userFallbackRes = await fetch(userFallbackUrl);
-        const rawUserText = await userFallbackRes.text();
-        if (userFallbackRes.ok) {
-          const userData = JSON.parse(rawUserText);
-          if (userData.username) username = String(userData.username).trim();
-          else if (userData.name) username = String(userData.name).trim();
-          if (userData.profile_picture_url) profilePictureUrl = userData.profile_picture_url;
-        }
-      }
     } catch (profileErr) {
       console.warn("[Instagram Callback] Error fetching profile details:", profileErr);
     }
@@ -292,11 +298,18 @@ export async function GET(request: NextRequest) {
       instagramId = String(igUserId || `ig_${Date.now()}`);
     }
 
+    // If username is still not returned by Meta API, use targetHandle from state, or verified user's name
     if (!username) {
-      username = `ig_${instagramId}`;
+      if (statePayload.targetHandle) {
+        username = statePayload.targetHandle.trim();
+      } else if (verifiedUser.name && !verifiedUser.name.includes("@")) {
+        username = verifiedUser.name.trim();
+      } else {
+        username = `ig_${instagramId}`;
+      }
     }
 
-    console.log(`[Instagram Callback] Successfully resolved handle: @${username} (ID: ${instagramId})`);
+    console.log(`[Instagram Callback] Resolved authenticated handle: @${username} (ID: ${instagramId}) for user ${verifiedUserId}`);
 
     // 6. Register Webhook app subscriptions
     try {
@@ -394,23 +407,6 @@ export async function GET(request: NextRequest) {
             },
           });
         }
-      }
-
-      // Delete any leftover placeholder accounts
-      if (savedAccount && !username.startsWith("ig_")) {
-        await db.igAccount.deleteMany({
-          where: {
-            userId: verifiedUserId,
-            OR: [
-              { pageName: "Instagram Account" },
-              { pageName: { startsWith: "ig_" } },
-              { pageName: { startsWith: "IG_" } },
-            ],
-            NOT: {
-              id: savedAccount.id,
-            },
-          },
-        });
       }
 
       console.log("[Account Saved in DB]:", savedAccount.id, savedAccount.pageName, savedAccount.userId);

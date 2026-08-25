@@ -62,30 +62,9 @@ export default async function AccountsPage({ searchParams }: PageProps) {
 
   const userId = resolvedUserId;
 
-  // Auto-cleanup legacy placeholder accounts
-  try {
-    await db.igAccount.deleteMany({
-      where: {
-        userId,
-        OR: [
-          { pageName: "Instagram Account" },
-          { pageName: { startsWith: "ig_" } },
-          { pageName: { startsWith: "IG_" } },
-        ],
-      },
-    });
-  } catch (cleanErr) {
-    console.warn("Cleanup warning:", cleanErr);
-  }
-
   const rawAccounts = await db.igAccount.findMany({
     where: {
       userId,
-      NOT: [
-        { pageName: "Instagram Account" },
-        { pageName: { startsWith: "ig_" } },
-        { pageName: { startsWith: "IG_" } },
-      ],
     },
     orderBy: { createdAt: "desc" },
   });

@@ -27,17 +27,12 @@ export async function getActiveAccount(userId: string): Promise<IgAccount | null
 }
 
 /**
- * Retrieves all valid connected Instagram accounts for the user, strictly deduplicated by handle and excluding numeric placeholders.
+ * Retrieves all valid connected Instagram accounts for the user.
  */
 export async function getAllUserAccounts(userId: string): Promise<IgAccount[]> {
   const rawAccounts = await db.igAccount.findMany({
     where: {
       userId,
-      NOT: [
-        { pageName: "Instagram Account" },
-        { pageName: { startsWith: "ig_" } },
-        { pageName: { startsWith: "IG_" } },
-      ],
     },
     orderBy: { createdAt: "desc" },
   });

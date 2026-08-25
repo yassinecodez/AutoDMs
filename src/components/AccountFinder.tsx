@@ -66,7 +66,7 @@ export function AccountFinder() {
     try {
       const handleToPass = targetHandle || (foundProfile ? foundProfile.username : cleanHandle(handleInput));
       const urlEndpoint = handleToPass
-        ? `/api/auth/instagram/url?handle=${encodeURIComponent(handleToPass)}`
+        ? `/api/auth/instagram/url?targetHandle=${encodeURIComponent(handleToPass)}`
         : "/api/auth/instagram/url";
 
       const res = await fetch(urlEndpoint);
