@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getActiveAccount } from "@/lib/activeAccount";
 
 export async function createAutomation(formData: FormData) {
   const session = await getServerSession(authOptions);
@@ -11,6 +12,7 @@ export async function createAutomation(formData: FormData) {
     throw new Error("Unauthorized");
   }
   const userId = session.user.id;
+  const activeAccount = await getActiveAccount(userId);
 
   const name = formData.get("name") as string;
   const triggerType = formData.get("triggerType") as string;
@@ -22,6 +24,8 @@ export async function createAutomation(formData: FormData) {
   const triggerSource = (formData.get("triggerSource") as string) || "COMMENTS";
   const enableLeadCapture = formData.get("enableLeadCapture") === "true";
   const leadConfirmationDm = formData.get("leadConfirmationDm") as string;
+  const formIgAccountId = formData.get("igAccountId") as string;
+  const igAccountId = formIgAccountId || activeAccount?.id || null;
 
   const buttonTitle = formData.get("buttonTitle") as string;
   const buttonUrl = formData.get("buttonUrl") as string;
@@ -50,6 +54,7 @@ export async function createAutomation(formData: FormData) {
   await db.automation.create({
     data: {
       userId,
+      igAccountId,
       name,
       triggerType,
       triggerKeyword: triggerType === "ALL" ? null : triggerKeyword,

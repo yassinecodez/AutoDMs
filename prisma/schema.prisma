@@ -36,6 +36,7 @@ model IgAccount {
   tokenExpiresAt     DateTime?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  automations        Automation[]
   leads              Lead[]
 }
 
@@ -43,6 +44,8 @@ model Automation {
   id                  String         @id @default(uuid())
   userId              String
   user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  igAccountId         String?
+  igAccount           IgAccount?     @relation(fields: [igAccountId], references: [id], onDelete: Cascade)
   name                String
   triggerType         String         // "ALL", "KEYWORD", "EXACT"
   triggerKeyword      String?        // Target text to match against
@@ -64,6 +67,7 @@ model Automation {
   leads               Lead[]
 
   @@index([userId, active, triggerSource])
+  @@index([igAccountId])
 }
 
 model ExecutionLog {

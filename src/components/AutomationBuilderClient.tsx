@@ -17,9 +17,13 @@ interface IgAccount {
 
 interface AutomationBuilderProps {
   connectedAccounts: IgAccount[];
+  activeAccountId?: string;
 }
 
-export default function AutomationBuilderClient({ connectedAccounts }: AutomationBuilderProps) {
+export default function AutomationBuilderClient({
+  connectedAccounts,
+  activeAccountId,
+}: AutomationBuilderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const templateParam = searchParams.get("template");
@@ -215,6 +219,10 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
     formData.append("secondaryButtonTitle", enableButtons ? secondaryButtonTitle : "");
     formData.append("secondaryButtonUrl", enableButtons ? secondaryButtonUrl : "");
 
+    if (activeAccountId) {
+      formData.append("igAccountId", activeAccountId);
+    }
+
     try {
       await createAutomation(formData);
       router.push("/dashboard/automations");
@@ -224,7 +232,8 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
     }
   };
 
-  const username = connectedAccounts[0]?.pageName || "your_brand";
+  const activeAccount = connectedAccounts.find((a) => a.id === activeAccountId) || connectedAccounts[0];
+  const username = activeAccount?.pageName || "your_brand";
   const firstKeyword = triggerKeyword ? triggerKeyword.split(",")[0].trim() : "PRICE";
 
   return (

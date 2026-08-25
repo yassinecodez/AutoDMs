@@ -3,8 +3,10 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import SidebarNav from "@/components/SidebarNav";
 import SignOutButton from "@/components/SignOutButton";
+import AccountSwitcher from "@/components/AccountSwitcher";
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { getActiveAccount, getAllUserAccounts } from "@/lib/activeAccount";
 
 export default async function DashboardLayout({
   children,
@@ -12,13 +14,14 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/login");
   }
+  const userId: string = session.user.id;
 
-  const [user, igAccount] = await Promise.all([
+  const [user, activeAccount, allAccounts] = await Promise.all([
     db.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: {
         name: true,
         email: true,
@@ -28,14 +31,8 @@ export default async function DashboardLayout({
         planType: true,
       },
     }),
-    db.igAccount.findFirst({
-      where: {
-        userId: session.user.id,
-        NOT: { pageName: "Instagram Account" },
-      },
-      select: { pageName: true, profilePictureUrl: true },
-      orderBy: { createdAt: "desc" },
-    }),
+    getActiveAccount(userId),
+    getAllUserAccounts(userId),
   ]);
 
   const dmsCount = user?.dmsCountThisMonth || 0;
@@ -62,6 +59,18 @@ export default async function DashboardLayout({
             </span>
           </div>
 
+          {/* Top-Left ManyChat & Vercel Style Workspace Switcher */}
+          <div className="p-3 border-b border-[#1A1A1A]">
+            <AccountSwitcher
+              accounts={allAccounts.map((a) => ({
+                id: a.id,
+                pageName: a.pageName,
+                profilePictureUrl: a.profilePictureUrl,
+              }))}
+              activeAccountId={activeAccount?.id || null}
+            />
+          </div>
+
           {/* Navigation Links */}
           <nav className="p-3">
             <SidebarNav />
@@ -69,43 +78,9 @@ export default async function DashboardLayout({
         </div>
 
         <div>
-          {/* Connected Profile Status & Monthly Meter */}
+          {/* Monthly Quota Meter */}
           <div className="p-3 mx-3 mb-3 bg-[#111111] border border-[#222222] rounded-2xl space-y-2.5 shrink-0 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-            {igAccount ? (
-              <div className="flex items-center justify-between gap-2 text-[11px]">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-5 h-5 rounded-full overflow-hidden bg-[#1A1A1A] border border-[#2B2B2B] flex items-center justify-center shrink-0">
-                    {igAccount.profilePictureUrl ? (
-                      <img
-                        src={igAccount.profilePictureUrl}
-                        alt={igAccount.pageName}
-                        className="w-full h-full object-cover"
-                        crossOrigin="anonymous"
-                      />
-                    ) : (
-                      <span className="text-[9px] font-bold text-white">
-                        {(igAccount.pageName ? igAccount.pageName[0] : "I").toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-zinc-300 font-semibold truncate">@{igAccount.pageName}</span>
-                </div>
-                <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-medium shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Live
-                </span>
-              </div>
-            ) : (
-              <div className="text-[11px] text-zinc-500 flex items-center justify-between">
-                <span>No profile linked</span>
-                <Link href="/dashboard/accounts" className="text-[10px] text-white hover:underline">
-                  Connect &rarr;
-                </Link>
-              </div>
-            )}
-
-            {/* Quota Progress Bar */}
-            <div className="space-y-1 pt-0.5">
+            <div className="space-y-1">
               <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
                 <span>DMs: <strong className="text-white font-mono">{dmsCount}</strong>/{dmsLimit}</span>
                 <span className="text-zinc-300 font-mono">{usagePct}%</span>
@@ -122,7 +97,7 @@ export default async function DashboardLayout({
               href="/dashboard/settings"
               className="block text-center text-[10px] font-medium text-zinc-400 hover:text-white transition-colors pt-0.5"
             >
-              Manage Plan &rarr;
+              Manage plan &rarr;
             </Link>
           </div>
 

@@ -280,8 +280,9 @@ export async function GET(request: NextRequest) {
     const encryptedToken = encrypt(longLivedToken);
     const pageIdValue = `ig_${instagramId}`;
 
+    let savedAccount: any = null;
     try {
-      await db.igAccount.upsert({
+      savedAccount = await db.igAccount.upsert({
         where: { instagramAccountId: instagramId },
         update: {
           userId: verifiedUser.id,
@@ -328,9 +329,21 @@ export async function GET(request: NextRequest) {
     revalidatePath("/dashboard/leads");
     revalidatePath("/dashboard/logs");
 
-    return NextResponse.redirect(
-      new URL("/dashboard/accounts?status=SUCCESS&count=1", request.url)
+    const response = NextResponse.redirect(
+      new URL("/dashboard?status=SUCCESS&count=1", request.url)
     );
+
+    if (savedAccount?.id) {
+      response.cookies.set("active_ig_account_id", savedAccount.id, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+      });
+    }
+
+    return response;
   } catch (err: any) {
     console.error("[Instagram Callback] Unexpected error during OAuth callback:", err);
     return NextResponse.redirect(

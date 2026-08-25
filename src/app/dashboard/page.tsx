@@ -17,15 +17,18 @@ import {
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PLANS } from "@/lib/plans";
+import { getActiveAccount } from "@/lib/activeAccount";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardOverview() {
   const session = await getServerSession(authOptions);
-  if (!session || !session.user) {
+  if (!session?.user?.id) {
     redirect("/login");
   }
-  const userId = session.user.id;
+  const userId: string = session.user.id;
+
+  const activeAccount = await getActiveAccount(userId);
 
   const [
     accounts,
@@ -36,31 +39,65 @@ export default async function DashboardOverview() {
     user,
   ] = await Promise.all([
     db.igAccount.findMany({
-      where: { userId },
+      where: {
+        userId,
+        NOT: { pageName: "Instagram Account" },
+      },
       select: {
         id: true,
         instagramAccountId: true,
         pageName: true,
+        profilePictureUrl: true,
         tokenExpiresAt: true,
       },
     }),
     db.automation.count({
-      where: { userId },
-    }),
-    db.executionLog.count({
       where: {
-        automation: { userId },
+        userId,
+        ...(activeAccount
+          ? {
+              OR: [
+                { igAccountId: activeAccount.id },
+                { igAccountId: null },
+              ],
+            }
+          : {}),
       },
     }),
     db.executionLog.count({
       where: {
-        automation: { userId },
+        automation: {
+          userId,
+          ...(activeAccount
+            ? {
+                OR: [
+                  { igAccountId: activeAccount.id },
+                  { igAccountId: null },
+                ],
+              }
+            : {}),
+        },
+      },
+    }),
+    db.executionLog.count({
+      where: {
+        automation: {
+          userId,
+          ...(activeAccount
+            ? {
+                OR: [
+                  { igAccountId: activeAccount.id },
+                  { igAccountId: null },
+                ],
+              }
+            : {}),
+        },
         dmStatus: "SUCCESS",
       },
     }),
     db.lead.count({
       where: {
-        igAccount: { userId },
+        ...(activeAccount ? { igAccountId: activeAccount.id } : { igAccount: { userId } }),
       },
     }),
     db.user.findUnique({
@@ -75,7 +112,7 @@ export default async function DashboardOverview() {
     }),
   ]);
 
-  const primaryAccount = accounts[0];
+  const currentAccount = activeAccount || accounts[0];
   const userName =
     user?.name ||
     session.user.name ||
@@ -131,47 +168,112 @@ export default async function DashboardOverview() {
             Hello, {userName}!
           </h1>
           <div className="flex items-center gap-2 text-xs text-zinc-400">
-            {primaryAccount ? (
+            {currentAccount ? (
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#111111] border border-[#222222] font-medium text-zinc-200">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  @{primaryAccount.pageName}
+                  @{currentAccount.pageName}
                   <span className="text-zinc-500">•</span>
                   <span className="text-emerald-400">Connected</span>
                 </span>
-                <Link
-                  href="/dashboard/logs"
-                  className="text-zinc-400 hover:text-white transition-colors underline-offset-4 hover:underline ml-1"
-                >
-                  View Activity Logs &rarr;
-                </Link>
+                <span className="text-zinc-500 hidden sm:inline">Active workspace</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#111111] border border-amber-900/40 text-amber-300 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  No Instagram account connected
-                </span>
-                <span className="text-zinc-600">•</span>
-                <Link
-                  href="/dashboard/accounts"
-                  className="text-white hover:text-zinc-300 font-medium transition-colors underline-offset-4 hover:underline"
-                >
-                  Connect Profile &rarr;
-                </Link>
+              <div className="flex items-center gap-2 text-amber-400">
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span>No Instagram account linked</span>
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <Link
-            href="/dashboard/automations/builder"
-            className="inline-flex items-center gap-2 h-10 px-4 bg-white hover:bg-zinc-200 text-black font-medium rounded-lg text-sm transition-colors shadow-sm"
-          >
-            <Plus className="w-4 h-4" strokeWidth={2} />
-            New automation
-          </Link>
+        <div className="flex items-center gap-3">
+          {accounts.length === 0 ? (
+            <Link
+              href="/dashboard/accounts"
+              className="h-10 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-medium text-xs flex items-center gap-2 transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Connect Instagram profile</span>
+            </Link>
+          ) : (
+            <Link
+              href="/dashboard/automations/builder"
+              className="h-10 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-medium text-xs flex items-center gap-2 transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New automation</span>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* SECTION 1.5: 4-Column Stat Metric Cards */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Total DMs Sent */}
+        <div className="p-5 bg-[#0A0A0A] border border-[#222222] rounded-2xl space-y-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-700 transition-all duration-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-zinc-400">DMs sent</span>
+            <div className="w-8 h-8 rounded-lg bg-[#141414] border border-[#262626] flex items-center justify-center text-zinc-300">
+              <Send className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-white font-mono">{totalDmsCount}</div>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Automated direct deliveries</p>
+          </div>
+        </div>
+
+        {/* Card 2: Active Rules */}
+        <div className="p-5 bg-[#0A0A0A] border border-[#222222] rounded-2xl space-y-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-700 transition-all duration-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-zinc-400">Active rules</span>
+            <div className="w-8 h-8 rounded-lg bg-[#141414] border border-[#262626] flex items-center justify-center text-zinc-300">
+              <Zap className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-white font-mono">{automationsCount}</div>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Live triggers running</p>
+          </div>
+        </div>
+
+        {/* Card 3: Captured Leads */}
+        <div className="p-5 bg-[#0A0A0A] border border-[#222222] rounded-2xl space-y-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-700 transition-all duration-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-zinc-400">Captured leads</span>
+            <div className="w-8 h-8 rounded-lg bg-[#141414] border border-[#262626] flex items-center justify-center text-zinc-300">
+              <Users className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-white font-mono">{capturedLeadsCount}</div>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Emails & phone numbers</p>
+          </div>
+        </div>
+
+        {/* Card 4: Quota Usage */}
+        <div className="p-5 bg-[#0A0A0A] border border-[#222222] rounded-2xl space-y-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-700 transition-all duration-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-zinc-400">Monthly quota</span>
+            <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-[#161616] border border-[#262626] text-zinc-300">
+              {planDetails.name}
+            </span>
+          </div>
+          <div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold text-white font-mono">{dmsUsed}</span>
+              <span className="text-xs text-zinc-500 font-mono">/{dmsLimit}</span>
+            </div>
+            <div className="w-full h-1.5 bg-[#141414] rounded-full overflow-hidden mt-2 border border-[#222222]">
+              <div
+                style={{ width: `${usagePercent}%` }}
+                className="h-full bg-white rounded-full transition-all duration-300"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -249,182 +351,142 @@ export default async function DashboardOverview() {
                   <h3 className="text-sm font-semibold text-white">Getting started</h3>
                   <p className="text-xs text-zinc-400">Complete setup to launch your Instagram pipeline</p>
                 </div>
-                <span className="text-xs font-medium text-zinc-400 bg-[#141414] border border-[#222222] px-2.5 py-1 rounded-full">
+                <span className="text-xs font-medium text-zinc-400 bg-[#141414] border border-[#222222] px-2.5 py-1 rounded-full font-mono">
                   {completedSteps} of 3 completed
                 </span>
               </div>
 
-              {/* Progress Bar */}
-              <div className="w-full bg-[#181818] h-1.5 rounded-full overflow-hidden">
+              {/* Progress track */}
+              <div className="w-full h-1.5 bg-[#141414] rounded-full overflow-hidden border border-[#222222]">
                 <div
-                  className="bg-white h-full transition-all duration-500 rounded-full"
                   style={{ width: `${checklistPercent}%` }}
+                  className="h-full bg-white rounded-full transition-all duration-300"
                 />
               </div>
 
-              {/* Checklist Items */}
+              {/* Step Checklist Items */}
               <div className="space-y-3 pt-2">
                 {/* Step 1: Connect Account */}
-                <div className="flex items-start justify-between p-3 rounded-lg bg-[#111111]/70 border border-[#222222]/80">
-                  <div className="flex items-start gap-3">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-[#111111] border border-[#1f1f1f]">
+                  <div className="flex items-center gap-3">
                     {step1Done ? (
-                      <CheckCircle2 className="w-4 h-4 text-white shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     ) : (
-                      <Circle className="w-4 h-4 text-zinc-600 shrink-0 mt-0.5" />
+                      <Circle className="w-4 h-4 text-zinc-600 shrink-0" />
                     )}
                     <div>
-                      <p className={`text-xs font-medium ${step1Done ? "text-zinc-200 line-through" : "text-white"}`}>
-                        Connect Instagram Business Account
+                      <p className={`text-xs font-medium ${step1Done ? "text-zinc-200" : "text-zinc-400"}`}>
+                        1. Connect your professional Instagram account
                       </p>
                       <p className="text-[11px] text-zinc-500">
-                        {step1Done
-                          ? `Connected as @${primaryAccount?.pageName}`
-                          : "Link your Meta Facebook Page & Instagram account"}
+                        {step1Done ? `Connected as @${currentAccount?.pageName}` : "Link your Creator or Business account"}
                       </p>
                     </div>
                   </div>
                   {!step1Done && (
                     <Link
                       href="/dashboard/accounts"
-                      className="text-xs font-medium text-white hover:underline shrink-0 ml-2"
+                      className="text-xs text-white hover:underline font-medium"
                     >
                       Connect &rarr;
                     </Link>
                   )}
                 </div>
 
-                {/* Step 2: Create Automation */}
-                <div className="flex items-start justify-between p-3 rounded-lg bg-[#111111]/70 border border-[#222222]/80">
-                  <div className="flex items-start gap-3">
+                {/* Step 2: Create First Rule */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-[#111111] border border-[#1f1f1f]">
+                  <div className="flex items-center gap-3">
                     {step2Done ? (
-                      <CheckCircle2 className="w-4 h-4 text-white shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     ) : (
-                      <Circle className="w-4 h-4 text-zinc-600 shrink-0 mt-0.5" />
+                      <Circle className="w-4 h-4 text-zinc-600 shrink-0" />
                     )}
                     <div>
-                      <p className={`text-xs font-medium ${step2Done ? "text-zinc-200 line-through" : "text-white"}`}>
-                        Create your first Automation rule
+                      <p className={`text-xs font-medium ${step2Done ? "text-zinc-200" : "text-zinc-400"}`}>
+                        2. Create your first automation rule
                       </p>
                       <p className="text-[11px] text-zinc-500">
-                        {step2Done
-                          ? `${automationsCount} active automation${automationsCount > 1 ? "s" : ""} configured`
-                          : "Set keyword triggers, instant DMs, and public replies"}
+                        {step2Done ? `${automationsCount} active rules configured` : "Choose a template or build custom keywords"}
                       </p>
                     </div>
                   </div>
                   {!step2Done && (
                     <Link
                       href="/dashboard/automations/builder"
-                      className="text-xs font-medium text-white hover:underline shrink-0 ml-2"
+                      className="text-xs text-white hover:underline font-medium"
                     >
-                      Build &rarr;
+                      Create &rarr;
                     </Link>
                   )}
                 </div>
 
-                {/* Step 3: Test Live */}
-                <div className="flex items-start justify-between p-3 rounded-lg bg-[#111111]/70 border border-[#222222]/80">
-                  <div className="flex items-start gap-3">
+                {/* Step 3: Test Real-Time Trigger */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-[#111111] border border-[#1f1f1f]">
+                  <div className="flex items-center gap-3">
                     {step3Done ? (
-                      <CheckCircle2 className="w-4 h-4 text-white shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                     ) : (
-                      <Circle className="w-4 h-4 text-zinc-600 shrink-0 mt-0.5" />
+                      <Circle className="w-4 h-4 text-zinc-600 shrink-0" />
                     )}
                     <div>
-                      <p className={`text-xs font-medium ${step3Done ? "text-zinc-200 line-through" : "text-white"}`}>
-                        Test on a live Reel or Post
+                      <p className={`text-xs font-medium ${step3Done ? "text-zinc-200" : "text-zinc-400"}`}>
+                        3. Trigger your first real-time DM
                       </p>
                       <p className="text-[11px] text-zinc-500">
-                        {step3Done
-                          ? `${totalLogsCount} total dispatches recorded`
-                          : "Leave a test comment on your Instagram post to verify delivery"}
+                        {step3Done ? `${totalDmsCount} DMs successfully delivered` : "Leave a test comment on your post to test AutoDMs"}
                       </p>
                     </div>
                   </div>
-                  {step3Done ? (
+                  {step3Done && (
                     <Link
                       href="/dashboard/logs"
-                      className="text-xs font-medium text-zinc-400 hover:text-white shrink-0 ml-2"
+                      className="text-xs text-zinc-400 hover:text-white font-medium"
                     >
-                      Logs &rarr;
-                    </Link>
-                  ) : (
-                    <Link
-                      href="/dashboard/logs"
-                      className="text-xs font-medium text-zinc-400 hover:text-white shrink-0 ml-2"
-                    >
-                      View stream &rarr;
+                      View logs &rarr;
                     </Link>
                   )}
                 </div>
               </div>
             </div>
+
+            <div className="pt-4 border-t border-[#1F1F1F] flex items-center justify-between text-xs text-zinc-500">
+              <span>All steps completed?</span>
+              <Link
+                href="/dashboard/automations"
+                className="text-white hover:underline font-medium"
+              >
+                Manage automations &rarr;
+              </Link>
+            </div>
           </div>
 
-          {/* Right Card: Monthly Plan & DM Usage */}
-          <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl p-6 space-y-5 flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-semibold text-white">Monthly DM Usage</h3>
-                  <p className="text-xs text-zinc-400">Current cycle automation dispatches</p>
-                </div>
-                <span className="text-xs font-semibold text-white bg-[#141414] border border-[#262626] px-2.5 py-1 rounded-md">
-                  {planDetails.name}
-                </span>
+          {/* Right Card: Quick Automation Builder Card */}
+          <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+            <div className="space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#262626] flex items-center justify-center text-zinc-300">
+                <Zap className="w-5 h-5" strokeWidth={1.75} />
               </div>
-
-              {/* Quota Progress */}
-              <div className="space-y-2 pt-1">
-                <div className="flex items-baseline justify-between text-xs">
-                  <span className="text-2xl font-bold text-white tracking-tight">
-                    {dmsUsed.toLocaleString()}
-                    <span className="text-sm font-normal text-zinc-500 ml-1.5">
-                      / {dmsLimit.toLocaleString()} DMs
-                    </span>
-                  </span>
-                  <span className="text-xs font-medium text-zinc-400">
-                    {usagePercent}% used
-                  </span>
-                </div>
-
-                <div className="w-full bg-[#181818] h-2 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-500 rounded-full ${
-                      usagePercent >= 90
-                        ? "bg-red-500"
-                        : usagePercent >= 75
-                        ? "bg-amber-500"
-                        : "bg-white"
-                    }`}
-                    style={{ width: `${usagePercent}%` }}
-                  />
-                </div>
-
-                <p className="text-[11px] text-zinc-500 pt-1">
-                  Usage resets automatically every 30 days. No hidden overage charges.
+              <div className="space-y-1">
+                <h3 className="text-base font-semibold text-white">Create custom automation</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Design complex triggers with multiple keyword variants, specific post targets, story mention rewards, and lead capture forms.
                 </p>
-              </div>
-
-              {/* Key Quick Stats */}
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                <div className="p-3 rounded-lg bg-[#111111] border border-[#222222]">
-                  <p className="text-[11px] text-zinc-500 font-medium">Delivered DMs</p>
-                  <p className="text-lg font-bold text-white mt-0.5">{totalDmsCount.toLocaleString()}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-[#111111] border border-[#222222]">
-                  <p className="text-[11px] text-zinc-500 font-medium">Captured Leads</p>
-                  <p className="text-lg font-bold text-white mt-0.5">{capturedLeadsCount.toLocaleString()}</p>
-                </div>
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="space-y-3">
               <Link
-                href="/dashboard/settings"
-                className="w-full inline-flex items-center justify-center gap-1.5 h-10 bg-white hover:bg-zinc-200 text-black font-medium rounded-lg text-xs transition-colors shadow-sm"
+                href="/dashboard/automations/builder"
+                className="w-full h-10 bg-white hover:bg-zinc-200 text-black font-medium rounded-xl text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
               >
-                Upgrade Plan &rarr;
+                <Plus className="w-4 h-4" />
+                <span>Open automation builder</span>
+              </Link>
+              <Link
+                href="/dashboard/templates"
+                className="w-full h-10 bg-[#111111] hover:bg-[#161616] text-zinc-300 hover:text-white border border-[#262626] font-medium rounded-xl text-xs flex items-center justify-center gap-2 transition-colors"
+              >
+                <span>Browse template library</span>
               </Link>
             </div>
           </div>

@@ -3,21 +3,23 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import LeadsTable from "@/components/LeadsTable";
+import { getActiveAccount } from "@/lib/activeAccount";
 
 export const dynamic = "force-dynamic";
 
 export default async function LeadsPage() {
   const session = await getServerSession(authOptions);
-  if (!session || !session.user) {
+  if (!session?.user?.id) {
     redirect("/login");
   }
-  const userId = session.user.id;
+  const userId: string = session.user.id;
+  const activeAccount = await getActiveAccount(userId);
 
   const leads = await db.lead.findMany({
     where: {
-      igAccount: {
-        userId,
-      },
+      ...(activeAccount
+        ? { igAccountId: activeAccount.id }
+        : { igAccount: { userId } }),
     },
     include: {
       automation: {
