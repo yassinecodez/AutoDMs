@@ -16,15 +16,11 @@ import {
   Circle,
   Plus,
   ScrollText,
-  Camera,
-  ExternalLink,
-  Gift,
-  FileText,
 } from "lucide-react";
 import { getActiveAccount } from "@/lib/activeAccount";
 import { PLANS } from "@/lib/plans";
 import { getCommenterAvatar } from "@/lib/commenterAvatar";
-import ActiveAutomationsWidget from "@/components/ActiveAutomationsWidget";
+import OverviewTemplatesSlider from "@/components/OverviewTemplatesSlider";
 
 export const dynamic = "force-dynamic";
 
@@ -167,6 +163,7 @@ export default async function DashboardOverview() {
         triggerSource: true,
         triggerKeyword: true,
         triggerScope: true,
+        replyDmMessage: true,
         active: true,
         _count: {
           select: { logs: true },
@@ -265,7 +262,7 @@ export default async function DashboardOverview() {
       </div>
 
       {/* ========================================================================= */}
-      {/* SECTION 1.5: 4-Column Stat Metric Cards */}
+      {/* SECTION 2: 4-Column Stat Metric Cards */}
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {/* Card 1: Total DMs Sent */}
@@ -337,173 +334,22 @@ export default async function DashboardOverview() {
       </div>
 
       {/* ========================================================================= */}
-      {/* SECTION 2: Dynamic Visual Flow Cards ("Start here") */}
+      {/* SECTION 3: 6-Template Arrow Slider ("Start here") */}
+      {/* ========================================================================= */}
+      <OverviewTemplatesSlider customTemplates={topAutomations} />
+
+      {/* ========================================================================= */}
+      {/* SECTION 4: Simplified Operations & Activity Feed */}
       {/* ========================================================================= */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-foreground">
-            Start here
-          </h2>
-          <Link
-            href="/dashboard/automations"
-            className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-          >
-            View all rules ({automationsCount})
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {/* Card 1: Comment to DM Link Flow */}
-          <div className="bg-card hover:bg-zinc-50 dark:hover:bg-[#0D0D0D] border border-border hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl p-6 transition-all duration-200 flex flex-col justify-between min-h-[290px] shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] group">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center text-foreground group-hover:border-zinc-400 dark:group-hover:border-zinc-500 transition-colors">
-                  <MessageCircle className="w-5 h-5" strokeWidth={1.75} />
-                </div>
-                <span className="bg-secondary border border-border text-foreground text-xs px-2.5 py-0.5 rounded-full font-medium">
-                  Popular
-                </span>
-              </div>
-
-              <div className="space-y-1">
-                <h3 className="text-base font-semibold text-foreground">
-                  Auto-DM links from comments
-                </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Send direct checkout links or pricing when followers comment on your Reels or Posts.
-                </p>
-              </div>
-
-              {/* Visual Micro-Flow Mockup */}
-              <div className="p-3 bg-secondary/60 border border-border rounded-xl flex items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-1.5 min-w-0 bg-card px-2.5 py-1 rounded-lg border border-border shadow-xs">
-                  <span className="text-[11px] font-mono font-medium text-foreground">&quot;PRICE&quot;</span>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                <div className="flex items-center gap-1.5 min-w-0 bg-card px-2.5 py-1 rounded-lg border border-border text-foreground font-medium text-[11px] shadow-xs">
-                  <span>Shop Link</span>
-                  <ExternalLink className="w-3 h-3 text-muted-foreground" />
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4">
-              <Link
-                href="/dashboard/automations/builder?template=comment_to_dm"
-                className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
-              >
-                <span>Use template</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Card 2: Story Mention Reward Flow */}
-          <div className="bg-card hover:bg-zinc-50 dark:hover:bg-[#0D0D0D] border border-border hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl p-6 transition-all duration-200 flex flex-col justify-between min-h-[290px] shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] group">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center text-foreground group-hover:border-zinc-400 dark:group-hover:border-zinc-500 transition-colors">
-                  <Sparkles className="w-5 h-5 text-amber-500" strokeWidth={1.75} />
-                </div>
-                <span className="bg-secondary border border-border text-foreground text-xs px-2.5 py-0.5 rounded-full font-medium">
-                  High conversion
-                </span>
-              </div>
-
-              <div className="space-y-1">
-                <h3 className="text-base font-semibold text-foreground">
-                  Reward story mentions
-                </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Automatically reward followers with coupon codes or VIP links when they mention you in stories.
-                </p>
-              </div>
-
-              {/* Visual Micro-Flow Mockup */}
-              <div className="p-3 bg-secondary/60 border border-border rounded-xl flex items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-1.5 min-w-0 bg-card px-2.5 py-1 rounded-lg border border-border shadow-xs">
-                  <Camera className="w-3 h-3 text-amber-500 shrink-0" />
-                  <span className="text-[11px] font-medium text-foreground truncate">@story tag</span>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                <div className="flex items-center gap-1.5 min-w-0 bg-card px-2.5 py-1 rounded-lg border border-border text-foreground font-medium text-[11px] shadow-xs">
-                  <Gift className="w-3 h-3 text-amber-500 shrink-0" />
-                  <span>15% Coupon</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4">
-              <Link
-                href="/dashboard/automations/builder?template=story_mention"
-                className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
-              >
-                <span>Use template</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Card 3: Inbound Direct DM Reply Flow */}
-          <div className="bg-card hover:bg-zinc-50 dark:hover:bg-[#0D0D0D] border border-border hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl p-6 transition-all duration-200 flex flex-col justify-between min-h-[290px] shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] group">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center text-foreground group-hover:border-zinc-400 dark:group-hover:border-zinc-500 transition-colors">
-                  <Inbox className="w-5 h-5" strokeWidth={1.75} />
-                </div>
-                <span className="bg-secondary border border-border text-foreground text-xs px-2.5 py-0.5 rounded-full font-medium">
-                  Instant reply
-                </span>
-              </div>
-
-              <div className="space-y-1">
-                <h3 className="text-base font-semibold text-foreground">
-                  Respond to all your DMs
-                </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Send instant automated replies and lead capture forms to direct message inquiries.
-                </p>
-              </div>
-
-              {/* Visual Micro-Flow Mockup */}
-              <div className="p-3 bg-secondary/60 border border-border rounded-xl flex items-center justify-between gap-2 text-xs">
-                <div className="flex items-center gap-1.5 min-w-0 bg-card px-2.5 py-1 rounded-lg border border-border shadow-xs">
-                  <span className="text-[11px] font-mono font-medium text-foreground">&quot;PRICING&quot;</span>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                <div className="flex items-center gap-1.5 min-w-0 bg-card px-2.5 py-1 rounded-lg border border-border text-foreground font-medium text-[11px] shadow-xs">
-                  <FileText className="w-3 h-3 text-blue-500 shrink-0" />
-                  <span>Rate Sheet</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4">
-              <Link
-                href="/dashboard/automations/builder?template=direct_dm"
-                className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
-              >
-                <span>Use template</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* SECTION 3: Smart Onboarding & Operations Hub */}
-      {/* ========================================================================= */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-foreground">
-            Operations & Live Feed
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Operations & Activity
           </h2>
           {completedSteps === 3 && (
             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Pipeline fully active</span>
+              <span>Pipeline active</span>
             </span>
           )}
         </div>
@@ -733,7 +579,7 @@ export default async function DashboardOverview() {
             </div>
           </div>
         ) : (
-          /* When Checklist is 100% COMPLETE (3 of 3): Display Active Automations & Live Activity stream! */
+          /* Clean 2-column simplified operational section */
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Card: Live Activity Stream */}
             <div className="bg-card border border-border rounded-2xl p-6 space-y-5 flex flex-col justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
@@ -839,11 +685,108 @@ export default async function DashboardOverview() {
               </div>
             </div>
 
-            {/* Right Card: Active Automations Quick-Toggle Widget */}
-            <ActiveAutomationsWidget
-              initialAutomations={topAutomations}
-              totalCount={automationsCount}
-            />
+            {/* Right Card: Simplified Active Automations List */}
+            <div className="bg-card border border-border rounded-2xl p-6 space-y-5 flex flex-col justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-secondary border border-border flex items-center justify-center text-foreground">
+                      <Zap className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">Active automations</h3>
+                      <p className="text-xs text-muted-foreground">Running Instagram rules</p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/dashboard/automations"
+                    className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                  >
+                    <span>Manage all ({automationsCount})</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+
+                {topAutomations.length === 0 ? (
+                  <div className="p-8 text-center bg-secondary/30 border border-border rounded-xl space-y-2.5 my-2">
+                    <div className="w-8 h-8 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground mx-auto">
+                      <Zap className="w-4 h-4" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold text-foreground">No automations created yet</p>
+                      <p className="text-[11px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                        Create your first keyword trigger to automatically send DM responses.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {topAutomations.map((auto) => {
+                      const dispatches = auto._count?.logs || 0;
+                      return (
+                        <div
+                          key={auto.id}
+                          className="p-3 bg-secondary/40 hover:bg-secondary/70 border border-border rounded-xl flex items-center justify-between gap-3 transition-colors"
+                        >
+                          <div className="min-w-0 flex-1 space-y-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                                  auto.active ? "bg-emerald-500" : "bg-zinc-400 dark:bg-zinc-600"
+                                }`}
+                              />
+                              <Link
+                                href={`/dashboard/automations/builder?edit=${auto.id}`}
+                                className="text-xs font-semibold text-foreground hover:underline truncate"
+                                title={auto.name}
+                              >
+                                {auto.name}
+                              </Link>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground truncate pl-3">
+                              {auto.triggerSource === "STORY_MENTIONS" ? (
+                                <span>Story mentions & tags</span>
+                              ) : auto.triggerSource === "DIRECT_MESSAGES" ? (
+                                <span>
+                                  DM: <strong className="text-foreground font-medium">&quot;{auto.triggerKeyword || "Any"}&quot;</strong>
+                                </span>
+                              ) : (
+                                <span>
+                                  Keyword: <strong className="text-foreground font-medium">&quot;{auto.triggerKeyword || "Any"}&quot;</strong>
+                                </span>
+                              )}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[11px] font-medium text-muted-foreground">
+                              {dispatches} sent
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2 flex items-center justify-between gap-3 border-t border-border">
+                <Link
+                  href="/dashboard/automations/builder"
+                  className="h-9 px-4 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>New automation</span>
+                </Link>
+                <Link
+                  href="/dashboard/automations"
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                >
+                  <span>Manage all rules</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
           </div>
         )}
       </div>

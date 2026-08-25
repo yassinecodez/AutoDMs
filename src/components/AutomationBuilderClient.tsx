@@ -281,19 +281,13 @@ export default function AutomationBuilderClient({
             Automations
           </Link>
           <span className="text-muted-foreground">/</span>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={ruleName}
-              onChange={(e) => setRuleName(e.target.value)}
-              className="bg-transparent border-b border-transparent hover:border-border focus:border-foreground font-semibold text-sm text-foreground focus:outline-none px-1.5 py-0.5 max-w-[240px] truncate"
-              title="Click to rename rule"
-            />
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
-              <span className={`w-2 h-2 rounded-full ${isSavedDot ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"}`} />
-              <span>{isSavedDot ? "Saved" : "Saving..."}</span>
-            </div>
-          </div>
+          <input
+            type="text"
+            value={ruleName}
+            onChange={(e) => setRuleName(e.target.value)}
+            className="bg-transparent border-b border-transparent hover:border-border focus:border-foreground font-semibold text-sm text-foreground focus:outline-none px-1.5 py-0.5 max-w-[280px] truncate"
+            title="Click to rename rule"
+          />
         </div>
 
         <button
@@ -399,11 +393,11 @@ export default function AutomationBuilderClient({
                       <p className="text-xs text-muted-foreground">Select which Instagram touchpoint activates this automation rule.</p>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {[
                         { id: "COMMENTS", title: "Comments", desc: "Post & Reel comments", icon: MessageSquare },
                         { id: "STORY_MENTIONS", title: "Story Mentions", desc: "Tagged in stories", icon: Camera },
-                        { id: "DIRECT_MESSAGES", title: "Direct DMs", desc: "Inbound inbox messages", icon: Send },
+                        { id: "DIRECT_MESSAGES", title: "Direct DMs", desc: "Inbound direct messages", icon: Send },
                       ].map((item) => {
                         const Icon = item.icon;
                         const isSelected = triggerSource === item.id;
@@ -411,10 +405,10 @@ export default function AutomationBuilderClient({
                           <div
                             key={item.id}
                             onClick={() => setTriggerSource(item.id as any)}
-                            className={`p-3.5 border rounded-2xl cursor-pointer transition-all duration-200 flex flex-col justify-between h-[106px] shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ${
+                            className={`p-4 border rounded-2xl cursor-pointer transition-all duration-200 flex flex-col justify-between min-h-[114px] select-none ${
                               isSelected
-                                ? "border-primary bg-secondary ring-1 ring-primary/20"
-                                : "border-border bg-card hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-secondary/40"
+                                ? "border-zinc-400 dark:border-zinc-500 bg-secondary/80 shadow-xs dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]"
+                                : "border-border bg-card hover:border-zinc-400 dark:hover:border-zinc-700 hover:bg-secondary/40"
                             }`}
                           >
                             <div className="flex items-center justify-between">
@@ -424,14 +418,14 @@ export default function AutomationBuilderClient({
                                 <Icon className="w-4 h-4" strokeWidth={1.75} />
                               </div>
                               <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
-                                isSelected ? "border-primary bg-primary" : "border-border bg-transparent"
+                                isSelected ? "border-zinc-400 dark:border-zinc-500 bg-secondary" : "border-border bg-transparent"
                               }`}>
-                                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
+                                {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
                               </div>
                             </div>
-                            <div>
+                            <div className="mt-2.5">
                               <p className="text-xs font-semibold text-foreground">{item.title}</p>
-                              <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{item.desc}</p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{item.desc}</p>
                             </div>
                           </div>
                         );
@@ -442,13 +436,13 @@ export default function AutomationBuilderClient({
                       <div className="space-y-3 pt-3 border-t border-border">
                         <label className="text-xs font-medium text-foreground block">Target publications</label>
                         
-                        <div className="grid grid-cols-2 gap-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           <div
                             onClick={() => setTriggerScope("ALL_POSTS")}
-                            className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                            className={`p-3.5 border rounded-xl cursor-pointer transition-colors ${
                               triggerScope === "ALL_POSTS"
-                                ? "border-primary bg-secondary"
-                                : "border-border bg-card hover:border-zinc-300 dark:hover:border-zinc-700"
+                                ? "border-zinc-400 dark:border-zinc-500 bg-secondary/80 shadow-xs"
+                                : "border-border bg-card hover:border-zinc-400 dark:hover:border-zinc-700"
                             }`}
                           >
                             <p className="text-xs font-medium text-foreground">All current & future posts</p>
@@ -457,10 +451,10 @@ export default function AutomationBuilderClient({
 
                           <div
                             onClick={() => setTriggerScope("SPECIFIC_POSTS")}
-                            className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                            className={`p-3.5 border rounded-xl cursor-pointer transition-colors ${
                               triggerScope === "SPECIFIC_POSTS"
-                                ? "border-primary bg-secondary"
-                                : "border-border bg-card hover:border-zinc-300 dark:hover:border-zinc-700"
+                                ? "border-zinc-400 dark:border-zinc-500 bg-secondary/80 shadow-xs"
+                                : "border-border bg-card hover:border-zinc-400 dark:hover:border-zinc-700"
                             }`}
                           >
                             <p className="text-xs font-medium text-foreground">Specific posts or reels</p>
@@ -610,13 +604,13 @@ export default function AutomationBuilderClient({
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           <div
                             onClick={() => setTriggerType("KEYWORD")}
-                            className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                            className={`p-3.5 border rounded-xl cursor-pointer transition-colors ${
                               triggerType === "KEYWORD"
-                                ? "border-primary bg-secondary"
-                                : "border-border bg-card hover:border-zinc-300 dark:hover:border-zinc-700"
+                                ? "border-zinc-400 dark:border-zinc-500 bg-secondary/80 shadow-xs"
+                                : "border-border bg-card hover:border-zinc-400 dark:hover:border-zinc-700"
                             }`}
                           >
                             <p className="text-xs font-medium text-foreground">Specific keywords</p>
@@ -625,10 +619,10 @@ export default function AutomationBuilderClient({
 
                           <div
                             onClick={() => setTriggerType("ALL")}
-                            className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                            className={`p-3.5 border rounded-xl cursor-pointer transition-colors ${
                               triggerType === "ALL"
-                                ? "border-primary bg-secondary"
-                                : "border-border bg-card hover:border-zinc-300 dark:hover:border-zinc-700"
+                                ? "border-zinc-400 dark:border-zinc-500 bg-secondary/80 shadow-xs"
+                                : "border-border bg-card hover:border-zinc-400 dark:hover:border-zinc-700"
                             }`}
                           >
                             <p className="text-xs font-medium text-foreground">All messages / comments</p>
