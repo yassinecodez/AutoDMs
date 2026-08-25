@@ -51,17 +51,19 @@ export async function GET(request: NextRequest) {
 
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
-  // Meta Business Login for Instagram (Using business.facebook.com endpoint)
-  const params = new URLSearchParams({
+  // Exact ManyChat OAuth Dialog URL
+  const dialogParams = new URLSearchParams({
     client_id: clientId,
     config_id: configId,
     redirect_uri: redirectUri,
     response_type: "code",
-    extras: JSON.stringify({ setup: { channel: "IG_API_ONBOARDING" } }),
     state: state,
   });
 
-  const url = `https://business.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
+  const dialogUrl = `https://business.facebook.com/v24.0/dialog/oauth?${dialogParams.toString()}`;
+  
+  // Wrap with business/loginpage to trigger "Log into business tools from Meta -> Continue with Instagram"
+  const url = `https://business.facebook.com/business/loginpage/?next=${encodeURIComponent(dialogUrl)}`;
 
   const acceptHeader = request.headers.get("accept") || "";
   if (acceptHeader.includes("application/json")) {
