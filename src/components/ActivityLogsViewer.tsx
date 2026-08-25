@@ -17,6 +17,7 @@ import {
   Clock,
   ArrowUpRight,
 } from "lucide-react";
+import { getCommenterAvatar } from "@/lib/commenterAvatar";
 
 export interface ExecutionLogItem {
   id: string;
@@ -324,19 +325,29 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
 
                       {/* 3. User Column */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="text-sm font-medium text-white">
-                          @{log.commenterUsername}
-                        </span>
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-6 h-6 rounded-full overflow-hidden bg-[#181818] border border-[#2B2B2B] flex items-center justify-center shrink-0 shadow-inner">
+                            <img
+                              src={getCommenterAvatar(log.commenterUsername)}
+                              alt={log.commenterUsername}
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                          <span className="text-xs font-semibold text-white">
+                            @{log.commenterUsername}
+                          </span>
+                        </div>
                       </td>
 
                       {/* 4. Input Message Column */}
                       <td className="py-3.5 px-4 max-w-xs">
-                        <p
-                          className="text-xs text-zinc-300 font-mono bg-[#141414] px-2 py-1 rounded border border-[#222222] truncate max-w-xs"
+                        <span
+                          className="text-xs text-zinc-300 font-mono bg-[#141414] px-2.5 py-1 rounded-lg border border-[#222222] truncate max-w-xs inline-block"
                           title={log.commentText}
                         >
                           "{log.commentText}"
-                        </p>
+                        </span>
                       </td>
 
                       {/* 5. Rule Matched Column */}

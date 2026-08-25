@@ -14,6 +14,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
+import { getCommenterAvatar } from "@/lib/commenterAvatar";
 
 interface Lead {
   id: string;
@@ -223,8 +224,13 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
                       {/* 1. Contact Column */}
                       <td className="py-4 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-full bg-[#181818] border border-[#262626] flex items-center justify-center text-[10px] font-bold text-zinc-300">
-                            {initial}
+                          <div className="w-7 h-7 rounded-full overflow-hidden bg-[#181818] border border-[#262626] flex items-center justify-center shrink-0 shadow-inner">
+                            <img
+                              src={getCommenterAvatar(lead.username)}
+                              alt={lead.username || "User"}
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
                           </div>
                           <div>
                             <span className="text-sm font-medium text-white">

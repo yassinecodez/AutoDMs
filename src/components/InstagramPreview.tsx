@@ -185,8 +185,13 @@ export function InstagramPreview({
                 {/* Follower Comment Row */}
                 <div className="flex items-start justify-between gap-2.5">
                   <div className="flex items-start gap-2.5">
-                    <div className="w-7 h-7 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-[10px] text-zinc-300 shrink-0">
-                      SK
+                    <div className="w-7 h-7 rounded-full overflow-hidden bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0 shadow-inner">
+                      <img
+                        src="/commenters/profile-1.png"
+                        alt="sarah_k"
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
                     </div>
                     <div className="space-y-0.5 text-xs">
                       <div className="flex items-center gap-1.5">
