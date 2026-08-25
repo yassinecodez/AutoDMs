@@ -82,9 +82,9 @@ export function SidebarNav() {
             prefetch={true}
             onClick={() => setOptimisticPath(item.href)}
             className={cn(
-              "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all group relative select-none",
+              "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors group relative select-none",
               isActive
-                ? "bg-zinc-900/10 dark:bg-white/10 text-zinc-900 dark:text-white font-semibold shadow-xs"
+                ? "bg-zinc-900/10 dark:bg-white/10 text-zinc-900 dark:text-white font-semibold"
                 : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200"
             )}
           >
@@ -98,7 +98,7 @@ export function SidebarNav() {
               <span>{item.name}</span>
             </div>
             {isActive && (
-              <span className="w-1 h-3 rounded-full bg-zinc-900 dark:bg-white shrink-0 animate-in fade-in zoom-in-75 duration-150" />
+              <span className="w-1 h-3 rounded-full bg-zinc-900 dark:bg-white shrink-0" />
             )}
           </Link>
         );
