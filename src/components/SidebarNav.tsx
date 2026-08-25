@@ -1,8 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Zap, LayoutTemplate, Users, ScrollText, CreditCard } from "lucide-react";
+import { LayoutDashboard, Zap, Users, ScrollText, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const InstagramNavIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -24,6 +25,11 @@ const InstagramNavIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const [optimisticPath, setOptimisticPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOptimisticPath(null);
+  }, [pathname]);
 
   const navItems = [
     {
@@ -58,37 +64,41 @@ export function SidebarNav() {
     },
   ];
 
+  const currentPath = optimisticPath || pathname;
+
   return (
     <div className="space-y-1">
       {navItems.map((item) => {
         const isActive =
           item.href === "/dashboard"
-            ? pathname === "/dashboard"
-            : pathname.startsWith(item.href);
+            ? currentPath === "/dashboard"
+            : currentPath.startsWith(item.href);
         const Icon = item.icon;
 
         return (
           <Link
             key={item.href}
             href={item.href}
+            prefetch={true}
+            onClick={() => setOptimisticPath(item.href)}
             className={cn(
-              "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors group relative",
+              "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all group relative select-none",
               isActive
-                ? "bg-zinc-900/10 dark:bg-white/10 text-zinc-900 dark:text-white font-semibold"
+                ? "bg-zinc-900/10 dark:bg-white/10 text-zinc-900 dark:text-white font-semibold shadow-xs"
                 : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200"
             )}
           >
             <div className="flex items-center gap-2.5">
               <Icon
                 className={cn(
-                  "w-4 h-4 transition-colors",
+                  "w-4 h-4 transition-colors shrink-0",
                   isActive ? "text-zinc-900 dark:text-white" : "text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300"
                 )}
               />
               <span>{item.name}</span>
             </div>
             {isActive && (
-              <span className="w-1 h-3 rounded-full bg-zinc-900 dark:bg-white shrink-0" />
+              <span className="w-1 h-3 rounded-full bg-zinc-900 dark:bg-white shrink-0 animate-in fade-in zoom-in-75 duration-150" />
             )}
           </Link>
         );

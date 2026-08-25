@@ -8,6 +8,7 @@ import { Settings } from "lucide-react";
 import { db } from "@/lib/db";
 import { getActiveAccount, getAllUserAccounts } from "@/lib/activeAccount";
 import OnboardingModal from "@/components/OnboardingModal";
+import PageTransition from "@/components/PageTransition";
 
 export default async function DashboardLayout({
   children,
@@ -139,7 +140,7 @@ export default async function DashboardLayout({
 
       {/* Main Content Area */}
       <main className="pl-60 flex-1 flex flex-col min-w-0 w-full min-h-screen bg-background">
-        {children}
+        <PageTransition>{children}</PageTransition>
       </main>
 
       {/* First-Time User Onboarding Modal */}

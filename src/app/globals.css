@@ -154,3 +154,13 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-zinc-400 dark:bg-[#333333];
 }
+
+/* Top Progress Indicator */
+#nprogress .bar {
+  background: hsl(var(--foreground)) !important;
+  height: 2.5px !important;
+  z-index: 99999 !important;
+}
+#nprogress .peg {
+  box-shadow: 0 0 10px hsl(var(--foreground)), 0 0 5px hsl(var(--foreground)) !important;
+}
