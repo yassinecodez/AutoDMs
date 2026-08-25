@@ -4,7 +4,7 @@ import { decrypt } from "@/lib/crypto";
 import { inspectAndRefreshAccountToken } from "@/lib/tokenRefresh";
 import { MetaApi } from "@/lib/meta";
 
-export const BUILD_VERSION = "v2026.08.25-unified-meta-oauth";
+const BUILD_VERSION = "v2026.08.25-unified-meta-oauth";
 
 export async function GET(request: NextRequest) {
   try {
