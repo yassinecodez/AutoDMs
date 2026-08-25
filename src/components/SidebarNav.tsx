@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Zap, LayoutTemplate, Users, ScrollText, Settings } from "lucide-react";
+import { LayoutDashboard, Zap, LayoutTemplate, Users, ScrollText, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const InstagramNavIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -52,9 +52,9 @@ export function SidebarNav() {
       icon: ScrollText,
     },
     {
-      name: "Settings & billing",
-      href: "/dashboard/settings",
-      icon: Settings,
+      name: "Billing",
+      href: "/dashboard/billing",
+      icon: CreditCard,
     },
   ];
 

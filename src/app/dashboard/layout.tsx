@@ -95,7 +95,7 @@ export default async function DashboardLayout({
             </div>
 
             <Link
-              href="/dashboard/settings"
+              href="/dashboard/billing"
               className="block text-center text-xs font-medium text-zinc-400 hover:text-white transition-colors pt-0.5"
             >
               Manage plan &rarr;
@@ -104,7 +104,11 @@ export default async function DashboardLayout({
 
           {/* User Footer Profile */}
           <div className="p-3 px-4 border-t border-[#222222] flex items-center justify-between gap-2.5 bg-[#0A0A0A]">
-            <div className="flex items-center gap-2.5 min-w-0">
+            <Link
+              href="/dashboard/settings"
+              className="flex items-center gap-2.5 min-w-0 flex-1 hover:opacity-80 transition-opacity"
+              title="Account settings"
+            >
               {/* 32px Circular Google / User Avatar */}
               <div className="w-8 h-8 rounded-full overflow-hidden bg-[#141414] border border-[#262626] flex items-center justify-center font-semibold text-xs text-white shrink-0 shadow-inner">
                 {userAvatar ? (
@@ -122,7 +126,7 @@ export default async function DashboardLayout({
                 <p className="text-xs font-semibold text-white truncate">{displayName || "User"}</p>
                 <p className="text-xs text-zinc-400 truncate">{displayEmail || ""}</p>
               </div>
-            </div>
+            </Link>
             <SignOutButton />
           </div>
         </div>
