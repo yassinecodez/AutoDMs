@@ -270,146 +270,136 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
           </button>
         </div>
       ) : (
-        /* Logs Stream Table */
+        /* Logs Stream Table (12-Column Linear / Vercel Grid) */
         <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-[#1F1F23] bg-[#0A0A0A] text-xs font-medium text-zinc-400">
-                  <th className="py-3 px-4 font-medium">User & event</th>
-                  <th className="py-3 px-4 font-medium">Automation rule</th>
-                  <th className="py-3 px-4 font-medium">Status</th>
-                  <th className="py-3 px-4 font-medium text-right">Time</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1F1F23]">
-                {filteredLogs.map((log) => {
-                  const timeAgo = formatTimeAgo(log.timestamp);
-                  const isComment = log.triggerSource === "COMMENT" || log.triggerSource === "COMMENTS";
-                  const isStory = log.triggerSource === "STORY_MENTION" || log.triggerSource === "STORY_MENTIONS";
+          {/* Header Row */}
+          <div className="grid grid-cols-12 px-5 py-3 text-xs font-medium text-zinc-400 border-b border-[#1F1F23] bg-[#0A0A0A] rounded-t-xl gap-3 sm:gap-4">
+            <div className="col-span-5 font-medium">User & event</div>
+            <div className="col-span-3 font-medium">Automation rule</div>
+            <div className="col-span-2 font-medium">Status</div>
+            <div className="col-span-2 font-medium text-right">Time</div>
+          </div>
 
-                  return (
-                    <tr
-                      key={log.id}
-                      className="bg-[#0A0A0A] hover:bg-[#0E0E10] border-b border-[#1F1F23] transition-colors group"
-                    >
-                      {/* 1. Left Section: User & Action Narrative */}
-                      <td className="py-3.5 px-4 min-w-[280px] align-middle">
-                        <div className="flex items-center gap-3">
-                          {/* 28px Crisp Circular Avatar */}
-                          <div className="w-7 h-7 rounded-full overflow-hidden bg-[#141414] border border-[#262626] flex items-center justify-center shrink-0 shadow-inner">
-                            <img
-                              src={getCommenterAvatar(log.commenterUsername)}
-                              alt={log.commenterUsername}
-                              className="w-full h-full object-cover"
-                              referrerPolicy="no-referrer"
-                            />
-                          </div>
+          {/* Rows Stream */}
+          <div className="divide-y divide-[#18181B]">
+            {filteredLogs.map((log) => {
+              const timeAgo = formatTimeAgo(log.timestamp);
+              const isComment = log.triggerSource === "COMMENT" || log.triggerSource === "COMMENTS";
+              const isStory = log.triggerSource === "STORY_MENTION" || log.triggerSource === "STORY_MENTIONS";
+              const initial = (log.commenterUsername ? log.commenterUsername[0] : "U").toUpperCase();
+              const avatarUrl = getCommenterAvatar(log.commenterUsername);
 
-                          <div className="space-y-0.5 truncate">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-semibold text-white truncate">
-                                @{log.commenterUsername}
-                              </p>
-                              {log.isFollower ? (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-950/60 border border-emerald-800/40 text-emerald-400">
-                                  Follower
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#141414] border border-[#262626] text-zinc-400">
-                                  Not following
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-zinc-400 font-normal truncate max-w-xs sm:max-w-md">
-                              {isComment ? (
-                                <span>
-                                  commented <span className="text-zinc-200 font-normal">"{log.commentText}"</span>
-                                </span>
-                              ) : isStory ? (
-                                <span>mentioned you in a story</span>
-                              ) : (
-                                <span>
-                                  sent DM <span className="text-zinc-200 font-normal">"{log.commentText}"</span>
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
+              return (
+                <div
+                  key={log.id}
+                  className="grid grid-cols-12 items-center px-5 py-3.5 border-b border-[#18181B] bg-[#0A0A0A] hover:bg-[#0E0E10] transition-colors last:border-b-0 last:rounded-b-xl gap-3 sm:gap-4"
+                >
+                  {/* Columns 1-5: User & Event (42% width) */}
+                  <div className="col-span-5 flex items-center gap-3 min-w-0">
+                    {/* 36px Crisp Avatar */}
+                    <div className="h-9 w-9 flex-shrink-0 rounded-full overflow-hidden bg-[#161618] border border-[#26262A] text-white font-semibold text-sm flex items-center justify-center shadow-inner">
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt={log.commenterUsername}
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <span>{initial}</span>
+                      )}
+                    </div>
 
-                      {/* 2. Middle Section: Matched Automation Rule */}
-                      <td className="py-3.5 px-4 min-w-[200px] align-middle">
-                        <div className="space-y-0.5">
-                          <p className="text-sm font-medium text-zinc-200 truncate">
-                            {log.automation?.name || "Direct Trigger Rule"}
-                          </p>
-                          <p className="text-xs text-zinc-500">
-                            {isStory
-                              ? "Story mention trigger"
-                              : "Private DM + Link delivered"}
-                          </p>
-                        </div>
-                      </td>
-
-                      {/* 3. Right Section: Status Indicator */}
-                      <td className="py-3.5 px-4 whitespace-nowrap align-middle">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            {log.dmStatus === "SUCCESS" ? (
-                              <>
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                                <span className="text-xs font-medium text-emerald-400">
-                                  Delivered
-                                </span>
-                              </>
-                            ) : log.dmStatus === "LEAD_CAPTURED" ? (
-                              <>
-                                <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                                <span className="text-xs font-medium text-white">
-                                  Lead captured
-                                </span>
-                              </>
-                            ) : log.dmStatus === "FAILED" ? (
-                              <>
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                                <span className="text-xs font-medium text-red-400">
-                                  Failed
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="w-1.5 h-1.5 rounded-full bg-zinc-600" />
-                                <span className="text-xs font-medium text-zinc-500">
-                                  {log.dmStatus === "TEST_EVENT" ? "Test event" : "Skipped"}
-                                </span>
-                              </>
-                            )}
-                          </div>
-
-                          {/* Error subtext if failed or skipped */}
-                          {log.dmError && (
-                            <p
-                              className="text-xs text-zinc-500 truncate max-w-[180px]"
-                              title={log.dmError}
-                            >
-                              {log.dmError}
-                            </p>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* 4. Right Section: Timestamp */}
-                      <td className="py-3.5 px-4 whitespace-nowrap align-middle text-right text-xs text-zinc-500 font-mono">
-                        <span title={new Date(log.timestamp).toLocaleString()}>
-                          {timeAgo}
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-white truncate">
+                          @{log.commenterUsername}
                         </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        {log.isFollower ? (
+                          <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-medium px-2 py-0.5 rounded-md shrink-0">
+                            Follower
+                          </span>
+                        ) : (
+                          <span className="bg-zinc-800/80 text-zinc-400 border border-zinc-700/50 text-[11px] font-medium px-2 py-0.5 rounded-md shrink-0">
+                            Not following
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-zinc-400 mt-0.5 truncate">
+                        {isComment ? (
+                          <span>
+                            commented <span className="text-zinc-200 font-normal">"{log.commentText}"</span>
+                          </span>
+                        ) : isStory ? (
+                          <span>mentioned you in a story</span>
+                        ) : (
+                          <span>
+                            sent DM <span className="text-zinc-200 font-normal">"{log.commentText}"</span>
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Columns 6-8: Automation Rule (25% width) */}
+                  <div className="col-span-3 min-w-0 space-y-0.5">
+                    <p className="text-sm font-medium text-zinc-200 truncate">
+                      {log.automation?.name || "Direct Trigger Rule"}
+                    </p>
+                    <p className="text-xs text-zinc-500 truncate">
+                      {isStory ? "Story mention trigger" : "Private DM + Link delivered"}
+                    </p>
+                  </div>
+
+                  {/* Columns 9-10: Status (18% width) */}
+                  <div className="col-span-2 min-w-0">
+                    <div className="w-fit flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#141414] border border-[#222222]">
+                      {log.dmStatus === "SUCCESS" ? (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                          <span className="text-xs font-medium text-emerald-400">
+                            Delivered
+                          </span>
+                        </>
+                      ) : log.dmStatus === "LEAD_CAPTURED" ? (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                          <span className="text-xs font-medium text-white">
+                            Lead captured
+                          </span>
+                        </>
+                      ) : log.dmStatus === "FAILED" ? (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
+                          <span className="text-xs font-medium text-red-400">
+                            Failed
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 shrink-0" />
+                          <span className="text-xs font-medium text-zinc-400">
+                            {log.dmStatus === "TEST_EVENT" ? "Test event" : "Skipped"}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {log.dmError && (
+                      <p className="text-xs text-zinc-500 truncate max-w-[150px] mt-0.5" title={log.dmError}>
+                        {log.dmError}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Columns 11-12: Time (15% width) */}
+                  <div className="col-span-2 text-right text-xs text-zinc-400 font-mono">
+                    <span title={new Date(log.timestamp).toLocaleString()}>
+                      {timeAgo}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
