@@ -18,6 +18,7 @@ import {
 import { toggleAutomationActive, deleteAutomation } from "@/app/dashboard/automations/actions";
 import Link from "next/link";
 import { TemplatesLibraryClient } from "@/components/TemplatesLibraryClient";
+import DropdownSelect from "@/components/DropdownSelect";
 
 interface IgAccount {
   id: string;
@@ -249,16 +250,16 @@ export default function AutomationsManager({
                 </button>
               </div>
 
-              {/* Status Filter */}
-              <select
+              {/* Status Filter Custom Dropdown */}
+              <DropdownSelect
                 value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="h-10 px-3 bg-[#111111] border border-[#262626] text-xs font-medium text-zinc-300 rounded-xl focus:outline-none focus:border-zinc-400"
-              >
-                <option value="ALL">All statuses</option>
-                <option value="LIVE">Live only</option>
-                <option value="PAUSED">Paused only</option>
-              </select>
+                onChange={setSelectedStatus}
+                options={[
+                  { value: "ALL", label: "All statuses" },
+                  { value: "LIVE", label: "Live only" },
+                  { value: "PAUSED", label: "Paused only" },
+                ]}
+              />
             </div>
           </div>
 

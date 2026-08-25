@@ -18,6 +18,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { getCommenterAvatar } from "@/lib/commenterAvatar";
+import DropdownSelect from "@/components/DropdownSelect";
 
 export interface ExecutionLogItem {
   id: string;
@@ -219,17 +220,17 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
             </button>
           </div>
 
-          {/* Source Dropdown */}
-          <select
+          {/* Source Custom Dropdown */}
+          <DropdownSelect
             value={selectedSource}
-            onChange={(e) => setSelectedSource(e.target.value)}
-            className="bg-[#111111] border border-[#262626] rounded-lg h-9 px-3 text-xs font-medium text-zinc-300 focus:outline-none focus:border-zinc-500 transition-colors cursor-pointer"
-          >
-            <option value="ALL" className="bg-[#111111] text-zinc-300">All sources</option>
-            <option value="COMMENTS" className="bg-[#111111] text-zinc-300">Comments</option>
-            <option value="STORIES" className="bg-[#111111] text-zinc-300">Stories</option>
-            <option value="DIRECT_MESSAGES" className="bg-[#111111] text-zinc-300">Direct messages</option>
-          </select>
+            onChange={setSelectedSource}
+            options={[
+              { value: "ALL", label: "All sources" },
+              { value: "COMMENTS", label: "Comments" },
+              { value: "STORIES", label: "Stories" },
+              { value: "DIRECT_MESSAGES", label: "Direct messages" },
+            ]}
+          />
         </div>
       </div>
 
