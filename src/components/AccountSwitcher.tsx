@@ -98,9 +98,9 @@ export default function AccountSwitcher({
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <span className="text-xs font-bold text-zinc-900 dark:text-white">
+              <div className="w-full h-full bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-inner">
                 {(activeAccount.pageName && activeAccount.pageName.length > 0 ? activeAccount.pageName[0] : "I").toUpperCase()}
-              </span>
+              </div>
             )}
           </div>
           <div className="min-w-0 flex-1">
