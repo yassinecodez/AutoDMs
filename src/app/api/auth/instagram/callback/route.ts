@@ -39,66 +39,67 @@ export async function GET(request: NextRequest) {
   const errorDescription = searchParams.get("error_description");
   const stateParam = searchParams.get("state");
 
-  // 1. Resolve and verify User ID from State, Email, or Session
+  // 1. Exact User ID Resolution from Session or State
   const session = await getServerSession(authOptions);
   const statePayload = extractStatePayload(stateParam);
-  const targetUserId = statePayload.userId || session?.user?.id;
-  const userEmail = statePayload.email || session?.user?.email;
 
-  let verifiedUser = null;
+  let verifiedUserId: string | null = null;
+  let verifiedUser: any = null;
 
-  // Try finding by target ID
-  if (targetUserId) {
-    try {
-      verifiedUser = await db.user.findUnique({
-        where: { id: targetUserId },
-      });
-    } catch (e) {
-      console.warn("[Instagram Callback] Error finding user by ID:", e);
-    }
-  }
-
-  // Try finding by Email
-  if (!verifiedUser && userEmail) {
-    try {
-      verifiedUser = await db.user.findUnique({
-        where: { email: userEmail.toLowerCase().trim() },
-      });
-    } catch (e) {
-      console.warn("[Instagram Callback] Error finding user by email:", e);
-    }
-  }
-
-  // Try finding by session user ID
-  if (!verifiedUser && session?.user?.id) {
+  // First priority: active authenticated session
+  if (session?.user?.id) {
     try {
       verifiedUser = await db.user.findUnique({
         where: { id: session.user.id },
       });
+      if (verifiedUser) verifiedUserId = verifiedUser.id;
     } catch (e) {
-      console.warn("[Instagram Callback] Error finding user by session ID:", e);
+      console.warn("[Instagram Callback] Error checking session.user.id:", e);
     }
   }
 
-  // Fallback: Use the most active / recent registered user
-  if (!verifiedUser) {
+  if (!verifiedUser && session?.user?.email) {
     try {
-      verifiedUser = await db.user.findFirst({
-        orderBy: { createdAt: "desc" },
+      verifiedUser = await db.user.findUnique({
+        where: { email: session.user.email.toLowerCase().trim() },
       });
+      if (verifiedUser) verifiedUserId = verifiedUser.id;
     } catch (e) {
-      console.warn("[Instagram Callback] Error finding fallback user:", e);
+      console.warn("[Instagram Callback] Error checking session.user.email:", e);
     }
   }
 
-  if (!verifiedUser) {
-    console.error("[Instagram Callback] No user record exists in the database to link with Instagram.");
+  // Second priority: state parameter payload
+  if (!verifiedUser && statePayload.userId) {
+    try {
+      verifiedUser = await db.user.findUnique({
+        where: { id: statePayload.userId },
+      });
+      if (verifiedUser) verifiedUserId = verifiedUser.id;
+    } catch (e) {
+      console.warn("[Instagram Callback] Error checking statePayload.userId:", e);
+    }
+  }
+
+  if (!verifiedUser && statePayload.email) {
+    try {
+      verifiedUser = await db.user.findUnique({
+        where: { email: statePayload.email.toLowerCase().trim() },
+      });
+      if (verifiedUser) verifiedUserId = verifiedUser.id;
+    } catch (e) {
+      console.warn("[Instagram Callback] Error checking statePayload.email:", e);
+    }
+  }
+
+  if (!verifiedUser || !verifiedUserId) {
+    console.error("[Instagram Callback] No authenticated user found in session or state payload.");
     return NextResponse.redirect(
       new URL("/dashboard/accounts?error=USER_NOT_FOUND", request.url)
     );
   }
 
-  console.log(`[Instagram Callback] Resolved database user: ID=${verifiedUser.id}, Email=${verifiedUser.email}`);
+  console.log(`[Instagram Callback] Bound to verified database user: ID=${verifiedUserId}, Email=${verifiedUser.email}`);
 
   if (error || !code) {
     console.error("[Instagram Callback] OAuth callback error from Meta:", error, errorReason, errorDescription);
@@ -308,17 +309,17 @@ export async function GET(request: NextRequest) {
       console.warn("[Instagram Callback] Subscribed apps warning:", subErr);
     }
 
-    // 7. Strict Account Deduplication and Persistence Logic
+    // 7. Strict Account Persistence Logic (Bound directly to verifiedUserId)
     const encryptedToken = encrypt(longLivedToken);
     const pageIdValue = `ig_${instagramId}`;
     const normalizedUsername = username.toLowerCase().trim();
 
     let savedAccount: any = null;
     try {
-      // Find ANY existing account for this user matching instagramAccountId OR pageName (case-insensitive)
+      // Find existing account for this user matching instagramAccountId OR pageName (case-insensitive)
       const existingAccounts = await db.igAccount.findMany({
         where: {
-          userId: verifiedUser.id,
+          userId: verifiedUserId,
           OR: [
             { instagramAccountId: instagramId },
             { pageName: { equals: normalizedUsername, mode: "insensitive" } },
@@ -330,11 +331,12 @@ export async function GET(request: NextRequest) {
 
       if (existingAccounts.length > 0) {
         const primary = existingAccounts[0];
-        console.log(`[Instagram Callback] Existing account matched for @${username} (ID: ${primary.id}). Updating in place...`);
+        console.log(`[Instagram Callback] Updating account @${username} (ID: ${primary.id}) for user ${verifiedUserId}...`);
 
         savedAccount = await db.igAccount.update({
           where: { id: primary.id },
           data: {
+            userId: verifiedUserId,
             instagramAccountId: instagramId,
             pageId: pageIdValue,
             pageName: username,
@@ -344,45 +346,61 @@ export async function GET(request: NextRequest) {
           },
         });
 
-        // If there were extra duplicate records, merge & clean them up
+        // Merge any duplicate records
         if (existingAccounts.length > 1) {
           const duplicateIds = existingAccounts.slice(1).map((a) => a.id);
-          console.log(`[Instagram Callback] Merging duplicate account IDs:`, duplicateIds);
-
           await db.automation.updateMany({
             where: { igAccountId: { in: duplicateIds } },
             data: { igAccountId: primary.id },
           });
-
           await db.lead.updateMany({
             where: { igAccountId: { in: duplicateIds } },
             data: { igAccountId: primary.id },
           });
-
           await db.igAccount.deleteMany({
             where: { id: { in: duplicateIds } },
           });
         }
       } else {
-        console.log(`[Instagram Callback] Creating new account record for @${username}...`);
-        savedAccount = await db.igAccount.create({
-          data: {
-            userId: verifiedUser.id,
-            instagramAccountId: instagramId,
-            pageId: pageIdValue,
-            pageName: username,
-            profilePictureUrl: profilePictureUrl,
-            accessToken: encryptedToken,
-            tokenExpiresAt: tokenExpiresAt,
-          },
+        // Also check if this instagramAccountId is currently bound to another user/record in DB
+        const existingWithSameId = await db.igAccount.findUnique({
+          where: { instagramAccountId: instagramId },
         });
+
+        if (existingWithSameId) {
+          console.log(`[Instagram Callback] Reassigning existing account @${username} (ID: ${existingWithSameId.id}) to active user ${verifiedUserId}...`);
+          savedAccount = await db.igAccount.update({
+            where: { id: existingWithSameId.id },
+            data: {
+              userId: verifiedUserId,
+              pageId: pageIdValue,
+              pageName: username,
+              profilePictureUrl: profilePictureUrl || existingWithSameId.profilePictureUrl,
+              accessToken: encryptedToken,
+              tokenExpiresAt: tokenExpiresAt,
+            },
+          });
+        } else {
+          console.log(`[Instagram Callback] Creating new account record @${username} for user ${verifiedUserId}...`);
+          savedAccount = await db.igAccount.create({
+            data: {
+              userId: verifiedUserId,
+              instagramAccountId: instagramId,
+              pageId: pageIdValue,
+              pageName: username,
+              profilePictureUrl: profilePictureUrl,
+              accessToken: encryptedToken,
+              tokenExpiresAt: tokenExpiresAt,
+            },
+          });
+        }
       }
 
-      // Delete any leftover placeholder accounts (starts with ig_ or named Instagram Account)
+      // Delete any leftover placeholder accounts
       if (savedAccount && !username.startsWith("ig_")) {
         await db.igAccount.deleteMany({
           where: {
-            userId: verifiedUser.id,
+            userId: verifiedUserId,
             OR: [
               { pageName: "Instagram Account" },
               { pageName: { startsWith: "ig_" } },
@@ -395,13 +413,9 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      console.log(`[Instagram Callback] Successfully saved @${username} (Account ID: ${savedAccount.id}) for user ${verifiedUser.id}`);
+      console.log("[Account Saved in DB]:", savedAccount.id, savedAccount.pageName, savedAccount.userId);
     } catch (prismaError: any) {
-      console.error("[Instagram Callback] Prisma persistence error:", {
-        message: prismaError.message,
-        code: prismaError.code,
-        meta: prismaError.meta,
-      });
+      console.error("[Instagram Callback] Prisma persistence error:", prismaError);
       return NextResponse.redirect(
         new URL(`/dashboard/accounts?error=DATABASE_ERROR&details=${encodeURIComponent(prismaError.code || "UPSERT_FAILED")}`, request.url)
       );

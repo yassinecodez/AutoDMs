@@ -44,7 +44,23 @@ export default async function AccountsPage({ searchParams }: PageProps) {
   if (!session || !session.user) {
     redirect("/login");
   }
-  const userId = session.user.id;
+
+  let resolvedUserId = session.user.id;
+  if (session.user.email) {
+    try {
+      const dbUser = await db.user.findUnique({
+        where: { email: session.user.email.toLowerCase().trim() },
+        select: { id: true },
+      });
+      if (dbUser?.id) {
+        resolvedUserId = dbUser.id;
+      }
+    } catch (e) {
+      console.warn("Error resolving DB user in accounts page:", e);
+    }
+  }
+
+  const userId = resolvedUserId;
 
   // Auto-cleanup legacy placeholder accounts
   try {
