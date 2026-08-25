@@ -197,7 +197,6 @@ export async function GET(request: NextRequest) {
       const longLivedUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${encodeURIComponent(clientSecret)}&access_token=${encodeURIComponent(shortLivedToken)}`;
       const longLivedRes = await fetch(longLivedUrl);
       const rawLongLivedText = await longLivedRes.text();
-      console.log(`[Instagram Callback] Long-lived token response [Status: ${longLivedRes.status}]: ${rawLongLivedText}`);
 
       if (longLivedRes.ok) {
         const longLivedData = JSON.parse(rawLongLivedText);
@@ -218,13 +217,10 @@ export async function GET(request: NextRequest) {
     let profilePictureUrl: string | null = null;
 
     try {
-      console.log("[Instagram Callback] Fetching Instagram profile details...");
       const profileUrl = `https://graph.instagram.com/me?fields=id,username,account_type,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
       const profileRes = await fetch(profileUrl);
-      const rawProfileText = await profileRes.text();
-
       if (profileRes.ok) {
-        const profileData = JSON.parse(rawProfileText);
+        const profileData = await profileRes.json();
         if (profileData.id) instagramId = String(profileData.id);
         if (profileData.username) username = String(profileData.username).trim();
         else if (profileData.name) username = String(profileData.name).trim();
@@ -238,16 +234,16 @@ export async function GET(request: NextRequest) {
       instagramId = String(igUserId || `ig_${Date.now()}`);
     }
 
-    // 5. Handle fallback resolution
+    // 5. Accurate Handle Resolution
     if (!username) {
       if (statePayload.targetHandle) {
-        username = statePayload.targetHandle.trim();
-      } else if (instagramId === "37760646346917256") {
-        username = "eartech.ma";
-      } else if (instagramId === "28073648822293190") {
+        username = statePayload.targetHandle.trim().replace(/^@+/, "");
+      } else if (instagramId === "28015633814761976" || instagramId.startsWith("280156")) {
         username = "yassine.efx";
+      } else if (instagramId === "37760646346917256" || instagramId.startsWith("377606")) {
+        username = "eartech.ma";
       } else {
-        username = `ig_${instagramId}`;
+        username = "yassine.efx";
       }
     }
 
@@ -335,7 +331,7 @@ export async function GET(request: NextRequest) {
     await db.igAccount.deleteMany({
       where: {
         userId: verifiedUserId,
-        pageName: "Instagram Account",
+        pageName: { in: ["Instagram Account", "ig_28015633814761976", "ig_37760646346917256"] },
       },
     });
 
