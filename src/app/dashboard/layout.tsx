@@ -7,6 +7,7 @@ import AccountSwitcher from "@/components/AccountSwitcher";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { getActiveAccount, getAllUserAccounts } from "@/lib/activeAccount";
+import OnboardingModal from "@/components/OnboardingModal";
 
 export default async function DashboardLayout({
   children,
@@ -131,6 +132,9 @@ export default async function DashboardLayout({
       <main className="pl-60 flex-1 flex flex-col min-w-0 w-full min-h-screen bg-[#000000]">
         {children}
       </main>
+
+      {/* First-Time User Onboarding Modal */}
+      <OnboardingModal hasConnectedAccounts={allAccounts.length > 0} />
     </div>
   );
 }

@@ -37,11 +37,6 @@ export function SidebarNav() {
       icon: Zap,
     },
     {
-      name: "Templates",
-      href: "/dashboard/templates",
-      icon: LayoutTemplate,
-    },
-    {
       name: "Leads database",
       href: "/dashboard/leads",
       icon: Users,

@@ -115,14 +115,29 @@ export default async function DashboardOverview() {
     }),
   ]);
 
+  function formatFirstName(rawName?: string | null, rawEmail?: string | null): string {
+    if (rawName && rawName.trim().length > 0) {
+      const firstWord = rawName.trim().split(/\s+/)[0];
+      if (firstWord) {
+        return firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase();
+      }
+    }
+    if (rawEmail && rawEmail.trim().length > 0) {
+      const handle = rawEmail.split("@")[0].trim();
+      const cleanWord = handle.replace(/[^a-zA-Z]/g, " ").trim().split(/\s+/)[0] || handle;
+      if (cleanWord) {
+        return cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1).toLowerCase();
+      }
+    }
+    return "Creator";
+  }
+
   const currentAccount = activeAccount || accounts[0] || null;
   const totalDmsCount = user?.dmsCountThisMonth || deliveredLogsCount || 0;
-  const userName =
-    user?.name ||
-    session.user.name ||
-    user?.email?.split("@")[0] ||
-    session.user.email?.split("@")[0] ||
-    "Creator";
+  const firstName = formatFirstName(
+    user?.name || session.user.name,
+    user?.email || session.user.email
+  );
 
   const dmsUsed = user?.dmsCountThisMonth || 0;
   const dmsLimit = user?.dmsLimit || 150;
@@ -166,31 +181,16 @@ export default async function DashboardOverview() {
   return (
     <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
       {/* ========================================================================= */}
-      {/* SECTION 1: Personalized Greeting & Channel Status */}
+      {/* SECTION 1: Personalized First-Name Greeting */}
       {/* ========================================================================= */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-[#222222]">
-        <div className="space-y-1.5">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-            Hello, {userName}!
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight text-white">
+            Hello, {firstName}!
           </h1>
-          <div className="flex items-center gap-2 text-xs text-zinc-400">
-            {currentAccount ? (
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#111111] border border-[#222222] font-medium text-zinc-200">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  @{currentAccount.pageName}
-                  <span className="text-zinc-500">•</span>
-                  <span className="text-emerald-400">Connected</span>
-                </span>
-                <span className="text-zinc-500 hidden sm:inline">Active workspace</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-amber-400">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span>No Instagram account linked</span>
-              </div>
-            )}
-          </div>
+          <p className="text-sm text-zinc-400">
+            Monitor incoming leads, auto-DMs, and conversation triggers in real-time.
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -515,7 +515,7 @@ export default async function DashboardOverview() {
 
             <div className="pt-2">
               <Link
-                href="/dashboard/templates"
+                href="/dashboard/automations?tab=templates"
                 className="w-full h-10 rounded-xl border border-[#262626] hover:bg-[#111111] text-zinc-200 font-medium text-sm flex items-center justify-center gap-2 transition-colors"
               >
                 <span>Browse starter templates</span>

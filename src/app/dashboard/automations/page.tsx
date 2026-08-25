@@ -7,9 +7,16 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { getActiveAccount } from "@/lib/activeAccount";
 
+interface PageProps {
+  searchParams: Promise<{
+    tab?: string;
+  }>;
+}
+
 export const dynamic = "force-dynamic";
 
-export default async function AutomationsPage() {
+export default async function AutomationsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     redirect("/login");
@@ -50,30 +57,32 @@ export default async function AutomationsPage() {
     }),
   ]);
 
+  const defaultTab = params.tab === "templates" ? "TEMPLATES" : "MY_RULES";
+
   return (
     <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
       {/* Top Bar Layout */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-[#222222]">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight text-white">Automations</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Automations</h1>
             {activeAccount && (
-              <span className="text-xs font-medium text-zinc-400 bg-[#141414] border border-[#262626] px-2 py-0.5 rounded-md">
+              <span className="text-xs font-medium text-zinc-400 bg-[#141414] border border-[#262626] px-2.5 py-0.5 rounded-full">
                 @{activeAccount.pageName}
               </span>
             )}
           </div>
           <p className="text-sm text-zinc-400">
-            Manage your active trigger rules and auto-DM campaigns for this workspace
+            Manage your active trigger rules and launch pre-built 1-click recipes for this workspace
           </p>
         </div>
 
         <Link
           href="/dashboard/automations/builder"
-          className="bg-white hover:bg-zinc-200 text-black font-medium rounded-lg h-9 px-4 text-sm inline-flex items-center gap-2 transition-colors shrink-0 shadow-sm"
+          className="h-10 px-5 bg-white hover:bg-zinc-200 text-black font-medium rounded-xl text-sm inline-flex items-center gap-2 transition-colors shrink-0 shadow-sm"
         >
           <Plus className="w-4 h-4" strokeWidth={2} />
-          New automation
+          <span>New automation</span>
         </Link>
       </div>
 
@@ -81,6 +90,7 @@ export default async function AutomationsPage() {
       <AutomationsManager
         initialAutomations={automations}
         connectedAccounts={connectedAccounts}
+        defaultTab={defaultTab}
       />
     </div>
   );

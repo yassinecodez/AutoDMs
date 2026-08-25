@@ -3,17 +3,9 @@
 import { useState } from "react";
 import {
   Search,
-  CheckCircle2,
   ArrowRight,
-  Shield,
   Loader2,
-  Users,
-  Grid,
-  ExternalLink,
-  ChevronDown,
-  Key,
 } from "lucide-react";
-import ManualConnectForm from "@/components/ManualConnectForm";
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -44,8 +36,6 @@ export function AccountFinder() {
   const [searching, setSearching] = useState(false);
   const [foundProfile, setFoundProfile] = useState<AccountProfile | null>(null);
   const [connecting, setConnecting] = useState(false);
-  const [error, setError] = useState("");
-  const [showManual, setShowManual] = useState(false);
 
   const cleanHandle = (input: string) => {
     return input.trim().replace(/^@+/, "").toLowerCase();
@@ -57,7 +47,6 @@ export function AccountFinder() {
     if (!handle) return;
 
     setSearching(true);
-    setError("");
 
     setTimeout(() => {
       setFoundProfile({
@@ -66,12 +55,11 @@ export function AccountFinder() {
         isBusiness: true,
       });
       setSearching(false);
-    }, 450);
+    }, 400);
   };
 
   const handleConnect = async () => {
     setConnecting(true);
-    setError("");
 
     try {
       const res = await fetch("/api/auth/instagram/url");
@@ -93,32 +81,58 @@ export function AccountFinder() {
   };
 
   return (
-    <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl p-6 space-y-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-      {/* Box Header */}
-      <div className="flex items-start gap-3.5">
-        <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#262626] flex items-center justify-center text-white shrink-0">
-          <InstagramIcon className="w-5 h-5" />
+    <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl p-6 sm:p-8 space-y-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+      {/* Box Header with High-Contrast Primary CTA */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#222222]">
+        <div className="flex items-start gap-4">
+          <div className="w-11 h-11 rounded-xl bg-[#141414] border border-[#262626] flex items-center justify-center text-white shrink-0">
+            <InstagramIcon className="w-5 h-5" />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold text-white">Connect Professional Account</h2>
+            <p className="text-sm text-zinc-400 max-w-xl leading-relaxed">
+              Link your Instagram Creator or Business profile via official Meta OAuth to enable automated DMs and comment replies.
+            </p>
+          </div>
         </div>
-        <div className="space-y-0.5">
-          <h2 className="text-base font-semibold text-white">Connect Professional Profile</h2>
-          <p className="text-xs text-zinc-400 leading-relaxed max-w-xl">
-            Find your Instagram username below to verify business permissions and link your account via Meta OAuth.
-          </p>
-        </div>
+
+        {/* Primary High-Contrast Connect Button */}
+        <button
+          type="button"
+          onClick={handleConnect}
+          disabled={connecting}
+          className="h-10 px-5 rounded-xl bg-white hover:bg-zinc-200 text-black font-medium text-sm inline-flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-50 shrink-0"
+        >
+          {connecting ? (
+            <Loader2 className="w-4 h-4 animate-spin text-black" />
+          ) : (
+            <InstagramIcon className="w-4 h-4 text-black" />
+          )}
+          <span>Connect with Instagram</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* 1. Account Search Input */}
-      <form onSubmit={handleSearch} className="space-y-3">
-        <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
+      {/* Account Verification Search */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label htmlFor="ig-handle-input" className="text-xs font-semibold text-zinc-300">
+            Verify handle permissions
+          </label>
+          <span className="text-xs text-zinc-500">Optional pre-check</span>
+        </div>
+
+        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-stretch gap-3">
           <div className="relative flex-1">
             <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-zinc-500 font-medium">
               @
             </span>
             <input
+              id="ig-handle-input"
               type="text"
               value={handleInput}
               onChange={(e) => setHandleInput(e.target.value)}
-              placeholder="creamedia.ma or your_brand"
+              placeholder="your_brand"
               className="w-full h-10 pl-8 pr-4 bg-[#111111] border border-[#262626] rounded-xl text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
             />
           </div>
@@ -126,19 +140,19 @@ export function AccountFinder() {
           <button
             type="submit"
             disabled={searching || !handleInput.trim()}
-            className="h-10 px-5 rounded-xl bg-[#181818] hover:bg-[#222222] text-white border border-[#2b2b2b] text-xs font-medium inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-40 shrink-0"
+            className="h-10 px-5 rounded-xl bg-[#181818] hover:bg-[#222222] text-white border border-[#2b2b2b] text-sm font-medium inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-40 shrink-0"
           >
             {searching ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Search className="w-3.5 h-3.5" />
+              <Search className="w-4 h-4" />
             )}
-            <span>Find Account</span>
+            <span>Find account</span>
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
 
-      {/* 2. Profile Preview Card (when handle searched) */}
+      {/* Profile Preview Card (when handle searched) */}
       {foundProfile && (
         <div className="p-4 bg-[#111111] border border-white/20 rounded-xl space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -149,65 +163,30 @@ export function AccountFinder() {
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5">
                   <h3 className="text-sm font-semibold text-white">@{foundProfile.username}</h3>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <span className="text-[10px] text-emerald-400 font-medium">Ready to Link</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-xs text-emerald-400 font-medium">Ready to Link</span>
                 </div>
                 <p className="text-xs text-zinc-400">Instagram Professional / Creator Account</p>
               </div>
             </div>
 
-            {/* Connect CTA Button */}
             <button
+              type="button"
               onClick={handleConnect}
               disabled={connecting}
-              className="h-10 px-5 rounded-xl bg-white hover:bg-zinc-200 text-black font-medium text-xs inline-flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-50 shrink-0"
+              className="h-10 px-5 rounded-xl bg-white hover:bg-zinc-200 text-black font-medium text-sm inline-flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-50 shrink-0"
             >
               {connecting ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
+                <Loader2 className="w-4 h-4 animate-spin text-black" />
               ) : (
                 <InstagramIcon className="w-4 h-4 text-black" />
               )}
-              <span>Sign in as @{foundProfile.username}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>Continue with @{foundProfile.username}</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       )}
-
-      {/* Direct OAuth Link Alternative */}
-      {!foundProfile && (
-        <div className="flex items-center justify-between pt-2 border-t border-[#222222]/80 text-xs">
-          <span className="text-zinc-500">Don't want to search first?</span>
-          <button
-            onClick={handleConnect}
-            disabled={connecting}
-            className="text-white hover:underline font-medium inline-flex items-center gap-1"
-          >
-            Direct Meta Login &rarr;
-          </button>
-        </div>
-      )}
-
-      {/* 3. Developer / Manual Token Fallback */}
-      <div className="pt-2 border-t border-[#222222]/80">
-        <button
-          type="button"
-          onClick={() => setShowManual(!showManual)}
-          className="text-xs text-zinc-500 hover:text-zinc-300 font-medium inline-flex items-center gap-1.5 transition-colors"
-        >
-          <Key className="w-3.5 h-3.5" />
-          <span>Manual Access Token Configuration (Advanced)</span>
-          <ChevronDown
-            className={`w-3.5 h-3.5 transition-transform ${showManual ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        {showManual && (
-          <div className="pt-4 animate-in fade-in duration-150">
-            <ManualConnectForm />
-          </div>
-        )}
-      </div>
     </div>
   );
 }
