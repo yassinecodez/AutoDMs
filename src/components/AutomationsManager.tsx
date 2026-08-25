@@ -291,16 +291,16 @@ export default function AutomationsManager({
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm border-collapse">
                   <thead>
-                    <tr className="border-b border-[#222222] bg-[#0F0F0F] text-xs font-semibold text-zinc-400">
-                      <th className="py-3.5 px-4 font-semibold">Status</th>
-                      <th className="py-3.5 px-4 font-semibold">Rule & trigger</th>
-                      <th className="py-3.5 px-4 font-semibold">Channel</th>
-                      <th className="py-3.5 px-4 font-semibold">Dispatches</th>
-                      <th className="py-3.5 px-4 font-semibold">Created</th>
-                      <th className="py-3.5 px-4 text-right font-semibold">Actions</th>
+                    <tr className="border-b border-[#1F1F23] bg-[#0A0A0A] text-xs font-medium text-zinc-400">
+                      <th className="py-3 px-4 font-medium">Status</th>
+                      <th className="py-3 px-4 font-medium">Automation & trigger</th>
+                      <th className="py-3 px-4 font-medium">Source</th>
+                      <th className="py-3 px-4 font-medium">Dispatches</th>
+                      <th className="py-3 px-4 font-medium">Created</th>
+                      <th className="py-3 px-4 text-right font-medium">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1A1A1A]">
+                  <tbody className="divide-y divide-[#1F1F23]">
                     {filteredAutomations.map((auto) => {
                       const isToggling = toggleLoading === auto.id;
                       const dispatchesCount = auto._count?.logs || 0;
@@ -309,31 +309,32 @@ export default function AutomationsManager({
                       return (
                         <tr
                           key={auto.id}
-                          className="hover:bg-[#0D0D0D] transition-colors group"
+                          className="bg-[#0A0A0A] hover:bg-[#0F0F0F] border-b border-[#1F1F23] transition-colors group"
                         >
                           {/* 1. Status Toggle Column */}
-                          <td className="py-4 px-4 whitespace-nowrap">
+                          <td className="py-3.5 px-4 whitespace-nowrap align-middle">
                             <button
                               type="button"
                               onClick={() => handleToggleActive(auto.id, auto.active)}
                               disabled={isToggling}
-                              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                                 auto.active ? "bg-white" : "bg-zinc-800"
                               }`}
-                              title={auto.active ? "Click to Pause" : "Click to Activate"}
+                              title={auto.active ? "Click to pause rule" : "Click to activate rule"}
                             >
                               <span
-                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-black shadow-lg ring-0 transition duration-200 ease-in-out ${
-                                  auto.active ? "translate-x-5 bg-black" : "translate-x-0 bg-zinc-400"
+                                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-black shadow-md ring-0 transition duration-200 ease-in-out ${
+                                  auto.active ? "translate-x-4 bg-black" : "translate-x-0 bg-zinc-400"
                                 }`}
                               />
                             </button>
                           </td>
 
-                          {/* 2. Rule Name & Trigger Column */}
-                          <td className="py-4 px-4 min-w-[240px]">
-                            <div className="space-y-1.5">
+                          {/* 2. Automation Name & Clean Trigger Column */}
+                          <td className="py-3.5 px-4 min-w-[260px] align-middle">
+                            <div className="space-y-0.5">
                               <div className="flex items-center gap-2">
+                                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${auto.active ? "bg-emerald-400" : "bg-zinc-600"}`} />
                                 <span className="text-sm font-semibold text-white truncate" title={auto.name}>
                                   {auto.name}
                                 </span>
@@ -344,101 +345,75 @@ export default function AutomationsManager({
                                 )}
                               </div>
 
-                              {/* Trigger Subtext */}
-                              <div className="flex flex-wrap items-center gap-1.5 text-xs text-zinc-400">
+                              {/* Clean Subtitle Line Trigger Details */}
+                              <p className="text-xs text-zinc-400 flex items-center gap-1 flex-wrap">
                                 {auto.triggerSource === "STORY_MENTIONS" ? (
-                                  <span>Trigger: Story Tag / Mention</span>
-                                ) : (
-                                  <>
-                                    <span className="text-zinc-500">Trigger:</span>
-                                    {auto.triggerType === "ALL" ? (
-                                      <span className="font-medium text-zinc-300">Any comment</span>
-                                    ) : (
-                                      <span className="font-medium text-white">
-                                        "{auto.triggerKeyword || "None"}"
-                                      </span>
-                                    )}
-                                    <span className="text-zinc-600">•</span>
-                                    <span className="text-zinc-400">
-                                      {auto.triggerScope === "SPECIFIC_POSTS"
-                                        ? `Specific Media (${auto.targetMediaIds?.length || 0})`
-                                        : "All posts & reels"}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-
-                              {/* Response Preview */}
-                              <div className="pt-0.5">
-                                <p
-                                  className="text-xs text-zinc-400 truncate max-w-xs bg-[#111111] px-2.5 py-1 rounded-lg border border-[#222222]"
-                                  title={auto.replyDmMessage}
-                                >
-                                  DM: "{auto.replyDmMessage}"
-                                </p>
-                              </div>
-
-                              {/* Button link preview if present */}
-                              {auto.buttonTitle && auto.buttonUrl && (
-                                <div className="flex items-center gap-1 text-xs text-zinc-400 pt-0.5">
-                                  <ExternalLink className="w-3.5 h-3.5 text-zinc-500" />
-                                  <span className="text-zinc-400">Button:</span>
-                                  <span className="text-white font-medium truncate max-w-[150px]">
-                                    {auto.buttonTitle}
+                                  <span>Story mentions & tags</span>
+                                ) : auto.triggerSource === "DIRECT_MESSAGES" ? (
+                                  <span>
+                                    Direct message keyword: <strong className="text-zinc-200 font-medium">"{auto.triggerKeyword || "Any"}"</strong>
                                   </span>
-                                </div>
-                              )}
+                                ) : (
+                                  <span>
+                                    Keywords: <strong className="text-zinc-200 font-medium">"{auto.triggerKeyword || "Any"}"</strong>
+                                    <span className="text-zinc-600 mx-1.5">•</span>
+                                    <span>{auto.triggerScope === "SPECIFIC_POSTS" ? `Specific post (${auto.targetMediaIds?.length || 1})` : "All posts"}</span>
+                                  </span>
+                                )}
+                              </p>
                             </div>
                           </td>
 
-                          {/* 3. Source Badge Column */}
-                          <td className="py-4 px-4 whitespace-nowrap">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-[#141414] border border-[#262626] text-zinc-300">
+                          {/* 3. Source Column */}
+                          <td className="py-3.5 px-4 whitespace-nowrap align-middle">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-normal text-zinc-300 bg-[#161616] border border-[#262626]">
                               {auto.triggerSource === "COMMENTS" ? (
                                 <>
                                   <MessageCircle className="w-3.5 h-3.5 text-zinc-400" />
-                                  Comments
+                                  <span>Comments</span>
                                 </>
                               ) : auto.triggerSource === "STORY_MENTIONS" ? (
                                 <>
-                                  <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
-                                  Stories
+                                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>Stories</span>
                                 </>
                               ) : (
                                 <>
                                   <Inbox className="w-3.5 h-3.5 text-zinc-400" />
-                                  Direct DMs
+                                  <span>Direct messages</span>
                                 </>
                               )}
                             </span>
                           </td>
 
-                          {/* 4. Total Dispatches Column */}
-                          <td className="py-4 px-4 whitespace-nowrap">
-                            <div>
-                              <p className="text-sm font-bold text-white tracking-tight">
-                                {dispatchesCount.toLocaleString()}
-                              </p>
-                              {auto.enableLeadCapture && (
-                                <p className="text-xs text-zinc-500">
+                          {/* 4. Dispatches Column */}
+                          <td className="py-3.5 px-4 whitespace-nowrap align-middle">
+                            <div className="text-sm font-medium text-white">
+                              <span>{dispatchesCount} sent</span>
+                              {auto.enableLeadCapture && leadsCount > 0 && (
+                                <span className="text-xs text-zinc-500 block font-normal">
                                   {leadsCount} lead{leadsCount !== 1 ? "s" : ""}
-                                </p>
+                                </span>
                               )}
                             </div>
                           </td>
 
                           {/* 5. Created Date Column */}
-                          <td className="py-4 px-4 whitespace-nowrap text-zinc-400 text-xs font-normal">
-                            {new Date(auto.createdAt).toLocaleDateString()}
+                          <td className="py-3.5 px-4 whitespace-nowrap align-middle text-xs text-zinc-500 font-normal">
+                            {new Date(auto.createdAt).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
                           </td>
 
                           {/* 6. Actions Column */}
-                          <td className="py-4 px-4 whitespace-nowrap text-right">
+                          <td className="py-3.5 px-4 whitespace-nowrap align-middle text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Link
                                 href={`/dashboard/automations/builder?edit=${auto.id}`}
-                                className="p-2 text-zinc-400 hover:text-white hover:bg-[#181818] rounded-lg transition-colors"
-                                title="Edit Automation Rule"
+                                className="p-1.5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors inline-flex items-center justify-center"
+                                title="Edit automation rule"
                               >
                                 <Edit2 className="w-4 h-4" strokeWidth={1.75} />
                               </Link>
@@ -446,8 +421,8 @@ export default function AutomationsManager({
                               <button
                                 type="button"
                                 onClick={() => setDeleteId(auto.id)}
-                                className="p-2 text-zinc-400 hover:text-red-400 hover:bg-[#181818] rounded-lg transition-colors"
-                                title="Delete Automation Rule"
+                                className="p-1.5 text-zinc-400 hover:text-red-400 hover:bg-zinc-800 rounded-lg transition-colors inline-flex items-center justify-center"
+                                title="Delete automation rule"
                               >
                                 <Trash2 className="w-4 h-4" strokeWidth={1.75} />
                               </button>
