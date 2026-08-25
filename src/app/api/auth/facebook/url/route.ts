@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
-  // Exact ManyChat OAuth Dialog Parameters
+  // 1. Meta Business Dialog
   const dialogParams = new URLSearchParams({
     client_id: clientId,
     config_id: configId,
@@ -62,9 +62,17 @@ export async function GET(request: NextRequest) {
   });
 
   const dialogUrl = `https://business.facebook.com/dialog/oauth?${dialogParams.toString()}`;
-  
-  // Wrap with business/loginpage to trigger exact ManyChat workflow
-  const url = `https://business.facebook.com/business/loginpage/?next=${encodeURIComponent(dialogUrl)}`;
+  const metaBusinessLoginPage = `https://business.facebook.com/business/loginpage/?next=${encodeURIComponent(dialogUrl)}`;
+
+  // 2. Direct Instagram Account Chooser (Exact ManyChat Screenshot 2 URL)
+  const igLoginParams = new URLSearchParams({
+    force_authentication: "1",
+    platform_app_id: clientId,
+    enable_fb_login: "1",
+    next: metaBusinessLoginPage,
+  });
+
+  const url = `https://www.instagram.com/accounts/login/?${igLoginParams.toString()}`;
 
   const acceptHeader = request.headers.get("accept") || "";
   if (acceptHeader.includes("application/json")) {
