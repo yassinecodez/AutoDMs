@@ -10,9 +10,9 @@ import {
   MessageCircle,
   Loader2,
   Image as ImageIcon,
-  ExternalLink,
+  Plus,
+  Link as LinkIcon,
   Layers,
-  Sparkles,
 } from "lucide-react";
 
 export interface InstagramMediaItem {
@@ -45,13 +45,40 @@ export function PostPickerModal({
   isLoading = false,
 }: PostPickerModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [customUrlInput, setCustomUrlInput] = useState("");
+  const [customItems, setCustomItems] = useState<InstagramMediaItem[]>([]);
   const [localSelectedIds, setLocalSelectedIds] = useState<string[]>(selectedMediaIds);
 
-  // Sync state when modal opens
+  const combinedMedia = useMemo(() => {
+    return [...customItems, ...mediaItems];
+  }, [customItems, mediaItems]);
+
   const handleToggleSelect = (id: string) => {
     setLocalSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
+  };
+
+  const handleAddCustomUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    const url = customUrlInput.trim();
+    if (!url) return;
+
+    // Extract shortcode or use url as identifier
+    const customId = `url_${Date.now()}_${encodeURIComponent(url.slice(0, 30))}`;
+    const newItem: InstagramMediaItem = {
+      id: customId,
+      caption: `Post: ${url}`,
+      thumbnail: "",
+      mediaUrl: url,
+      permalink: url,
+      type: "CUSTOM_POST",
+      timestamp: new Date().toISOString(),
+    };
+
+    setCustomItems((prev) => [newItem, ...prev]);
+    setLocalSelectedIds((prev) => [...prev, customId]);
+    setCustomUrlInput("");
   };
 
   const handleApply = () => {
@@ -60,11 +87,12 @@ export function PostPickerModal({
   };
 
   const filteredMedia = useMemo(() => {
-    if (!searchQuery.trim()) return mediaItems;
-    return mediaItems.filter((item) =>
-      (item.caption || "").toLowerCase().includes(searchQuery.toLowerCase())
+    if (!searchQuery.trim()) return combinedMedia;
+    return combinedMedia.filter((item) =>
+      (item.caption || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.permalink || "").toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [mediaItems, searchQuery]);
+  }, [combinedMedia, searchQuery]);
 
   if (!isOpen) return null;
 
@@ -72,9 +100,7 @@ export function PostPickerModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-card border border-border rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         
-        {/* ========================================================================= */}
-        {/* 1. Modal Header */}
-        {/* ========================================================================= */}
+        {/* Modal Header */}
         <div className="p-5 border-b border-border space-y-3">
           <div className="flex items-center justify-between">
             <div>
@@ -92,39 +118,61 @@ export function PostPickerModal({
             </button>
           </div>
 
+          {/* Paste Custom Post / Reel URL Form */}
+          <form onSubmit={handleAddCustomUrl} className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <LinkIcon className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="url"
+                value={customUrlInput}
+                onChange={(e) => setCustomUrlInput(e.target.value)}
+                placeholder="Paste Instagram Post / Reel URL (e.g. instagram.com/p/...)"
+                className="w-full h-9 pl-9 pr-3 bg-secondary border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={!customUrlInput.trim()}
+              className="h-9 px-3.5 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground border border-border text-xs font-medium inline-flex items-center gap-1.5 transition-colors disabled:opacity-40 shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Post</span>
+            </button>
+          </form>
+
           {/* Search Filter Input */}
-          <div className="relative">
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search posts by caption keyword..."
-              className="w-full h-9 pl-9 pr-3 bg-secondary border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
-            />
-          </div>
+          {combinedMedia.length > 0 && (
+            <div className="relative">
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search loaded posts by caption keyword..."
+                className="w-full h-9 pl-9 pr-3 bg-secondary border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
+              />
+            </div>
+          )}
         </div>
 
-        {/* ========================================================================= */}
-        {/* 2. Visual Media Grid Layout */}
-        {/* ========================================================================= */}
-        <div className="flex-1 overflow-y-auto p-5 min-h-[300px]">
+        {/* Visual Media Grid Layout */}
+        <div className="flex-1 overflow-y-auto p-5 min-h-[260px]">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 text-center space-y-3">
               <Loader2 className="w-6 h-6 animate-spin text-foreground" />
               <p className="text-xs text-muted-foreground">Loading your Instagram feed...</p>
             </div>
           ) : filteredMedia.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center space-y-2">
+            <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
               <div className="w-10 h-10 rounded-full bg-secondary border border-border flex items-center justify-center text-muted-foreground">
                 <ImageIcon className="w-5 h-5" />
               </div>
-              <p className="text-xs font-medium text-foreground">No publications found</p>
-              <p className="text-[11px] text-muted-foreground max-w-xs leading-relaxed">
-                {searchQuery
-                  ? "No posts matched your search caption query."
-                  : "Ensure your Instagram Business profile has published posts or reels."}
-              </p>
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-foreground">No media loaded from API</p>
+                <p className="text-[11px] text-muted-foreground max-w-sm leading-relaxed">
+                  Paste your Instagram Post or Reel URL above to target it directly, or choose <strong>Any Post or Reel</strong> in trigger settings to monitor all publications.
+                </p>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -132,6 +180,7 @@ export function PostPickerModal({
                 const isSelected = localSelectedIds.includes(item.id);
                 const isVideo = item.type === "VIDEO";
                 const isCarousel = item.type === "CAROUSEL_ALBUM";
+                const isCustom = item.type === "CUSTOM_POST";
 
                 return (
                   <div
@@ -152,12 +201,15 @@ export function PostPickerModal({
                         crossOrigin="anonymous"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-secondary text-muted-foreground">
-                        <ImageIcon className="w-6 h-6" />
+                      <div className="w-full h-full flex flex-col items-center justify-center p-3 text-center bg-secondary text-muted-foreground space-y-1">
+                        <LinkIcon className="w-5 h-5 text-primary" />
+                        <span className="text-[10px] font-medium text-foreground truncate max-w-full">
+                          {item.caption || "Target Post"}
+                        </span>
                       </div>
                     )}
 
-                    {/* Media Type Badge (Reel / Video / Carousel) */}
+                    {/* Media Type Badge */}
                     <div className="absolute top-2 left-2 z-10">
                       {isVideo && (
                         <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-md border border-white/10 text-[9px] font-medium text-white shadow-sm">
@@ -168,6 +220,11 @@ export function PostPickerModal({
                       {isCarousel && (
                         <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-md border border-white/10 text-[9px] font-medium text-white shadow-sm">
                           <Layers className="w-3 h-3 text-white" />
+                        </span>
+                      )}
+                      {isCustom && (
+                        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary text-primary-foreground text-[9px] font-medium shadow-sm">
+                          Custom URL
                         </span>
                       )}
                     </div>
@@ -185,12 +242,9 @@ export function PostPickerModal({
 
                     {/* Hover Info Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2.5 space-y-1">
-                      {/* Caption snippet */}
                       <p className="text-[10px] text-zinc-200 line-clamp-2 leading-snug">
-                        {item.caption || "No caption provided"}
+                        {item.caption || "Target Post"}
                       </p>
-
-                      {/* Engagement Counters */}
                       <div className="flex items-center gap-2.5 text-[10px] text-zinc-400 pt-0.5">
                         {item.likeCount !== undefined && (
                           <span className="flex items-center gap-1 text-zinc-300">
@@ -213,9 +267,7 @@ export function PostPickerModal({
           )}
         </div>
 
-        {/* ========================================================================= */}
-        {/* 3. Modal Footer */}
-        {/* ========================================================================= */}
+        {/* Modal Footer */}
         <div className="p-4 border-t border-border bg-card flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground font-medium">
