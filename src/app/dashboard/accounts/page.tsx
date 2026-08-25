@@ -29,6 +29,9 @@ interface PageProps {
   searchParams: Promise<{
     status?: string;
     error?: string;
+    warning?: string;
+    expected?: string;
+    actual?: string;
     message?: string;
     count?: string;
     connected?: string;
@@ -67,17 +70,11 @@ export default async function AccountsPage({ searchParams }: PageProps) {
     await refreshLongLivedTokenIfNeeded(acc);
   }
 
-  const accounts = await db.igAccount.findMany({
-    where: { userId },
-    select: {
-      id: true,
-      instagramAccountId: true,
-      pageName: true,
-      profilePictureUrl: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  // Deduplicate accounts by pageName (case-insensitive)
+  const uniqueAccounts = rawAccounts.filter(
+    (acc, index, self) =>
+      index === self.findIndex((t) => t.pageName?.toLowerCase() === acc.pageName?.toLowerCase())
+  );
 
   return (
     <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
@@ -89,13 +86,16 @@ export default async function AccountsPage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      {/* Guided Connection Helper & Error Reporting Banner */}
+      {/* Guided Connection Helper & Error / Warning Reporting Banner */}
       <GuidedConnectionHelper
         errorParam={params.error}
+        warningParam={params.warning}
+        expectedParam={params.expected}
+        actualParam={params.actual}
         detailsParam={params.details}
         statusParam={params.status || (params.connected ? "SUCCESS" : undefined)}
         countParam={params.count}
-        hasConnectedAccounts={accounts.length > 0}
+        hasConnectedAccounts={uniqueAccounts.length > 0}
       />
 
       {/* Pre-OAuth Account Finder & Connection Box */}
@@ -105,11 +105,11 @@ export default async function AccountsPage({ searchParams }: PageProps) {
       <div className="space-y-4 pt-2">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold text-muted-foreground">
-            Connected profiles ({accounts.length})
+            Connected profiles ({uniqueAccounts.length})
           </h2>
         </div>
 
-        {accounts.length === 0 ? (
+        {uniqueAccounts.length === 0 ? (
           <div className="p-12 text-center bg-card border border-border rounded-2xl text-muted-foreground text-xs space-y-3 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
             <div className="w-10 h-10 rounded-full bg-secondary border border-border flex items-center justify-center mx-auto text-muted-foreground">
               <InstagramIcon className="w-5 h-5" />
@@ -123,7 +123,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
-            {accounts.map((acc) => (
+            {uniqueAccounts.map((acc) => (
               <div
                 key={acc.id}
                 className="p-5 bg-card border border-border rounded-2xl flex items-center justify-between gap-4 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-[#0D0D0D] transition-all duration-200"

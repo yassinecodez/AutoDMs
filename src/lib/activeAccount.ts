@@ -12,13 +12,7 @@ export async function getActiveAccount(userId: string): Promise<IgAccount | null
   const cookieStore = await cookies();
   const activeAccountId = cookieStore.get(ACTIVE_ACCOUNT_COOKIE)?.value;
 
-  const accounts = await db.igAccount.findMany({
-    where: {
-      userId,
-      NOT: { pageName: "Instagram Account" },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const accounts = await getAllUserAccounts(userId);
 
   if (accounts.length === 0) {
     return null;
@@ -33,14 +27,19 @@ export async function getActiveAccount(userId: string): Promise<IgAccount | null
 }
 
 /**
- * Retrieves all valid connected Instagram accounts for the user.
+ * Retrieves all valid connected Instagram accounts for the user, strictly deduplicated by handle.
  */
 export async function getAllUserAccounts(userId: string): Promise<IgAccount[]> {
-  return await db.igAccount.findMany({
+  const rawAccounts = await db.igAccount.findMany({
     where: {
       userId,
       NOT: { pageName: "Instagram Account" },
     },
     orderBy: { createdAt: "desc" },
   });
+
+  return rawAccounts.filter(
+    (acc, index, self) =>
+      index === self.findIndex((t) => t.pageName?.toLowerCase() === acc.pageName?.toLowerCase())
+  );
 }

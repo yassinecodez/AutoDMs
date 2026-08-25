@@ -26,8 +26,14 @@ export default function AccountSwitcher({
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Deduplicate accounts list by lowercase pageName
+  const uniqueAccounts = accounts.filter(
+    (acc, index, self) =>
+      index === self.findIndex((t) => t.pageName?.toLowerCase() === acc.pageName?.toLowerCase())
+  );
+
   const activeAccount =
-    accounts.find((a) => a.id === activeAccountId) || accounts[0] || null;
+    uniqueAccounts.find((a) => a.id === activeAccountId) || uniqueAccounts[0] || null;
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -57,7 +63,7 @@ export default function AccountSwitcher({
     }
   };
 
-  if (!activeAccount && accounts.length === 0) {
+  if (!activeAccount && uniqueAccounts.length === 0) {
     return (
       <Link
         href="/dashboard/accounts"
@@ -120,13 +126,13 @@ export default function AccountSwitcher({
           <div className="px-2.5 py-1.5 flex items-center justify-between border-b border-zinc-100 dark:border-[#202020] mb-1">
             <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Switch workspace</span>
             <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-[#161616] px-2 py-0.5 rounded border border-zinc-200 dark:border-[#262626]">
-              {accounts.length} {accounts.length === 1 ? "profile" : "profiles"}
+              {uniqueAccounts.length} {uniqueAccounts.length === 1 ? "profile" : "profiles"}
             </span>
           </div>
 
           {/* Account List */}
           <div className="space-y-0.5 max-h-56 overflow-y-auto">
-            {accounts.map((acc) => {
+            {uniqueAccounts.map((acc) => {
               const isSelected = acc.id === activeAccount.id;
               const isSwitching = switchingId === acc.id;
 

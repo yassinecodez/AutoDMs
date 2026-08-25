@@ -7,10 +7,15 @@ import {
   X,
   ShieldAlert,
   Loader2,
+  AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 
 interface GuidedConnectionHelperProps {
   errorParam?: string;
+  warningParam?: string;
+  expectedParam?: string;
+  actualParam?: string;
   detailsParam?: string;
   statusParam?: string;
   countParam?: string;
@@ -19,6 +24,9 @@ interface GuidedConnectionHelperProps {
 
 export function GuidedConnectionHelper({
   errorParam,
+  warningParam,
+  expectedParam,
+  actualParam,
   detailsParam,
   statusParam,
   countParam,
@@ -27,10 +35,14 @@ export function GuidedConnectionHelper({
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleConnectAgain = async () => {
+  const handleConnectAgain = async (target?: string) => {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/instagram/url");
+      const endpoint = target
+        ? `/api/auth/instagram/url?handle=${encodeURIComponent(target)}`
+        : "/api/auth/instagram/url";
+
+      const res = await fetch(endpoint);
       if (!res.ok) {
         throw new Error("Failed to get authorization URL");
       }
@@ -48,7 +60,58 @@ export function GuidedConnectionHelper({
 
   if (dismissed) return null;
 
-  // 1. Success Banner
+  // 1. Handle Mismatch Warning Banner
+  if (warningParam === "HANDLE_MISMATCH") {
+    return (
+      <div className="p-5 bg-amber-500/10 border border-amber-500/20 text-foreground rounded-2xl flex items-start justify-between gap-3 shadow-sm animate-in fade-in duration-200">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
+            <AlertTriangle className="w-5 h-5" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-foreground">
+              Connected as @{actualParam || "another account"} instead of @{expectedParam}
+            </h3>
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
+              Your browser was logged into <strong className="text-foreground">@{actualParam}</strong> on instagram.com.
+              We successfully linked <strong className="text-foreground">@{actualParam}</strong>. To connect <strong className="text-foreground">@{expectedParam}</strong>, please switch accounts on Instagram and try again.
+            </p>
+            <div className="pt-1 flex flex-wrap items-center gap-3">
+              <a
+                href="https://www.instagram.com/accounts/logout/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-9 px-4 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground border border-border font-medium text-xs inline-flex items-center gap-1.5 transition-colors"
+              >
+                <span>Switch account on Instagram</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+              {expectedParam && (
+                <button
+                  type="button"
+                  onClick={() => handleConnectAgain(expectedParam)}
+                  disabled={loading}
+                  className="h-9 px-4 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-xs inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-sm"
+                >
+                  {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                  <span>Connect @{expectedParam}</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={() => setDismissed(true)}
+          className="text-muted-foreground hover:text-foreground transition-colors p-1"
+          title="Dismiss"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
+  // 2. Success Banner
   if (statusParam === "SUCCESS" || statusParam === "success") {
     return (
       <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-foreground rounded-2xl flex items-start justify-between gap-3 shadow-sm animate-in fade-in duration-200">
@@ -74,7 +137,7 @@ export function GuidedConnectionHelper({
     );
   }
 
-  // 2. Token Exchange / Permissions Banner
+  // 3. Token Exchange / Permissions Banner
   if (errorParam && errorParam !== "SUCCESS" && errorParam !== "success") {
     return (
       <div className="p-5 bg-red-500/10 border border-red-500/20 text-foreground rounded-2xl flex items-start justify-between gap-3 shadow-sm animate-in fade-in duration-200">
@@ -96,7 +159,7 @@ export function GuidedConnectionHelper({
             )}
             <div className="pt-1">
               <button
-                onClick={handleConnectAgain}
+                onClick={() => handleConnectAgain()}
                 disabled={loading}
                 className="h-9 px-4 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-xs inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-sm"
               >

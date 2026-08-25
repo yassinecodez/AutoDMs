@@ -5,6 +5,8 @@ import {
   Search,
   ArrowRight,
   Loader2,
+  ExternalLink,
+  Info,
 } from "lucide-react";
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -55,14 +57,19 @@ export function AccountFinder() {
         isBusiness: true,
       });
       setSearching(false);
-    }, 400);
+    }, 300);
   };
 
-  const handleConnect = async () => {
+  const handleConnect = async (targetHandle?: string) => {
     setConnecting(true);
 
     try {
-      const res = await fetch("/api/auth/instagram/url");
+      const handleToPass = targetHandle || (foundProfile ? foundProfile.username : cleanHandle(handleInput));
+      const urlEndpoint = handleToPass
+        ? `/api/auth/instagram/url?handle=${encodeURIComponent(handleToPass)}`
+        : "/api/auth/instagram/url";
+
+      const res = await fetch(urlEndpoint);
       if (!res.ok) {
         throw new Error("Failed to generate authorization session.");
       }
@@ -99,7 +106,7 @@ export function AccountFinder() {
         {/* Primary High-Contrast Connect Button */}
         <button
           type="button"
-          onClick={handleConnect}
+          onClick={() => handleConnect()}
           disabled={connecting}
           className="h-10 px-5 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-sm inline-flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-50 shrink-0"
         >
@@ -117,9 +124,9 @@ export function AccountFinder() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label htmlFor="ig-handle-input" className="text-xs font-semibold text-foreground">
-            Verify handle permissions
+            Target account lookup & verification
           </label>
-          <span className="text-xs text-muted-foreground">Optional pre-check</span>
+          <span className="text-xs text-muted-foreground">Pre-check handle</span>
         </div>
 
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-stretch gap-3">
@@ -131,7 +138,12 @@ export function AccountFinder() {
               id="ig-handle-input"
               type="text"
               value={handleInput}
-              onChange={(e) => setHandleInput(e.target.value)}
+              onChange={(e) => {
+                setHandleInput(e.target.value);
+                if (foundProfile && cleanHandle(e.target.value) !== foundProfile.username) {
+                  setFoundProfile(null);
+                }
+              }}
               placeholder="your_brand"
               className="w-full h-10 pl-8 pr-4 bg-secondary border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
             />
@@ -154,7 +166,7 @@ export function AccountFinder() {
 
       {/* Profile Preview Card (when handle searched) */}
       {foundProfile && (
-        <div className="p-4 bg-secondary/50 border border-border rounded-xl space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="p-5 bg-secondary/50 border border-border rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="w-12 h-12 rounded-full bg-secondary border border-border flex items-center justify-center text-foreground font-bold text-base shrink-0">
@@ -172,7 +184,7 @@ export function AccountFinder() {
 
             <button
               type="button"
-              onClick={handleConnect}
+              onClick={() => handleConnect(foundProfile.username)}
               disabled={connecting}
               className="h-10 px-5 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-sm inline-flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-50 shrink-0"
             >
@@ -184,6 +196,25 @@ export function AccountFinder() {
               <span>Continue with @{foundProfile.username}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
+          </div>
+
+          {/* Clean reminder and Account Switch helper */}
+          <div className="pt-3 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+              <span>
+                Ensure you are logged into <strong className="text-foreground">@{foundProfile.username}</strong> on instagram.com in this browser.
+              </span>
+            </div>
+            <a
+              href="https://www.instagram.com/accounts/logout/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:underline inline-flex items-center gap-1 font-medium shrink-0"
+            >
+              <span>Switch account on Instagram</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
           </div>
         </div>
       )}

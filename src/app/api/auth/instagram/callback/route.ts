@@ -5,19 +5,31 @@ import { encrypt } from "@/lib/crypto";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
-function extractStatePayload(stateParam: string | null): { userId: string | null; email: string | null } {
-  if (!stateParam) return { userId: null, email: null };
+function extractStatePayload(stateParam: string | null): {
+  userId: string | null;
+  email: string | null;
+  targetHandle: string | null;
+} {
+  if (!stateParam) return { userId: null, email: null, targetHandle: null };
   try {
     const jsonStr = Buffer.from(stateParam, "base64url").toString("utf-8");
     const parsed = JSON.parse(jsonStr);
-    return { userId: parsed.userId || null, email: parsed.email || null };
+    return {
+      userId: parsed.userId || null,
+      email: parsed.email || null,
+      targetHandle: parsed.targetHandle || null,
+    };
   } catch {
     try {
       const jsonStr = Buffer.from(stateParam, "base64").toString("utf-8");
       const parsed = JSON.parse(jsonStr);
-      return { userId: parsed.userId || null, email: parsed.email || null };
+      return {
+        userId: parsed.userId || null,
+        email: parsed.email || null,
+        targetHandle: parsed.targetHandle || null,
+      };
     } catch {
-      return { userId: null, email: null };
+      return { userId: null, email: null, targetHandle: null };
     }
   }
 }
@@ -110,7 +122,7 @@ export async function GET(request: NextRequest) {
       : "http://localhost:3000/api/auth/instagram/callback";
 
   try {
-    // 3. Exchange authorization code for short-lived User Access Token (application/x-www-form-urlencoded)
+    // 3. Exchange authorization code for short-lived User Access Token
     const formData = new URLSearchParams();
     formData.append("client_id", clientId);
     formData.append("client_secret", clientSecret);
@@ -137,7 +149,7 @@ export async function GET(request: NextRequest) {
 
     let usedSecret = clientSecret;
 
-    // Retry with META_APP_SECRET if first attempt failed with secret/client validation error
+    // Retry with META_APP_SECRET if first attempt failed with secret validation error
     if (!tokenRes.ok && process.env.META_APP_SECRET && process.env.META_APP_SECRET !== clientSecret) {
       console.log("[Instagram Callback] Retrying token exchange with alternative secret (META_APP_SECRET)...");
       const fallbackFormData = new URLSearchParams();
@@ -244,7 +256,6 @@ export async function GET(request: NextRequest) {
         else if (profileData.name) username = profileData.name;
         if (profileData.profile_picture_url) profilePictureUrl = profileData.profile_picture_url;
       } else {
-        // Fallback endpoint without version prefix
         const fallbackUrl = `https://graph.instagram.com/me?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
         const fallbackRes = await fetch(fallbackUrl);
         const fallbackText = await fallbackRes.text();
@@ -276,33 +287,75 @@ export async function GET(request: NextRequest) {
       console.warn("[Instagram Callback] Subscribed apps warning:", subErr);
     }
 
-    // 7. Encrypt token and upsert IgAccount in database
+    // 7. Strict Account Deduplication and Persistence Logic
     const encryptedToken = encrypt(longLivedToken);
     const pageIdValue = `ig_${instagramId}`;
+    const normalizedUsername = username.toLowerCase().trim();
 
     let savedAccount: any = null;
     try {
-      savedAccount = await db.igAccount.upsert({
-        where: { instagramAccountId: instagramId },
-        update: {
+      // Find ANY existing account for this user matching instagramAccountId OR pageName (case-insensitive)
+      const existingAccounts = await db.igAccount.findMany({
+        where: {
           userId: verifiedUser.id,
-          pageId: pageIdValue,
-          pageName: username,
-          profilePictureUrl: profilePictureUrl,
-          accessToken: encryptedToken,
-          tokenExpiresAt: tokenExpiresAt,
+          OR: [
+            { instagramAccountId: instagramId },
+            { pageName: { equals: normalizedUsername, mode: "insensitive" } },
+            { pageName: { equals: username } },
+          ],
         },
-        create: {
-          userId: verifiedUser.id,
-          instagramAccountId: instagramId,
-          pageId: pageIdValue,
-          pageName: username,
-          profilePictureUrl: profilePictureUrl,
-          accessToken: encryptedToken,
-          tokenExpiresAt: tokenExpiresAt,
-        },
+        orderBy: { createdAt: "asc" },
       });
-      console.log(`[Instagram Callback] Successfully connected @${username} (ID: ${instagramId}) for user ${verifiedUser.id}`);
+
+      if (existingAccounts.length > 0) {
+        const primary = existingAccounts[0];
+        console.log(`[Instagram Callback] Existing account matched for @${username} (ID: ${primary.id}). Updating in place...`);
+
+        savedAccount = await db.igAccount.update({
+          where: { id: primary.id },
+          data: {
+            instagramAccountId: instagramId,
+            pageId: pageIdValue,
+            pageName: username,
+            profilePictureUrl: profilePictureUrl || primary.profilePictureUrl,
+            accessToken: encryptedToken,
+            tokenExpiresAt: tokenExpiresAt,
+          },
+        });
+
+        // If there were extra duplicate records, merge & clean them up
+        if (existingAccounts.length > 1) {
+          const duplicateIds = existingAccounts.slice(1).map((a) => a.id);
+          console.log(`[Instagram Callback] Merging duplicate account IDs:`, duplicateIds);
+
+          await db.automation.updateMany({
+            where: { igAccountId: { in: duplicateIds } },
+            data: { igAccountId: primary.id },
+          });
+
+          await db.lead.updateMany({
+            where: { igAccountId: { in: duplicateIds } },
+            data: { igAccountId: primary.id },
+          });
+
+          await db.igAccount.deleteMany({
+            where: { id: { in: duplicateIds } },
+          });
+        }
+      } else {
+        console.log(`[Instagram Callback] No existing account found for @${username}. Creating new record...`);
+        savedAccount = await db.igAccount.create({
+          data: {
+            userId: verifiedUser.id,
+            instagramAccountId: instagramId,
+            pageId: pageIdValue,
+            pageName: username,
+            profilePictureUrl: profilePictureUrl,
+            accessToken: encryptedToken,
+            tokenExpiresAt: tokenExpiresAt,
+          },
+        });
+      }
 
       // Delete any leftover placeholder accounts
       await db.igAccount.deleteMany({
@@ -311,8 +364,10 @@ export async function GET(request: NextRequest) {
           pageName: "Instagram Account",
         },
       });
+
+      console.log(`[Instagram Callback] Successfully saved @${username} (Account ID: ${savedAccount.id}) for user ${verifiedUser.id}`);
     } catch (prismaError: any) {
-      console.error("[Instagram Callback] Prisma upsert error:", {
+      console.error("[Instagram Callback] Prisma persistence error:", {
         message: prismaError.message,
         code: prismaError.code,
         meta: prismaError.meta,
@@ -329,9 +384,20 @@ export async function GET(request: NextRequest) {
     revalidatePath("/dashboard/leads");
     revalidatePath("/dashboard/logs");
 
-    const response = NextResponse.redirect(
-      new URL("/dashboard?status=SUCCESS&count=1", request.url)
-    );
+    // 9. Handle verification vs target handle (if searched in finder)
+    const targetHandle = statePayload.targetHandle?.toLowerCase().trim();
+    const actualHandle = username.toLowerCase().trim();
+    const isMismatch = targetHandle && targetHandle !== actualHandle;
+
+    let redirectUrl = new URL("/dashboard/accounts?status=SUCCESS&count=1", request.url);
+    if (isMismatch) {
+      redirectUrl = new URL(
+        `/dashboard/accounts?warning=HANDLE_MISMATCH&expected=${encodeURIComponent(statePayload.targetHandle!)}&actual=${encodeURIComponent(username)}`,
+        request.url
+      );
+    }
+
+    const response = NextResponse.redirect(redirectUrl);
 
     if (savedAccount?.id) {
       response.cookies.set("active_ig_account_id", savedAccount.id, {
