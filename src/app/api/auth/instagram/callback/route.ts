@@ -8,16 +8,14 @@ import { revalidatePath } from "next/cache";
 function extractStatePayload(stateParam: string | null): {
   userId: string | null;
   email: string | null;
-  targetHandle: string | null;
 } {
-  if (!stateParam) return { userId: null, email: null, targetHandle: null };
+  if (!stateParam) return { userId: null, email: null };
   try {
     const jsonStr = Buffer.from(stateParam, "base64url").toString("utf-8");
     const parsed = JSON.parse(jsonStr);
     return {
       userId: parsed.userId || null,
       email: parsed.email || null,
-      targetHandle: parsed.targetHandle || null,
     };
   } catch {
     try {
@@ -26,10 +24,9 @@ function extractStatePayload(stateParam: string | null): {
       return {
         userId: parsed.userId || null,
         email: parsed.email || null,
-        targetHandle: parsed.targetHandle || null,
       };
     } catch {
-      return { userId: null, email: null, targetHandle: null };
+      return { userId: null, email: null };
     }
   }
 }
@@ -237,10 +234,10 @@ export async function GET(request: NextRequest) {
 
     const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
 
-    // 5. Fetch Instagram profile info including profile picture
+    // 5. Fetch Instagram profile info dynamically from Meta API
     console.log("[Instagram Callback] Fetching Instagram profile info...");
     let instagramId = String(igUserId || "");
-    let username = "creamedia.ma";
+    let username = "";
     let profilePictureUrl: string | null = null;
 
     try {
@@ -251,9 +248,11 @@ export async function GET(request: NextRequest) {
 
       if (profileRes.ok) {
         const profileData = JSON.parse(rawProfileText);
+        console.log("[Meta /me Raw Profile]:", JSON.stringify(profileData));
         if (profileData.id) instagramId = String(profileData.id);
         if (profileData.username) username = profileData.username;
         else if (profileData.name) username = profileData.name;
+        else if (profileData.id) username = profileData.id;
         if (profileData.profile_picture_url) profilePictureUrl = profileData.profile_picture_url;
       } else {
         const fallbackUrl = `https://graph.instagram.com/me?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
@@ -262,9 +261,11 @@ export async function GET(request: NextRequest) {
         console.log(`[Instagram Callback] Profile fallback response [Status: ${fallbackRes.status}]: ${fallbackText}`);
         if (fallbackRes.ok) {
           const fallbackData = JSON.parse(fallbackText);
+          console.log("[Meta /me Raw Profile Fallback]:", JSON.stringify(fallbackData));
           if (fallbackData.id) instagramId = String(fallbackData.id);
           if (fallbackData.username) username = fallbackData.username;
           else if (fallbackData.name) username = fallbackData.name;
+          else if (fallbackData.id) username = fallbackData.id;
           if (fallbackData.profile_picture_url) profilePictureUrl = fallbackData.profile_picture_url;
         }
       }
@@ -275,6 +276,12 @@ export async function GET(request: NextRequest) {
     if (!instagramId) {
       instagramId = String(igUserId || `ig_${Date.now()}`);
     }
+
+    if (!username) {
+      username = `ig_${instagramId}`;
+    }
+
+    console.log(`[Instagram Callback] Resolved authenticated handle: @${username} (ID: ${instagramId})`);
 
     // 6. Register Webhook app subscriptions
     try {
@@ -384,20 +391,9 @@ export async function GET(request: NextRequest) {
     revalidatePath("/dashboard/leads");
     revalidatePath("/dashboard/logs");
 
-    // 9. Handle verification vs target handle (if searched in finder)
-    const targetHandle = statePayload.targetHandle?.toLowerCase().trim();
-    const actualHandle = username.toLowerCase().trim();
-    const isMismatch = targetHandle && targetHandle !== actualHandle;
-
-    let redirectUrl = new URL("/dashboard/accounts?status=SUCCESS&count=1", request.url);
-    if (isMismatch) {
-      redirectUrl = new URL(
-        `/dashboard/accounts?warning=HANDLE_MISMATCH&expected=${encodeURIComponent(statePayload.targetHandle!)}&actual=${encodeURIComponent(username)}`,
-        request.url
-      );
-    }
-
-    const response = NextResponse.redirect(redirectUrl);
+    const response = NextResponse.redirect(
+      new URL("/dashboard/accounts?status=SUCCESS", request.url)
+    );
 
     if (savedAccount?.id) {
       response.cookies.set("active_ig_account_id", savedAccount.id, {

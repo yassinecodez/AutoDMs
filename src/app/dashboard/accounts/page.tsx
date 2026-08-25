@@ -29,9 +29,6 @@ interface PageProps {
   searchParams: Promise<{
     status?: string;
     error?: string;
-    warning?: string;
-    expected?: string;
-    actual?: string;
     message?: string;
     count?: string;
     connected?: string;
@@ -86,12 +83,9 @@ export default async function AccountsPage({ searchParams }: PageProps) {
         </p>
       </div>
 
-      {/* Guided Connection Helper & Error / Warning Reporting Banner */}
+      {/* Guided Connection Helper & Error / Status Reporting Banner */}
       <GuidedConnectionHelper
         errorParam={params.error}
-        warningParam={params.warning}
-        expectedParam={params.expected}
-        actualParam={params.actual}
         detailsParam={params.details}
         statusParam={params.status || (params.connected ? "SUCCESS" : undefined)}
         countParam={params.count}

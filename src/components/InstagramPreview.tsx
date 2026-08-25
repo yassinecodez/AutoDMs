@@ -30,7 +30,7 @@ interface InstagramPreviewProps {
 }
 
 export function InstagramPreview({
-  username = "creamedia.ma",
+  username = "your_brand",
   triggerKeyword = "PRICE",
   replyDmMessage = "Hey Sarah! Here is the direct link to the dress you saw on our Reel. Use code SUMMER20 for 20% off at checkout!",
   publicReplyComment = "Just sent you a DM with the direct link! 📩",
