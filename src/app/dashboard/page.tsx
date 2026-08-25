@@ -221,7 +221,7 @@ export default async function DashboardOverview() {
             </div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-white font-mono">{totalDmsCount}</div>
+            <div className="text-2xl font-bold text-white tracking-tight">{totalDmsCount}</div>
             <p className="text-[11px] text-zinc-500 mt-0.5">Automated direct deliveries</p>
           </div>
         </div>
@@ -235,7 +235,7 @@ export default async function DashboardOverview() {
             </div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-white font-mono">{automationsCount}</div>
+            <div className="text-2xl font-bold text-white tracking-tight">{automationsCount}</div>
             <p className="text-[11px] text-zinc-500 mt-0.5">Live triggers running</p>
           </div>
         </div>
@@ -249,7 +249,7 @@ export default async function DashboardOverview() {
             </div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-white font-mono">{capturedLeadsCount}</div>
+            <div className="text-2xl font-bold text-white tracking-tight">{capturedLeadsCount}</div>
             <p className="text-[11px] text-zinc-500 mt-0.5">Emails & phone numbers</p>
           </div>
         </div>
@@ -258,14 +258,14 @@ export default async function DashboardOverview() {
         <div className="p-5 bg-[#0A0A0A] border border-[#222222] rounded-2xl space-y-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-700 transition-all duration-200">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-zinc-400">Monthly quota</span>
-            <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-[#161616] border border-[#262626] text-zinc-300">
+            <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-[#161616] border border-[#262626] text-zinc-300">
               {planDetails.name}
             </span>
           </div>
           <div>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-white font-mono">{dmsUsed}</span>
-              <span className="text-xs text-zinc-500 font-mono">/{dmsLimit}</span>
+              <span className="text-2xl font-bold text-white tracking-tight">{dmsUsed}</span>
+              <span className="text-xs text-zinc-500">/{dmsLimit}</span>
             </div>
             <div className="w-full h-1.5 bg-[#141414] rounded-full overflow-hidden mt-2 border border-[#222222]">
               <div
@@ -309,7 +309,7 @@ export default async function DashboardOverview() {
                       <Icon className="w-5 h-5" strokeWidth={1.75} />
                     </div>
                     {template.tag && (
-                      <span className="bg-[#181818] border border-[#2b2b2b] text-zinc-300 text-[10px] px-2.5 py-0.5 rounded-full font-medium font-mono">
+                      <span className="bg-[#181818] border border-[#2b2b2b] text-zinc-300 text-[10px] px-2.5 py-0.5 rounded-full font-medium">
                         {template.tag}
                       </span>
                     )}
@@ -351,7 +351,7 @@ export default async function DashboardOverview() {
                   <h3 className="text-sm font-semibold text-white">Getting started</h3>
                   <p className="text-xs text-zinc-400">Complete setup to launch your Instagram pipeline</p>
                 </div>
-                <span className="text-xs font-medium text-zinc-400 bg-[#141414] border border-[#222222] px-2.5 py-1 rounded-full font-mono">
+                <span className="text-xs font-medium text-zinc-400 bg-[#141414] border border-[#222222] px-2.5 py-1 rounded-full">
                   {completedSteps} of 3 completed
                 </span>
               </div>

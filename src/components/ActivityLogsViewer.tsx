@@ -113,7 +113,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
           <div className="space-y-0.5">
             <p className="text-[11px] font-medium text-zinc-400">Total Dispatches</p>
             <p className="text-2xl font-bold text-white tracking-tight">{totalDispatches.toLocaleString()}</p>
-            <p className="text-[10px] text-zinc-500 font-mono">Live webhook triggers</p>
+            <p className="text-[10px] text-zinc-500 font-medium">Live webhook triggers</p>
           </div>
           <div className="p-2.5 rounded-xl bg-[#141414] border border-[#262626] text-white shrink-0">
             <Send className="w-4 h-4" strokeWidth={1.75} />
@@ -125,7 +125,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
           <div className="space-y-0.5">
             <p className="text-[11px] font-medium text-zinc-400">Delivery Success Rate</p>
             <p className="text-2xl font-bold text-white tracking-tight">{successRate}%</p>
-            <p className="text-[10px] text-zinc-500 font-mono">{deliveredCount} delivered</p>
+            <p className="text-[10px] text-zinc-500 font-medium">{deliveredCount} delivered</p>
           </div>
           <div className="p-2.5 rounded-xl bg-[#141414] border border-[#262626] text-white shrink-0">
             <CheckCircle2 className="w-4 h-4" strokeWidth={1.75} />
@@ -137,7 +137,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
           <div className="space-y-0.5">
             <p className="text-[11px] font-medium text-zinc-400">Leads Captured</p>
             <p className="text-2xl font-bold text-white tracking-tight">{leadsCapturedCount.toLocaleString()}</p>
-            <p className="text-[10px] text-zinc-500 font-mono">Contact extractions</p>
+            <p className="text-[10px] text-zinc-500 font-medium">Contact extractions</p>
           </div>
           <div className="p-2.5 rounded-xl bg-[#141414] border border-[#262626] text-white shrink-0">
             <Users className="w-4 h-4" strokeWidth={1.75} />
@@ -149,7 +149,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
           <div className="space-y-0.5">
             <p className="text-[11px] font-medium text-zinc-400">Skipped / Filtered</p>
             <p className="text-2xl font-bold text-white tracking-tight">{skippedOrRestrictedCount.toLocaleString()}</p>
-            <p className="text-[10px] text-zinc-500 font-mono">No match or quota</p>
+            <p className="text-[10px] text-zinc-500 font-medium">No match or quota</p>
           </div>
           <div className="p-2.5 rounded-xl bg-[#141414] border border-[#262626] text-white shrink-0">
             <Zap className="w-4 h-4" strokeWidth={1.75} />
@@ -223,12 +223,12 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
           <select
             value={selectedSource}
             onChange={(e) => setSelectedSource(e.target.value)}
-            className="bg-[#111111] border border-[#262626] rounded-lg h-9 px-3 text-xs font-medium text-zinc-300 focus:outline-none focus:border-zinc-500 transition-colors"
+            className="bg-[#111111] border border-[#262626] rounded-lg h-9 px-3 text-xs font-medium text-zinc-300 focus:outline-none focus:border-zinc-500 transition-colors cursor-pointer"
           >
-            <option value="ALL">All sources</option>
-            <option value="COMMENTS">Comments</option>
-            <option value="STORIES">Stories</option>
-            <option value="DIRECT_MESSAGES">Direct messages</option>
+            <option value="ALL" className="bg-[#111111] text-zinc-300">All sources</option>
+            <option value="COMMENTS" className="bg-[#111111] text-zinc-300">Comments</option>
+            <option value="STORIES" className="bg-[#111111] text-zinc-300">Stories</option>
+            <option value="DIRECT_MESSAGES" className="bg-[#111111] text-zinc-300">Direct messages</option>
           </select>
         </div>
       </div>
@@ -293,7 +293,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
                     >
                       {/* 1. Time Column */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5 text-zinc-400 font-mono text-[11px]">
+                        <div className="flex items-center gap-1.5 text-zinc-400 text-[11px] font-normal">
                           <Clock className="w-3 h-3 text-zinc-600" />
                           <span title={new Date(log.timestamp).toLocaleString()}>
                             {timeAgo}
@@ -343,7 +343,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
                       {/* 4. Input Message Column */}
                       <td className="py-3.5 px-4 max-w-xs">
                         <span
-                          className="text-xs text-zinc-300 font-mono bg-[#141414] px-2.5 py-1 rounded-lg border border-[#222222] truncate max-w-xs inline-block"
+                          className="text-xs text-zinc-300 bg-[#141414] px-2.5 py-1 rounded-lg border border-[#222222] truncate max-w-xs inline-block"
                           title={log.commentText}
                         >
                           "{log.commentText}"

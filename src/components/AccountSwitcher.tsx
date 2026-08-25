@@ -69,7 +69,7 @@ export default function AccountSwitcher({
           </div>
           <span className="font-medium truncate">Connect Instagram</span>
         </div>
-        <span className="text-[10px] text-zinc-500 font-mono">+ Add</span>
+        <span className="text-[10px] text-zinc-500 font-medium">+ Add</span>
       </Link>
     );
   }
@@ -106,7 +106,7 @@ export default function AccountSwitcher({
                 <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1.9 14.7l-4.2-4.2 1.4-1.4 2.8 2.8 6.8-6.8 1.4 1.4-8.2 8.2z" />
               </svg>
             </div>
-            <span className="text-[10px] text-zinc-500 block -mt-0.5 font-mono">Workspace</span>
+            <span className="text-[10px] text-zinc-500 block -mt-0.5 font-medium">Workspace</span>
           </div>
         </div>
 
@@ -119,7 +119,7 @@ export default function AccountSwitcher({
           {/* Header */}
           <div className="px-2.5 py-1.5 flex items-center justify-between border-b border-[#202020] mb-1">
             <span className="text-[11px] font-medium text-zinc-400">Switch workspace</span>
-            <span className="text-[10px] font-mono text-zinc-500 bg-[#161616] px-1.5 py-0.2 rounded border border-[#262626]">
+            <span className="text-[10px] font-medium text-zinc-500 bg-[#161616] px-1.5 py-0.5 rounded border border-[#262626]">
               {accounts.length} {accounts.length === 1 ? "profile" : "profiles"}
             </span>
           </div>

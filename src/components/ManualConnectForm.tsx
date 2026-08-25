@@ -110,7 +110,7 @@ export function ManualConnectForm() {
                 name="accessToken"
                 required
                 rows={3}
-                className="w-full px-3 py-1.5 bg-[#111111] border border-[#262626] rounded-lg focus:outline-none focus:border-zinc-400 text-white font-mono text-[10px]"
+                className="w-full px-3 py-1.5 bg-[#111111] border border-[#262626] rounded-lg focus:outline-none focus:border-zinc-400 text-white text-[11px]"
                 placeholder="EAAGm0PX4E1gBA..."
               />
             </div>

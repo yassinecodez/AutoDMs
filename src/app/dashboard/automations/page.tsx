@@ -58,7 +58,7 @@ export default async function AutomationsPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-white">Automations</h1>
             {activeAccount && (
-              <span className="text-xs font-mono text-zinc-400 bg-[#141414] border border-[#262626] px-2 py-0.5 rounded-md">
+              <span className="text-xs font-medium text-zinc-400 bg-[#141414] border border-[#262626] px-2 py-0.5 rounded-md">
                 @{activeAccount.pageName}
               </span>
             )}

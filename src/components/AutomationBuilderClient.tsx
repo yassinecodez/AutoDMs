@@ -258,7 +258,7 @@ export default function AutomationBuilderClient({
               className="bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-white font-medium text-xs text-white focus:outline-none px-1 py-0.5 max-w-[200px] truncate"
               title="Click to rename rule"
             />
-            <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-mono">
+            <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-medium">
               <span className={`w-1.5 h-1.5 rounded-full ${isSavedDot ? "bg-white" : "bg-zinc-600"}`} />
               <span>{isSavedDot ? "Saved" : "Saving..."}</span>
             </div>
@@ -502,7 +502,7 @@ export default function AutomationBuilderClient({
                                             <p className="text-xs font-medium text-white truncate max-w-[140px]">
                                               {caption}
                                             </p>
-                                            <p className="text-[10px] text-zinc-500 font-mono">
+                                            <p className="text-[10px] text-zinc-500 font-medium">
                                               ID: {mediaId.slice(-8)}
                                             </p>
                                           </div>
@@ -638,7 +638,7 @@ export default function AutomationBuilderClient({
                             {/* Tag Chips */}
                             <div className="flex flex-wrap gap-1.5">
                               {triggerKeyword.split(",").map((k) => k.trim()).filter((k) => k.length > 0).map((chip, idx) => (
-                                <span key={idx} className="px-2 py-0.5 rounded bg-[#111111] border border-[#222222] text-zinc-300 font-mono text-[10px]">
+                                <span key={idx} className="px-2 py-0.5 rounded bg-[#111111] border border-[#222222] text-zinc-300 font-medium text-[10px]">
                                   #{chip.toLowerCase()}
                                 </span>
                               ))}
@@ -719,7 +719,7 @@ export default function AutomationBuilderClient({
                                   value={buttonUrl}
                                   onChange={(e) => setButtonUrl(e.target.value)}
                                   placeholder="https://example.com"
-                                  className="w-full h-9 px-3 bg-[#111111] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 font-mono focus:outline-none focus:border-zinc-400 transition-colors"
+                                  className="w-full h-9 px-3 bg-[#111111] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
                                 />
                               </div>
                             </div>
@@ -746,7 +746,7 @@ export default function AutomationBuilderClient({
                                   value={secondaryButtonUrl}
                                   onChange={(e) => setSecondaryButtonUrl(e.target.value)}
                                   placeholder="https://wa.me/..."
-                                  className="w-full h-9 px-3 bg-[#111111] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 font-mono focus:outline-none focus:border-zinc-400 transition-colors"
+                                  className="w-full h-9 px-3 bg-[#111111] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
                                 />
                               </div>
                             </div>

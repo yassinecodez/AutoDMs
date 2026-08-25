@@ -177,7 +177,7 @@ export function InstagramPreview({
                 <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-bold text-white">Comments</span>
-                    <span className="text-[11px] text-zinc-400 font-mono">324</span>
+                    <span className="text-[11px] text-zinc-400 font-medium">324</span>
                   </div>
                   <span className="text-[10px] text-zinc-400 font-medium">Top comments ▾</span>
                 </div>
@@ -196,10 +196,10 @@ export function InstagramPreview({
                     <div className="space-y-0.5 text-xs">
                       <div className="flex items-center gap-1.5">
                         <span className="font-semibold text-white text-[11px]">sarah_k</span>
-                        <span className="text-[10px] text-zinc-500 font-mono">1m</span>
+                        <span className="text-[10px] text-zinc-500 font-medium">1m</span>
                       </div>
                       <p className="text-zinc-200 text-[11px] leading-snug">
-                        Where can I get this? <span className="text-white font-bold bg-white/10 px-1 py-0.5 rounded font-mono">"{triggerKeyword}"</span>
+                        Where can I get this? <span className="text-white font-bold bg-white/10 px-1 py-0.5 rounded">"{triggerKeyword}"</span>
                       </p>
                       <div className="flex items-center gap-3 text-[10px] text-zinc-400 pt-0.5">
                         <span className="hover:text-zinc-200 cursor-pointer">Reply</span>
@@ -222,7 +222,7 @@ export function InstagramPreview({
                       <div className="flex items-center gap-1">
                         <span className="font-semibold text-white text-[11px]">{username}</span>
                         <span className="text-[8px] px-1 py-0.2 bg-zinc-800 text-zinc-300 rounded font-medium border border-zinc-700">Author</span>
-                        <span className="text-[10px] text-zinc-500 font-mono ml-0.5">Just now</span>
+                        <span className="text-[10px] text-zinc-500 font-medium ml-0.5">Just now</span>
                       </div>
                       <p className="text-zinc-300 text-[11px] leading-snug">
                         {publicReplyComment}

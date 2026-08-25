@@ -90,8 +90,8 @@ export function GuidedConnectionHelper({
                 : "Instagram was unable to complete the authorization handshake. Click below to reconnect your profile."}
             </p>
             {detailsParam && (
-              <p className="text-[11px] font-mono text-red-400 bg-red-950/30 border border-red-900/40 px-2.5 py-1 rounded-lg">
-                Reason: {detailsParam}
+              <p className="text-[11px] font-normal text-red-400 bg-red-950/30 border border-red-900/40 px-2.5 py-1 rounded-lg">
+                Details: {detailsParam}
               </p>
             )}
             <div className="pt-1">

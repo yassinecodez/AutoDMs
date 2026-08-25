@@ -212,11 +212,11 @@ export function TemplatesLibraryClient() {
                     <Icon className="w-5 h-5" strokeWidth={1.75} />
                   </div>
                   {item.tag ? (
-                    <span className="bg-[#181818] border border-[#2b2b2b] text-zinc-300 text-[10px] px-2.5 py-0.5 rounded-full font-medium font-mono">
+                    <span className="bg-[#181818] border border-[#2b2b2b] text-zinc-300 text-[10px] px-2.5 py-0.5 rounded-full font-medium">
                       {item.tag}
                     </span>
                   ) : (
-                    <span className="text-[11px] font-medium text-zinc-400 font-mono">
+                    <span className="text-[11px] font-medium text-zinc-400">
                       {item.categoryLabel}
                     </span>
                   )}
@@ -236,7 +236,7 @@ export function TemplatesLibraryClient() {
                 <div className="p-3 bg-[#111111] border border-[#222222] rounded-xl flex items-center justify-between gap-2 text-[11px]">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                    <span className="font-mono text-zinc-300 truncate">{item.triggerLabel}</span>
+                    <span className="font-medium text-zinc-300 truncate">{item.triggerLabel}</span>
                   </div>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
                   <div className="flex items-center gap-1.5 min-w-0">
@@ -249,7 +249,7 @@ export function TemplatesLibraryClient() {
                 <div className="p-3.5 bg-[#111111] border border-[#222222] rounded-xl space-y-2.5 text-xs">
                   {/* Message Snippet */}
                   <div className="space-y-1">
-                    <span className="text-zinc-500 font-medium text-[10px] block font-mono">Direct message reply:</span>
+                    <span className="text-zinc-500 font-medium text-[10px] block">Direct message reply:</span>
                     <p className="text-[11px] text-zinc-300 line-clamp-2 bg-[#0A0A0A] p-2.5 rounded-lg border border-[#222222] leading-relaxed">
                       "{item.replyMessage}"
                     </p>

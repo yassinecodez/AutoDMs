@@ -54,7 +54,7 @@ export default async function DashboardLayout({
               <span className="w-2 h-2 rounded-full bg-white inline-block shrink-0" />
               <span>AutoDMs</span>
             </Link>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#111111] text-zinc-400 border border-[#222222]">
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#111111] text-zinc-400 border border-[#222222]">
               v1.0
             </span>
           </div>
@@ -82,8 +82,8 @@ export default async function DashboardLayout({
           <div className="p-3 mx-3 mb-3 bg-[#111111] border border-[#222222] rounded-2xl space-y-2.5 shrink-0 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
             <div className="space-y-1">
               <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
-                <span>DMs: <strong className="text-white font-mono">{dmsCount}</strong>/{dmsLimit}</span>
-                <span className="text-zinc-300 font-mono">{usagePct}%</span>
+                <span>DMs: <strong className="text-white font-semibold">{dmsCount}</strong>/{dmsLimit}</span>
+                <span className="text-zinc-300 font-medium">{usagePct}%</span>
               </div>
               <div className="w-full h-1.5 bg-[#000000] rounded-full overflow-hidden border border-[#222222]">
                 <div
@@ -111,7 +111,7 @@ export default async function DashboardLayout({
                     src={userAvatar}
                     alt={displayName}
                     className="w-full h-full object-cover"
-                    crossOrigin="anonymous"
+                    referrerPolicy="no-referrer"
                   />
                 ) : (
                   <span>{displayName[0].toUpperCase()}</span>
@@ -119,7 +119,7 @@ export default async function DashboardLayout({
               </div>
               <div className="truncate">
                 <p className="text-xs font-semibold text-white truncate">{displayName}</p>
-                <p className="text-[10px] text-zinc-500 font-mono truncate">{displayEmail}</p>
+                <p className="text-[10px] text-zinc-500 truncate">{displayEmail}</p>
               </div>
             </div>
             <SignOutButton />

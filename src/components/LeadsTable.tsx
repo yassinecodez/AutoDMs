@@ -153,7 +153,7 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
             </button>
           </div>
 
-          <span className="text-xs text-zinc-500 font-mono font-medium">
+          <span className="text-xs text-zinc-500 font-medium">
             Showing {filteredLeads.length} contact{filteredLeads.length !== 1 ? "s" : ""}
           </span>
         </div>
@@ -243,7 +243,7 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
                       {/* 2. Email Address Column */}
                       <td className="py-4 px-4 whitespace-nowrap">
                         {lead.email ? (
-                          <div className="flex items-center gap-1.5 text-zinc-300 font-mono text-[11px]">
+                          <div className="flex items-center gap-1.5 text-zinc-300 text-[11px] font-normal">
                             <Mail className="w-3.5 h-3.5 text-zinc-500" />
                             <a
                               href={`mailto:${lead.email}`}
@@ -253,14 +253,14 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
                             </a>
                           </div>
                         ) : (
-                          <span className="text-zinc-600 font-mono text-xs">—</span>
+                          <span className="text-zinc-600 text-xs">—</span>
                         )}
                       </td>
 
                       {/* 3. Phone Number Column */}
                       <td className="py-4 px-4 whitespace-nowrap">
                         {lead.phone ? (
-                          <div className="flex items-center gap-2 text-zinc-300 font-mono text-[11px]">
+                          <div className="flex items-center gap-2 text-zinc-300 text-[11px] font-normal">
                             <Phone className="w-3.5 h-3.5 text-zinc-500" />
                             <span>{lead.phone}</span>
                             {waUrl && (
@@ -276,7 +276,7 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
                             )}
                           </div>
                         ) : (
-                          <span className="text-zinc-600 font-mono text-xs">—</span>
+                          <span className="text-zinc-600 text-xs">—</span>
                         )}
                       </td>
 
@@ -288,7 +288,7 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
                       </td>
 
                       {/* 5. Date Captured Column */}
-                      <td className="py-4 px-4 whitespace-nowrap text-zinc-400 text-xs font-mono text-right">
+                      <td className="py-4 px-4 whitespace-nowrap text-zinc-400 text-xs font-normal text-right">
                         {new Date(lead.createdAt).toLocaleDateString()}
                       </td>
                     </tr>

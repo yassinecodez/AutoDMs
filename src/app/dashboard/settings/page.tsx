@@ -65,7 +65,7 @@ export default async function SettingsPage() {
               Usage cycles automatically reset every 30 days.
             </p>
           </div>
-          <div className="px-3 py-1 rounded-lg bg-[#111111] border border-[#262626] text-white text-xs font-mono font-medium w-fit">
+          <div className="px-3 py-1 rounded-lg bg-[#111111] border border-[#262626] text-white text-xs font-medium w-fit">
             Current tier: {currentPlanDetails.name}
           </div>
         </div>
@@ -74,9 +74,9 @@ export default async function SettingsPage() {
         <div className="space-y-2 pt-1">
           <div className="flex justify-between text-xs font-medium">
             <span className="text-zinc-400">
-              DMs dispatched: <strong className="text-white font-mono">{user.dmsCountThisMonth}</strong> / {user.dmsLimit}
+              DMs dispatched: <strong className="text-white font-semibold">{user.dmsCountThisMonth}</strong> / {user.dmsLimit}
             </span>
-            <span className="text-zinc-300 font-mono">{usagePercentage}% consumed</span>
+            <span className="text-zinc-300 font-medium">{usagePercentage}% consumed</span>
           </div>
           
           <div className="w-full h-2 bg-[#111111] border border-[#222222] rounded-full overflow-hidden">
@@ -86,7 +86,7 @@ export default async function SettingsPage() {
             />
           </div>
 
-          <div className="text-[11px] text-zinc-500 pt-0.5 text-right font-mono">
+          <div className="text-[11px] text-zinc-500 pt-0.5 text-right font-medium">
             Cycle resets in <strong className="text-zinc-300">{resetsInDays} days</strong> ({new Date(resetDate).toLocaleDateString()})
           </div>
         </div>
@@ -108,13 +108,13 @@ export default async function SettingsPage() {
           }`}>
             <div className="space-y-4">
               <div className="space-y-1">
-                <span className="text-[11px] font-medium text-zinc-400 font-mono">Starter tier</span>
+                <span className="text-[11px] font-medium text-zinc-400">Starter tier</span>
                 <h3 className="text-base font-bold text-white">Free Starter</h3>
                 <p className="text-xs text-zinc-400 leading-normal">Basic triggers for content creators.</p>
               </div>
               <div className="space-y-0.5 py-1">
-                <p className="text-2xl font-bold text-white">$0 <span className="text-xs font-normal text-zinc-500 font-sans">/ forever</span></p>
-                <p className="text-[10px] text-zinc-500 font-mono font-medium">0 DH per month</p>
+                <p className="text-2xl font-bold text-white tracking-tight">$0 <span className="text-xs font-normal text-zinc-500">/ forever</span></p>
+                <p className="text-[10px] text-zinc-500 font-medium">0 DH per month</p>
               </div>
               <ul className="text-xs space-y-2 text-zinc-300 border-t border-[#1F1F1F] pt-4">
                 <li className="flex items-center gap-2">
@@ -148,13 +148,13 @@ export default async function SettingsPage() {
 
             <div className="space-y-4">
               <div className="space-y-1">
-                <span className="text-[11px] font-medium text-zinc-400 font-mono">Professional tier</span>
+                <span className="text-[11px] font-medium text-zinc-400">Professional tier</span>
                 <h3 className="text-base font-bold text-white">Creator Pro</h3>
                 <p className="text-xs text-zinc-400 leading-normal">High volume triggers & story rewards.</p>
               </div>
               <div className="space-y-0.5 py-1">
-                <p className="text-2xl font-bold text-white">$5 <span className="text-xs font-normal text-zinc-500 font-sans">/ month</span></p>
-                <p className="text-[10px] text-zinc-400 font-mono font-medium">50 DH per month</p>
+                <p className="text-2xl font-bold text-white tracking-tight">$5 <span className="text-xs font-normal text-zinc-500">/ month</span></p>
+                <p className="text-[10px] text-zinc-400 font-medium">50 DH per month</p>
               </div>
               <ul className="text-xs space-y-2 text-zinc-300 border-t border-[#1F1F1F] pt-4">
                 <li className="flex items-center gap-2">
@@ -182,13 +182,13 @@ export default async function SettingsPage() {
           }`}>
             <div className="space-y-4">
               <div className="space-y-1">
-                <span className="text-[11px] font-medium text-zinc-400 font-mono">Agency tier</span>
+                <span className="text-[11px] font-medium text-zinc-400">Agency tier</span>
                 <h3 className="text-base font-bold text-white">Business / Agency</h3>
                 <p className="text-xs text-zinc-400 leading-normal">Multi-account scale for agencies & brands.</p>
               </div>
               <div className="space-y-0.5 py-1">
-                <p className="text-2xl font-bold text-white">$15 <span className="text-xs font-normal text-zinc-500 font-sans">/ month</span></p>
-                <p className="text-[10px] text-zinc-400 font-mono font-medium">150 DH per month</p>
+                <p className="text-2xl font-bold text-white tracking-tight">$15 <span className="text-xs font-normal text-zinc-500">/ month</span></p>
+                <p className="text-[10px] text-zinc-400 font-medium">150 DH per month</p>
               </div>
               <ul className="text-xs space-y-2 text-zinc-300 border-t border-[#1F1F1F] pt-4">
                 <li className="flex items-center gap-2">

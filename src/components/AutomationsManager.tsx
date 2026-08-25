@@ -212,11 +212,11 @@ export default function AutomationsManager({
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="bg-[#111111] border border-[#262626] rounded-lg h-9 px-3 text-xs font-medium text-zinc-300 focus:outline-none focus:border-zinc-500 transition-colors"
+            className="bg-[#111111] border border-[#262626] rounded-lg h-9 px-3 text-xs font-medium text-zinc-300 focus:outline-none focus:border-zinc-500 transition-colors cursor-pointer"
           >
-            <option value="ALL">All Status</option>
-            <option value="LIVE">Live</option>
-            <option value="PAUSED">Paused</option>
+            <option value="ALL" className="bg-[#111111] text-zinc-300">All status</option>
+            <option value="LIVE" className="bg-[#111111] text-zinc-300">Live</option>
+            <option value="PAUSED" className="bg-[#111111] text-zinc-300">Paused</option>
           </select>
         </div>
       </div>
@@ -347,9 +347,9 @@ export default function AutomationsManager({
                               <>
                                 <span className="text-zinc-500">Trigger:</span>
                                 {auto.triggerType === "ALL" ? (
-                                  <span className="font-mono text-zinc-300">Any Comment</span>
+                                  <span className="font-medium text-zinc-300">Any Comment</span>
                                 ) : (
-                                  <span className="font-mono text-white">
+                                  <span className="font-medium text-white">
                                     "{auto.triggerKeyword || "None"}"
                                   </span>
                                 )}
@@ -366,7 +366,7 @@ export default function AutomationsManager({
                           {/* Response Preview */}
                           <div className="pt-0.5">
                             <p
-                              className="text-[11px] text-zinc-400 truncate max-w-xs font-mono bg-[#111111] px-2 py-0.5 rounded border border-[#222222]"
+                              className="text-[11px] text-zinc-400 truncate max-w-xs bg-[#111111] px-2 py-0.5 rounded border border-[#222222]"
                               title={auto.replyDmMessage}
                             >
                               DM: "{auto.replyDmMessage}"
@@ -423,7 +423,7 @@ export default function AutomationsManager({
                       </td>
 
                       {/* 5. Created Date Column */}
-                      <td className="py-4 px-4 whitespace-nowrap text-zinc-400 text-xs font-mono">
+                      <td className="py-4 px-4 whitespace-nowrap text-zinc-400 text-xs font-normal">
                         {new Date(auto.createdAt).toLocaleDateString()}
                       </td>
 
