@@ -51,12 +51,13 @@ export async function GET(request: NextRequest) {
 
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
+  // Pure Meta Business Login for Instagram (Configuration ID)
+  // Omitting auth_type & scope allows Meta to trigger the native Instagram Account Chooser & Business Asset Picker
   const params = new URLSearchParams({
     client_id: clientId,
     config_id: configId,
     redirect_uri: redirectUri,
     response_type: "code",
-    auth_type: "rerequest",
     state: state,
   });
 
