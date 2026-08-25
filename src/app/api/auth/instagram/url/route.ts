@@ -50,14 +50,12 @@ export async function GET(request: NextRequest) {
 
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
-  // Pure Instagram OAuth - Zero Facebook Redirects
+  // Pure 1-Click Instagram OAuth (No password prompt, uses active Instagram login)
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: "code",
     scope: "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments",
-    enable_fb_login: "0",
-    force_authentication: "1",
     state: state,
   });
 
