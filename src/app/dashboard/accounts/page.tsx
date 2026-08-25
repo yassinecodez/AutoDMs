@@ -51,7 +51,11 @@ export default async function AccountsPage({ searchParams }: PageProps) {
     await db.igAccount.deleteMany({
       where: {
         userId,
-        pageName: "Instagram Account",
+        OR: [
+          { pageName: "Instagram Account" },
+          { pageName: { startsWith: "ig_" } },
+          { pageName: { startsWith: "IG_" } },
+        ],
       },
     });
   } catch (cleanErr) {
@@ -59,7 +63,14 @@ export default async function AccountsPage({ searchParams }: PageProps) {
   }
 
   const rawAccounts = await db.igAccount.findMany({
-    where: { userId },
+    where: {
+      userId,
+      NOT: [
+        { pageName: "Instagram Account" },
+        { pageName: { startsWith: "ig_" } },
+        { pageName: { startsWith: "IG_" } },
+      ],
+    },
     orderBy: { createdAt: "desc" },
   });
 

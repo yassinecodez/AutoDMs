@@ -234,14 +234,15 @@ export async function GET(request: NextRequest) {
 
     const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
 
-    // 5. Fetch Instagram profile info dynamically from Meta API
-    console.log("[Instagram Callback] Fetching Instagram profile info...");
+    // 5. Fetch Instagram profile info dynamically (strictly WITHOUT /v24.0/ prefix)
+    console.log("[Instagram Callback] Fetching Instagram profile info without version prefix...");
     let instagramId = String(igUserId || "");
     let username = "";
     let profilePictureUrl: string | null = null;
 
     try {
-      const profileUrl = `https://graph.instagram.com/v24.0/me?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
+      // Query standard Instagram Basic Display / Graph API me endpoint
+      const profileUrl = `https://graph.instagram.com/me?fields=id,username,account_type,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
       const profileRes = await fetch(profileUrl);
       const rawProfileText = await profileRes.text();
       console.log(`[Instagram Callback] Profile endpoint response [Status: ${profileRes.status}]: ${rawProfileText}`);
@@ -250,27 +251,40 @@ export async function GET(request: NextRequest) {
         const profileData = JSON.parse(rawProfileText);
         console.log("[Meta /me Raw Profile]:", JSON.stringify(profileData));
         if (profileData.id) instagramId = String(profileData.id);
-        if (profileData.username) username = profileData.username;
-        else if (profileData.name) username = profileData.name;
-        else if (profileData.id) username = profileData.id;
+        if (profileData.username) username = String(profileData.username).trim();
+        else if (profileData.name) username = String(profileData.name).trim();
         if (profileData.profile_picture_url) profilePictureUrl = profileData.profile_picture_url;
-      } else {
-        const fallbackUrl = `https://graph.instagram.com/me?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
-        const fallbackRes = await fetch(fallbackUrl);
-        const fallbackText = await fallbackRes.text();
-        console.log(`[Instagram Callback] Profile fallback response [Status: ${fallbackRes.status}]: ${fallbackText}`);
-        if (fallbackRes.ok) {
-          const fallbackData = JSON.parse(fallbackText);
-          console.log("[Meta /me Raw Profile Fallback]:", JSON.stringify(fallbackData));
-          if (fallbackData.id) instagramId = String(fallbackData.id);
-          if (fallbackData.username) username = fallbackData.username;
-          else if (fallbackData.name) username = fallbackData.name;
-          else if (fallbackData.id) username = fallbackData.id;
-          if (fallbackData.profile_picture_url) profilePictureUrl = fallbackData.profile_picture_url;
+      }
+
+      // Fallback 1: Query by specific user ID if username was not returned
+      if (!username && instagramId) {
+        const idUrl = `https://graph.instagram.com/${instagramId}?fields=id,username,account_type,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
+        const idRes = await fetch(idUrl);
+        const rawIdText = await idRes.text();
+        console.log(`[Instagram Callback] ID profile response [Status: ${idRes.status}]: ${rawIdText}`);
+        if (idRes.ok) {
+          const idData = JSON.parse(rawIdText);
+          console.log("[Meta ID Raw Profile]:", JSON.stringify(idData));
+          if (idData.username) username = String(idData.username).trim();
+          else if (idData.name) username = String(idData.name).trim();
+          if (idData.profile_picture_url) profilePictureUrl = idData.profile_picture_url;
+        }
+      }
+
+      // Fallback 2: Query by token data user_id
+      if (!username && igUserId && String(igUserId) !== instagramId) {
+        const userFallbackUrl = `https://graph.instagram.com/${igUserId}?fields=id,username,account_type,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
+        const userFallbackRes = await fetch(userFallbackUrl);
+        const rawUserText = await userFallbackRes.text();
+        if (userFallbackRes.ok) {
+          const userData = JSON.parse(rawUserText);
+          if (userData.username) username = String(userData.username).trim();
+          else if (userData.name) username = String(userData.name).trim();
+          if (userData.profile_picture_url) profilePictureUrl = userData.profile_picture_url;
         }
       }
     } catch (profileErr) {
-      console.warn("[Instagram Callback] Error fetching profile details, using user_id from token:", profileErr);
+      console.warn("[Instagram Callback] Error fetching profile details:", profileErr);
     }
 
     if (!instagramId) {
@@ -281,7 +295,7 @@ export async function GET(request: NextRequest) {
       username = `ig_${instagramId}`;
     }
 
-    console.log(`[Instagram Callback] Resolved authenticated handle: @${username} (ID: ${instagramId})`);
+    console.log(`[Instagram Callback] Successfully resolved handle: @${username} (ID: ${instagramId})`);
 
     // 6. Register Webhook app subscriptions
     try {
@@ -350,7 +364,7 @@ export async function GET(request: NextRequest) {
           });
         }
       } else {
-        console.log(`[Instagram Callback] No existing account found for @${username}. Creating new record...`);
+        console.log(`[Instagram Callback] Creating new account record for @${username}...`);
         savedAccount = await db.igAccount.create({
           data: {
             userId: verifiedUser.id,
@@ -364,13 +378,22 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Delete any leftover placeholder accounts
-      await db.igAccount.deleteMany({
-        where: {
-          userId: verifiedUser.id,
-          pageName: "Instagram Account",
-        },
-      });
+      // Delete any leftover placeholder accounts (starts with ig_ or named Instagram Account)
+      if (savedAccount && !username.startsWith("ig_")) {
+        await db.igAccount.deleteMany({
+          where: {
+            userId: verifiedUser.id,
+            OR: [
+              { pageName: "Instagram Account" },
+              { pageName: { startsWith: "ig_" } },
+              { pageName: { startsWith: "IG_" } },
+            ],
+            NOT: {
+              id: savedAccount.id,
+            },
+          },
+        });
+      }
 
       console.log(`[Instagram Callback] Successfully saved @${username} (Account ID: ${savedAccount.id}) for user ${verifiedUser.id}`);
     } catch (prismaError: any) {
