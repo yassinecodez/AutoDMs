@@ -19,17 +19,32 @@ export default async function DashboardLayout({
   const [user, igAccount] = await Promise.all([
     db.user.findUnique({
       where: { id: session.user.id },
-      select: { dmsCountThisMonth: true, dmsLimit: true, planType: true },
+      select: {
+        name: true,
+        email: true,
+        image: true,
+        dmsCountThisMonth: true,
+        dmsLimit: true,
+        planType: true,
+      },
     }),
     db.igAccount.findFirst({
-      where: { userId: session.user.id },
-      select: { pageName: true },
+      where: {
+        userId: session.user.id,
+        NOT: { pageName: "Instagram Account" },
+      },
+      select: { pageName: true, profilePictureUrl: true },
+      orderBy: { createdAt: "desc" },
     }),
   ]);
 
   const dmsCount = user?.dmsCountThisMonth || 0;
   const dmsLimit = user?.dmsLimit || 150;
   const usagePct = Math.min(Math.round((dmsCount / dmsLimit) * 100), 100);
+
+  const userAvatar = user?.image || session.user.image;
+  const displayName = user?.name || session.user.name || user?.email?.split("@")[0] || "User";
+  const displayEmail = user?.email || session.user.email || "";
 
   return (
     <div className="flex h-screen bg-[#000000] overflow-hidden text-zinc-100 font-sans selection:bg-white/20 selection:text-white">
@@ -55,26 +70,45 @@ export default async function DashboardLayout({
 
         <div>
           {/* Connected Profile Status & Monthly Meter */}
-          <div className="p-3 mx-3 mb-3 bg-[#111111] border border-[#222222] rounded-xl space-y-2.5 shrink-0">
+          <div className="p-3 mx-3 mb-3 bg-[#111111] border border-[#222222] rounded-2xl space-y-2.5 shrink-0 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
             {igAccount ? (
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-zinc-400 font-medium truncate">@{igAccount.pageName}</span>
-                <span className="flex items-center gap-1 text-[10px] text-zinc-300 font-medium">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              <div className="flex items-center justify-between gap-2 text-[11px]">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-5 h-5 rounded-full overflow-hidden bg-[#1A1A1A] border border-[#2B2B2B] flex items-center justify-center shrink-0">
+                    {igAccount.profilePictureUrl ? (
+                      <img
+                        src={igAccount.profilePictureUrl}
+                        alt={igAccount.pageName}
+                        className="w-full h-full object-cover"
+                        crossOrigin="anonymous"
+                      />
+                    ) : (
+                      <span className="text-[9px] font-bold text-white uppercase">
+                        {igAccount.pageName ? igAccount.pageName[0] : "I"}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-zinc-300 font-semibold truncate">@{igAccount.pageName}</span>
+                </div>
+                <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-medium shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   Live
                 </span>
               </div>
             ) : (
-              <div className="text-[11px] text-zinc-500">
+              <div className="text-[11px] text-zinc-500 flex items-center justify-between">
                 <span>No profile linked</span>
+                <Link href="/dashboard/accounts" className="text-[10px] text-white hover:underline">
+                  Connect &rarr;
+                </Link>
               </div>
             )}
 
             {/* Quota Progress Bar */}
-            <div className="space-y-1">
+            <div className="space-y-1 pt-0.5">
               <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
-                <span>DMs: <strong className="text-white">{dmsCount}</strong>/{dmsLimit}</span>
-                <span className="text-zinc-300">{usagePct}%</span>
+                <span>DMs: <strong className="text-white font-mono">{dmsCount}</strong>/{dmsLimit}</span>
+                <span className="text-zinc-300 font-mono">{usagePct}%</span>
               </div>
               <div className="w-full h-1.5 bg-[#000000] rounded-full overflow-hidden border border-[#222222]">
                 <div
@@ -86,7 +120,7 @@ export default async function DashboardLayout({
 
             <Link
               href="/dashboard/settings"
-              className="block text-center text-[10px] font-medium text-zinc-300 hover:text-white transition-colors"
+              className="block text-center text-[10px] font-medium text-zinc-400 hover:text-white transition-colors pt-0.5"
             >
               Manage Plan &rarr;
             </Link>
@@ -95,12 +129,22 @@ export default async function DashboardLayout({
           {/* User Footer Profile */}
           <div className="p-3 px-4 border-t border-[#222222] flex items-center justify-between gap-2.5 bg-[#0A0A0A]">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-full bg-[#1A1A1A] border border-[#262626] flex items-center justify-center font-medium text-xs text-white uppercase shrink-0">
-                {(session.user.name || session.user.email || "U")[0]}
+              {/* 32px Circular Google / User Avatar */}
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-[#141414] border border-[#262626] flex items-center justify-center font-semibold text-xs text-white uppercase shrink-0 shadow-inner">
+                {userAvatar ? (
+                  <img
+                    src={userAvatar}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                    crossOrigin="anonymous"
+                  />
+                ) : (
+                  <span>{displayName[0]}</span>
+                )}
               </div>
               <div className="truncate">
-                <p className="text-xs font-medium text-white truncate">{session.user.name || session.user.email}</p>
-                <p className="text-[10px] text-zinc-500 truncate">{session.user.email}</p>
+                <p className="text-xs font-semibold text-white truncate">{displayName}</p>
+                <p className="text-[10px] text-zinc-500 font-mono truncate">{displayEmail}</p>
               </div>
             </div>
             <SignOutButton />

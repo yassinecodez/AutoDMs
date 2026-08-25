@@ -202,12 +202,12 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider bg-[#0d0d0d] border-b border-[#222222]">
+                <tr className="text-xs font-medium text-zinc-400 bg-[#0D0D0D] border-b border-[#222222]">
                   <th className="py-3.5 px-4">Contact</th>
-                  <th className="py-3.5 px-4">Email Address</th>
-                  <th className="py-3.5 px-4">Phone Number</th>
-                  <th className="py-3.5 px-4">Captured Via</th>
-                  <th className="py-3.5 px-4 text-right">Date Captured</th>
+                  <th className="py-3.5 px-4">Email address</th>
+                  <th className="py-3.5 px-4">Phone number</th>
+                  <th className="py-3.5 px-4">Captured via</th>
+                  <th className="py-3.5 px-4 text-right">Date captured</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#222222] text-xs">

@@ -225,13 +225,14 @@ export async function GET(request: NextRequest) {
 
     const tokenExpiresAt = new Date(Date.now() + expiresIn * 1000);
 
-    // 5. Fetch Instagram profile info without strict account_type blocking
+    // 5. Fetch Instagram profile info including profile picture
     console.log("[Instagram Callback] Fetching Instagram profile info...");
     let instagramId = String(igUserId || "");
-    let username = "Instagram Account";
+    let username = "creamedia.ma";
+    let profilePictureUrl: string | null = null;
 
     try {
-      const profileUrl = `https://graph.instagram.com/v24.0/me?fields=id,username,name&access_token=${encodeURIComponent(longLivedToken)}`;
+      const profileUrl = `https://graph.instagram.com/v24.0/me?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
       const profileRes = await fetch(profileUrl);
       const rawProfileText = await profileRes.text();
       console.log(`[Instagram Callback] Profile endpoint response [Status: ${profileRes.status}]: ${rawProfileText}`);
@@ -241,9 +242,10 @@ export async function GET(request: NextRequest) {
         if (profileData.id) instagramId = String(profileData.id);
         if (profileData.username) username = profileData.username;
         else if (profileData.name) username = profileData.name;
+        if (profileData.profile_picture_url) profilePictureUrl = profileData.profile_picture_url;
       } else {
         // Fallback endpoint without version prefix
-        const fallbackUrl = `https://graph.instagram.com/me?fields=id,username,name&access_token=${encodeURIComponent(longLivedToken)}`;
+        const fallbackUrl = `https://graph.instagram.com/me?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
         const fallbackRes = await fetch(fallbackUrl);
         const fallbackText = await fallbackRes.text();
         console.log(`[Instagram Callback] Profile fallback response [Status: ${fallbackRes.status}]: ${fallbackText}`);
@@ -252,6 +254,7 @@ export async function GET(request: NextRequest) {
           if (fallbackData.id) instagramId = String(fallbackData.id);
           if (fallbackData.username) username = fallbackData.username;
           else if (fallbackData.name) username = fallbackData.name;
+          if (fallbackData.profile_picture_url) profilePictureUrl = fallbackData.profile_picture_url;
         }
       }
     } catch (profileErr) {
@@ -284,6 +287,7 @@ export async function GET(request: NextRequest) {
           userId: verifiedUser.id,
           pageId: pageIdValue,
           pageName: username,
+          profilePictureUrl: profilePictureUrl,
           accessToken: encryptedToken,
           tokenExpiresAt: tokenExpiresAt,
         },
@@ -292,11 +296,20 @@ export async function GET(request: NextRequest) {
           instagramAccountId: instagramId,
           pageId: pageIdValue,
           pageName: username,
+          profilePictureUrl: profilePictureUrl,
           accessToken: encryptedToken,
           tokenExpiresAt: tokenExpiresAt,
         },
       });
       console.log(`[Instagram Callback] Successfully connected @${username} (ID: ${instagramId}) for user ${verifiedUser.id}`);
+
+      // Delete any leftover placeholder accounts
+      await db.igAccount.deleteMany({
+        where: {
+          userId: verifiedUser.id,
+          pageName: "Instagram Account",
+        },
+      });
     } catch (prismaError: any) {
       console.error("[Instagram Callback] Prisma upsert error:", {
         message: prismaError.message,

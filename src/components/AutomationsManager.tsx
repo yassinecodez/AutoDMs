@@ -266,11 +266,11 @@ export default function AutomationsManager({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider bg-[#0d0d0d] border-b border-[#222222]">
+                <tr className="text-xs font-medium text-zinc-400 bg-[#0D0D0D] border-b border-[#222222]">
                   <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4">Automation Name & Trigger</th>
+                  <th className="py-3.5 px-4">Automation & trigger</th>
                   <th className="py-3.5 px-4">Source</th>
-                  <th className="py-3.5 px-4">Total Dispatches</th>
+                  <th className="py-3.5 px-4">Dispatches</th>
                   <th className="py-3.5 px-4">Created</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>

@@ -216,7 +216,7 @@ export function TemplatesLibraryClient() {
                       {item.tag}
                     </span>
                   ) : (
-                    <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider font-mono">
+                    <span className="text-[11px] font-medium text-zinc-400 font-mono">
                       {item.categoryLabel}
                     </span>
                   )}
@@ -249,7 +249,7 @@ export function TemplatesLibraryClient() {
                 <div className="p-3.5 bg-[#111111] border border-[#222222] rounded-xl space-y-2.5 text-xs">
                   {/* Message Snippet */}
                   <div className="space-y-1">
-                    <span className="text-zinc-500 font-medium text-[10px] block font-mono uppercase">Direct Message Reply:</span>
+                    <span className="text-zinc-500 font-medium text-[10px] block font-mono">Direct message reply:</span>
                     <p className="text-[11px] text-zinc-300 line-clamp-2 bg-[#0A0A0A] p-2.5 rounded-lg border border-[#222222] leading-relaxed">
                       "{item.replyMessage}"
                     </p>

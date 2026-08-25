@@ -84,10 +84,19 @@ export const authOptions: AuthOptions = {
               data: {
                 email,
                 name: user.name ?? undefined,
+                image: user.image ?? undefined,
                 password: hashedPassword,
                 planType: "FREE",
                 dmsLimit: 150,
                 usageResetAt: new Date(),
+              },
+            });
+          } else if (user.image && user.image !== existingUser.image) {
+            await db.user.update({
+              where: { id: existingUser.id },
+              data: {
+                image: user.image,
+                name: user.name ?? existingUser.name,
               },
             });
           }
@@ -104,12 +113,14 @@ export const authOptions: AuthOptions = {
         try {
           const dbUser = await db.user.findUnique({
             where: { email: token.email.toLowerCase().trim() },
-            select: { id: true, planType: true },
+            select: { id: true, planType: true, image: true, name: true },
           });
           if (dbUser) {
             token.id = dbUser.id;
             token.sub = dbUser.id;
             token.planType = dbUser.planType;
+            if (dbUser.image) token.picture = dbUser.image;
+            if (dbUser.name) token.name = dbUser.name;
           }
         } catch (err) {
           console.error("Error looking up user in jwt callback:", err);
@@ -118,6 +129,7 @@ export const authOptions: AuthOptions = {
         token.id = user.id;
         token.sub = user.id;
         token.planType = (user as any).planType || "FREE";
+        if (user.image) token.picture = user.image;
       }
       return token;
     },
@@ -125,6 +137,8 @@ export const authOptions: AuthOptions = {
       if (token && session.user) {
         session.user.id = (token.id || token.sub) as string;
         (session.user as any).planType = (token.planType as string) || "FREE";
+        if (token.picture) session.user.image = token.picture as string;
+        if (token.name) session.user.name = token.name as string;
       }
       return session;
     },

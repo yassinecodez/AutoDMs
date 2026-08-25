@@ -13,6 +13,7 @@ model User {
   email              String       @unique
   password           String
   name               String?
+  image              String?      // Google / user avatar URL
   planType           String       @default("FREE")      // "FREE" | "PRO" | "BUSINESS"
   dmsLimit           Int          @default(150)
   dmsCountThisMonth  Int          @default(0)
@@ -30,6 +31,7 @@ model IgAccount {
   instagramAccountId String   @unique
   pageId             String?  @unique
   pageName           String
+  profilePictureUrl  String?  // Instagram profile avatar URL
   accessToken        String   // Encrypted Page Access Token
   tokenExpiresAt     DateTime?
   createdAt          DateTime @default(now())

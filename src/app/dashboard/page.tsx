@@ -180,7 +180,7 @@ export default async function DashboardOverview() {
       {/* ========================================================================= */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+          <h2 className="text-xs font-semibold text-zinc-400">
             Start here
           </h2>
           <Link
@@ -236,7 +236,7 @@ export default async function DashboardOverview() {
       {/* SECTION 3: "Your Next Steps" (2-Column Grid) */}
       {/* ========================================================================= */}
       <div className="space-y-4">
-        <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+        <h2 className="text-xs font-semibold text-zinc-400">
           Your next steps
         </h2>
 
@@ -246,7 +246,7 @@ export default async function DashboardOverview() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Getting Started</h3>
+                  <h3 className="text-sm font-semibold text-white">Getting started</h3>
                   <p className="text-xs text-zinc-400">Complete setup to launch your Instagram pipeline</p>
                 </div>
                 <span className="text-xs font-medium text-zinc-400 bg-[#141414] border border-[#222222] px-2.5 py-1 rounded-full">
