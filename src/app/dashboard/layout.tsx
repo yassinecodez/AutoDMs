@@ -83,8 +83,8 @@ export default async function DashboardLayout({
                         crossOrigin="anonymous"
                       />
                     ) : (
-                      <span className="text-[9px] font-bold text-white uppercase">
-                        {igAccount.pageName ? igAccount.pageName[0] : "I"}
+                      <span className="text-[9px] font-bold text-white">
+                        {(igAccount.pageName ? igAccount.pageName[0] : "I").toUpperCase()}
                       </span>
                     )}
                   </div>
@@ -130,7 +130,7 @@ export default async function DashboardLayout({
           <div className="p-3 px-4 border-t border-[#222222] flex items-center justify-between gap-2.5 bg-[#0A0A0A]">
             <div className="flex items-center gap-2.5 min-w-0">
               {/* 32px Circular Google / User Avatar */}
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-[#141414] border border-[#262626] flex items-center justify-center font-semibold text-xs text-white uppercase shrink-0 shadow-inner">
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-[#141414] border border-[#262626] flex items-center justify-center font-semibold text-xs text-white shrink-0 shadow-inner">
                 {userAvatar ? (
                   <img
                     src={userAvatar}
@@ -139,7 +139,7 @@ export default async function DashboardLayout({
                     crossOrigin="anonymous"
                   />
                 ) : (
-                  <span>{displayName[0]}</span>
+                  <span>{displayName[0].toUpperCase()}</span>
                 )}
               </div>
               <div className="truncate">

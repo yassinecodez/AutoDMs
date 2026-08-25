@@ -182,7 +182,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
                 selectedStatus === "ALL" ? "bg-[#222222] text-white" : "hover:text-zinc-200"
               }`}
             >
-              All Status
+              All status
             </button>
             <button
               onClick={() => setSelectedStatus("SUCCESS")}
@@ -198,7 +198,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
                 selectedStatus === "LEAD_CAPTURED" ? "bg-[#222222] text-white" : "hover:text-zinc-200"
               }`}
             >
-              Lead Captured
+              Lead captured
             </button>
             <button
               onClick={() => setSelectedStatus("FAILED")}
@@ -224,10 +224,10 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
             onChange={(e) => setSelectedSource(e.target.value)}
             className="bg-[#111111] border border-[#262626] rounded-lg h-9 px-3 text-xs font-medium text-zinc-300 focus:outline-none focus:border-zinc-500 transition-colors"
           >
-            <option value="ALL">All Sources</option>
+            <option value="ALL">All sources</option>
             <option value="COMMENTS">Comments</option>
             <option value="STORIES">Stories</option>
-            <option value="DIRECT_MESSAGES">Direct Messages</option>
+            <option value="DIRECT_MESSAGES">Direct messages</option>
           </select>
         </div>
       </div>
@@ -316,7 +316,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
                           ) : (
                             <>
                               <Inbox className="w-3 h-3 text-zinc-400" />
-                              Direct DM
+                              Direct message
                             </>
                           )}
                         </span>
@@ -365,7 +365,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
                               <>
                                 <span className="w-1.5 h-1.5 rounded-full bg-white" />
                                 <span className="text-[11px] font-medium text-white">
-                                  Lead Captured
+                                  Lead captured
                                 </span>
                               </>
                             ) : log.dmStatus === "FAILED" ? (

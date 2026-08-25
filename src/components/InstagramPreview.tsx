@@ -155,8 +155,8 @@ export function InstagramPreview({
               <div className="px-4 pb-2 z-10 space-y-1">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 p-[1.5px]">
-                    <div className="w-full h-full rounded-full bg-black flex items-center justify-center text-[10px] font-bold text-white uppercase">
-                      {username.slice(0, 2)}
+                    <div className="w-full h-full rounded-full bg-black flex items-center justify-center text-[10px] font-bold text-white">
+                      {username.slice(0, 2).toUpperCase()}
                     </div>
                   </div>
                   <span className="text-xs font-semibold text-white">@{username}</span>
@@ -209,8 +209,8 @@ export function InstagramPreview({
                 <div className="flex items-start justify-between gap-2.5 pl-7 border-l border-zinc-800 ml-3">
                   <div className="flex items-start gap-2">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 p-[1px] shrink-0">
-                      <div className="w-full h-full rounded-full bg-black flex items-center justify-center text-[9px] font-bold text-white uppercase">
-                        {username.slice(0, 2)}
+                      <div className="w-full h-full rounded-full bg-black flex items-center justify-center text-[9px] font-bold text-white">
+                        {username.slice(0, 2).toUpperCase()}
                       </div>
                     </div>
                     <div className="space-y-0.5 text-xs">
@@ -248,8 +248,8 @@ export function InstagramPreview({
                   <ChevronLeft className="w-5 h-5 text-white -ml-1 cursor-pointer" strokeWidth={2.5} />
                   <div className="relative">
                     <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 p-[1px]">
-                      <div className="w-full h-full rounded-full bg-black flex items-center justify-center text-[10px] font-bold text-white uppercase">
-                        {username.slice(0, 2)}
+                      <div className="w-full h-full rounded-full bg-black flex items-center justify-center text-[10px] font-bold text-white">
+                        {username.slice(0, 2).toUpperCase()}
                       </div>
                     </div>
                     <span className="w-2 h-2 rounded-full bg-[#00DF81] border border-black absolute -bottom-0.5 -right-0.5" />

@@ -290,8 +290,8 @@ export default function AutomationBuilderClient({ connectedAccounts }: Automatio
               {[
                 { num: 1, name: "Trigger" },
                 { num: 2, name: "Keywords" },
-                { num: 3, name: "Direct Reply" },
-                { num: 4, name: "Public Reply" },
+                { num: 3, name: "Direct reply" },
+                { num: 4, name: "Public reply" },
               ].map((s) => {
                 const isCurrent = step === s.num;
                 const isCompleted = s.num < step;

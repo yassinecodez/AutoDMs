@@ -143,8 +143,8 @@ export function AccountFinder() {
         <div className="p-4 bg-[#111111] border border-white/20 rounded-xl space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-full bg-[#181818] border border-[#333333] flex items-center justify-center text-white font-bold text-base uppercase shrink-0">
-                {foundProfile.username[0]}
+              <div className="w-12 h-12 rounded-full bg-[#181818] border border-[#333333] flex items-center justify-center text-white font-bold text-base shrink-0">
+                {foundProfile.username[0].toUpperCase()}
               </div>
               <div className="space-y-0.5">
                 <div className="flex items-center gap-1.5">

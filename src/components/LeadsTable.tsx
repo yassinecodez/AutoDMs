@@ -91,7 +91,7 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
       {/* ========================================================================= */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-[#222222]">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Contacts & Leads</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Contacts & leads</h1>
           <p className="text-sm text-zinc-400 mt-0.5">
             View, filter, and export contact details captured from Instagram DMs
           </p>
@@ -132,7 +132,7 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
                 filterType === "ALL" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
               }`}
             >
-              All Contacts
+              All contacts
             </button>
             <button
               onClick={() => setFilterType("EMAIL")}
@@ -140,7 +140,7 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
                 filterType === "EMAIL" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
               }`}
             >
-              With Email
+              With email
             </button>
             <button
               onClick={() => setFilterType("PHONE")}
@@ -148,7 +148,7 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
                 filterType === "PHONE" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
               }`}
             >
-              With Phone
+              With phone
             </button>
           </div>
 
@@ -178,7 +178,7 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
             className="inline-flex items-center gap-2 h-10 px-5 bg-white hover:bg-zinc-200 text-black font-medium rounded-lg text-xs transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" strokeWidth={2} />
-            Create Lead Capture Rule
+            Create lead capture rule
           </Link>
         </div>
       ) : filteredLeads.length === 0 ? (

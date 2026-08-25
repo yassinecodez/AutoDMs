@@ -42,8 +42,8 @@ const TEMPLATES: TemplateItem[] = [
     id: "comment_to_dm",
     title: "Send Link on Keyword",
     category: "SELL_EARN",
-    categoryLabel: "Sell & Earn",
-    tag: "Most Popular",
+    categoryLabel: "Sell & earn",
+    tag: "Most popular",
     description: "Instantly send your checkout or product link when followers comment on your Reels or Posts.",
     triggerSource: "COMMENTS",
     triggerKeyword: "LINK, BUY, PRICE",
@@ -59,8 +59,8 @@ const TEMPLATES: TemplateItem[] = [
     id: "lead_magnet",
     title: "Deliver Lead Magnet (PDF / Guide)",
     category: "CAPTURE_LEADS",
-    categoryLabel: "Capture Leads",
-    tag: "High Conversion",
+    categoryLabel: "Capture leads",
+    tag: "High conversion",
     description: "Capture emails and phone numbers before delivering high-value free resources and guides.",
     triggerSource: "COMMENTS",
     triggerKeyword: "GUIDE, FREE, PDF",
@@ -76,7 +76,7 @@ const TEMPLATES: TemplateItem[] = [
     id: "story_mention",
     title: "Reward Story Mentions",
     category: "AUDIENCE_ENGAGEMENT",
-    categoryLabel: "Audience Engagement",
+    categoryLabel: "Audience engagement",
     tag: "Growth",
     description: "Automatically reward followers with a 15% discount coupon code whenever they tag your brand in their stories.",
     triggerSource: "STORY_MENTIONS",
@@ -93,7 +93,7 @@ const TEMPLATES: TemplateItem[] = [
     id: "direct_dm",
     title: "Auto-Reply to DMs & Pricing Inquiries",
     category: "SELL_EARN",
-    categoryLabel: "Sell & Earn",
+    categoryLabel: "Sell & earn",
     description: "Send instant automated pricing packages, FAQs, and WhatsApp consultation links to inbound DMs.",
     triggerSource: "DIRECT_MESSAGES",
     triggerKeyword: "PRICING, COST, SERVICES",
@@ -109,7 +109,7 @@ const TEMPLATES: TemplateItem[] = [
     id: "waitlist",
     title: "Grow VIP Waitlist",
     category: "CAPTURE_LEADS",
-    categoryLabel: "Capture Leads",
+    categoryLabel: "Capture leads",
     tag: "Launch",
     description: "Build an exclusive waitlist for your upcoming product launch or event by collecting verified contact details.",
     triggerSource: "COMMENTS",
@@ -167,7 +167,7 @@ export function TemplatesLibraryClient() {
               selectedCategory === "ALL" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
             }`}
           >
-            All Templates
+            All templates
           </button>
           <button
             onClick={() => setSelectedCategory("SELL_EARN")}
@@ -175,7 +175,7 @@ export function TemplatesLibraryClient() {
               selectedCategory === "SELL_EARN" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
             }`}
           >
-            Sell & Earn
+            Sell & earn
           </button>
           <button
             onClick={() => setSelectedCategory("CAPTURE_LEADS")}
@@ -183,7 +183,7 @@ export function TemplatesLibraryClient() {
               selectedCategory === "CAPTURE_LEADS" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
             }`}
           >
-            Capture Leads
+            Capture leads
           </button>
           <button
             onClick={() => setSelectedCategory("AUDIENCE_ENGAGEMENT")}
@@ -191,7 +191,7 @@ export function TemplatesLibraryClient() {
               selectedCategory === "AUDIENCE_ENGAGEMENT" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
             }`}
           >
-            Audience Engagement
+            Audience engagement
           </button>
         </div>
       </div>

@@ -306,7 +306,7 @@ export default function AutomationsManager({
                           </button>
 
                           <span
-                            className={`inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider ${
+                            className={`inline-flex items-center gap-1.5 text-xs font-medium ${
                               auto.active ? "text-zinc-200" : "text-zinc-500"
                             }`}
                           >
@@ -333,8 +333,8 @@ export default function AutomationsManager({
                               {auto.name}
                             </span>
                             {auto.enableLeadCapture && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-[#181818] text-zinc-300 border border-[#2b2b2b] uppercase tracking-wider">
-                                Lead Capture
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#141414] text-zinc-300 border border-[#262626]">
+                                Lead capture
                               </span>
                             )}
                           </div>

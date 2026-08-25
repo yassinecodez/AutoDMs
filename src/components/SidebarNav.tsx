@@ -42,22 +42,22 @@ export function SidebarNav() {
       icon: LayoutTemplate,
     },
     {
-      name: "Leads Database",
+      name: "Leads database",
       href: "/dashboard/leads",
       icon: Users,
     },
     {
-      name: "Instagram Accounts",
+      name: "Instagram accounts",
       href: "/dashboard/accounts",
       icon: InstagramNavIcon,
     },
     {
-      name: "Activity Logs",
+      name: "Activity logs",
       href: "/dashboard/logs",
       icon: ScrollText,
     },
     {
-      name: "Settings & Billing",
+      name: "Settings & billing",
       href: "/dashboard/settings",
       icon: Settings,
     },

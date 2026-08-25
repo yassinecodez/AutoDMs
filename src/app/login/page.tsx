@@ -126,8 +126,8 @@ function LoginForm() {
         {/* Divider */}
         <div className="relative flex items-center justify-center my-4">
           <div className="w-full border-t border-[#1F1F1F]" />
-          <span className="absolute bg-[#0A0A0A] px-2 text-xs uppercase tracking-wider text-zinc-500 font-medium">
-            OR CONTINUE WITH EMAIL
+          <span className="absolute bg-[#0A0A0A] px-2 text-xs text-zinc-500 font-medium">
+            or continue with email
           </span>
         </div>
 

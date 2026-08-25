@@ -104,7 +104,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
       {/* Accounts List */}
       <div className="space-y-4 pt-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+          <h2 className="text-xs font-semibold text-zinc-400">
             Connected profiles ({accounts.length})
           </h2>
         </div>
@@ -139,8 +139,8 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                         crossOrigin="anonymous"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-tr from-amber-500/20 via-rose-500/20 to-purple-600/20 flex items-center justify-center font-bold text-sm text-white uppercase">
-                        {acc.pageName ? acc.pageName[0] : "I"}
+                      <div className="w-full h-full bg-gradient-to-tr from-amber-500/20 via-rose-500/20 to-purple-600/20 flex items-center justify-center font-bold text-sm text-white">
+                        {(acc.pageName ? acc.pageName[0] : "I").toUpperCase()}
                       </div>
                     )}
                   </div>
