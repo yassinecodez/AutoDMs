@@ -60,11 +60,16 @@ export function AccountFinder() {
     }, 300);
   };
 
-  const handleConnect = async () => {
+  const handleConnect = async (targetHandle?: string) => {
     setConnecting(true);
 
     try {
-      const res = await fetch("/api/auth/facebook/url");
+      const handleToPass = targetHandle || (foundProfile ? foundProfile.username : cleanHandle(handleInput));
+      const urlEndpoint = handleToPass
+        ? `/api/auth/instagram/url?handle=${encodeURIComponent(handleToPass)}`
+        : "/api/auth/instagram/url";
+
+      const res = await fetch(urlEndpoint);
       if (!res.ok) {
         throw new Error("Failed to generate authorization session.");
       }
@@ -76,7 +81,7 @@ export function AccountFinder() {
       }
     } catch (err: any) {
       console.error("Connection initiation error:", err);
-      window.location.href = "/api/auth/facebook/url";
+      window.location.href = "/api/auth/instagram/url";
     } finally {
       setConnecting(false);
     }
@@ -93,7 +98,7 @@ export function AccountFinder() {
           <div className="space-y-1">
             <h2 className="text-base font-semibold text-foreground">Connect Professional Account</h2>
             <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-              Link your Instagram Creator or Business profile via official Meta Business OAuth with full asset selection support.
+              Link your Instagram Creator or Business profile via official Meta consent to enable automated DMs and comment replies.
             </p>
           </div>
         </div>
@@ -101,7 +106,7 @@ export function AccountFinder() {
         {/* Primary High-Contrast Connect Button */}
         <button
           type="button"
-          onClick={handleConnect}
+          onClick={() => handleConnect()}
           disabled={connecting}
           className="h-10 px-5 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-sm inline-flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-50 shrink-0"
         >
@@ -179,7 +184,7 @@ export function AccountFinder() {
 
             <button
               type="button"
-              onClick={handleConnect}
+              onClick={() => handleConnect(foundProfile.username)}
               disabled={connecting}
               className="h-10 px-5 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-sm inline-flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-50 shrink-0"
             >
@@ -198,16 +203,16 @@ export function AccountFinder() {
             <div className="flex items-center gap-1.5">
               <Info className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
               <span>
-                Meta Business login will open your account asset selector so you can choose any connected page or Instagram profile.
+                Ensure you are logged into <strong className="text-foreground">@{foundProfile.username}</strong> on instagram.com in this browser.
               </span>
             </div>
             <a
-              href="https://www.facebook.com/pages"
+              href="https://www.instagram.com/accounts/logout/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-foreground hover:underline inline-flex items-center gap-1 font-medium shrink-0"
             >
-              <span>Manage Meta Pages</span>
+              <span>Switch account on Instagram</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>

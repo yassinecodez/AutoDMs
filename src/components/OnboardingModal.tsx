@@ -46,7 +46,7 @@ export function OnboardingModal({ hasConnectedAccounts }: OnboardingModalProps) 
   const handleConnect = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/facebook/url");
+      const res = await fetch("/api/auth/instagram/url");
       if (!res.ok) {
         throw new Error("Failed to get authorization URL");
       }
@@ -54,11 +54,11 @@ export function OnboardingModal({ hasConnectedAccounts }: OnboardingModalProps) 
       if (data.url) {
         window.location.href = data.url;
       } else {
-        window.location.href = "/api/auth/facebook/url";
+        window.location.href = "/api/auth/instagram/url";
       }
     } catch (err) {
       console.error("Connect error:", err);
-      window.location.href = "/api/auth/facebook/url";
+      window.location.href = "/api/auth/instagram/url";
     }
   };
 
@@ -102,7 +102,7 @@ export function OnboardingModal({ hasConnectedAccounts }: OnboardingModalProps) 
         <div className="space-y-2.5 p-4 rounded-2xl bg-secondary border border-border text-xs text-foreground">
           <div className="flex items-center gap-2.5">
             <Check className="w-4 h-4 text-emerald-500 shrink-0" strokeWidth={2.5} />
-            <span>1-Click official Meta OAuth authorization</span>
+            <span>1-Click official Instagram consent authorization</span>
           </div>
           <div className="flex items-center gap-2.5">
             <Check className="w-4 h-4 text-emerald-500 shrink-0" strokeWidth={2.5} />

@@ -50,8 +50,6 @@ export async function GET(request: NextRequest) {
     redirect_uri: redirectUri,
     response_type: "code",
     scope: "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments",
-    force_authentication: "1",
-    enable_fb_login: "0",
     state: state,
   });
 
