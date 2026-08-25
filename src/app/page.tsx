@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MessageSquare, ArrowRight, Camera, Users, Zap, Shield, Check, Sparkles } from "lucide-react";
+import { MessageSquare, ArrowRight, Camera, Users, Zap, Shield, Check } from "lucide-react";
 import LandingNav from "@/components/LandingNav";
 import InstagramPreview from "@/components/InstagramPreview";
 import PricingSection from "@/components/PricingSection";
@@ -12,35 +12,29 @@ export default function HomePage() {
       {/* Floating Glassmorphic Navigation Bar */}
       <LandingNav />
 
-      {/* Hero Section (2-Column Split Layout) */}
-      <section className="pt-32 sm:pt-40 pb-20 md:pb-28 max-w-6xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center">
+      {/* Hero Section (Widescreen max-w-7xl 2-Column Split Layout) */}
+      <section className="pt-36 sm:pt-44 pb-20 md:pb-28 max-w-7xl mx-auto w-full px-6 sm:px-10 lg:px-12 min-h-[85vh] flex items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center w-full">
           
           {/* Left Column (7 cols): Headline, Copy, CTA & Trust Bar */}
-          <div className="lg:col-span-7 space-y-7 text-left">
+          <div className="lg:col-span-7 space-y-8 text-left">
             
-            {/* Top Tag Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.06] border border-white/10 text-xs font-medium text-zinc-300 backdrop-blur-md">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
-              <span>Official Meta Instagram Graph API</span>
-            </div>
-
             {/* Headline */}
-            <div className="space-y-4">
-              <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-white leading-[1.08] text-balance">
+            <div className="space-y-5">
+              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[1.06] max-w-2xl text-balance">
                 Turn Instagram comments into direct sales.
               </h1>
               <p className="text-base sm:text-lg text-zinc-400 leading-relaxed max-w-xl text-balance">
-                When followers comment on your Reels or tag you in stories, AutoDMs instantly delivers your private link, product catalog, or discount code right inside their direct messages.
+                When followers comment on your Reels or tag you in stories, AutoDMs instantly delivers your private links, product catalogs, and discount codes right inside their direct messages.
               </p>
             </div>
 
             {/* CTA Area */}
-            <div className="space-y-3 pt-1">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 max-w-md">
+            <div className="space-y-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 max-w-md">
                 <Link
                   href="/login"
-                  className="h-12 px-6 bg-white hover:bg-zinc-200 text-black font-semibold rounded-xl text-sm transition-colors flex items-center justify-center gap-2 shadow-lg shadow-white/5"
+                  className="h-12 px-7 bg-white hover:bg-zinc-200 text-black font-semibold rounded-xl text-sm transition-colors flex items-center justify-center gap-2 shadow-xl shadow-white/5"
                 >
                   <span>Start automating free</span>
                   <ArrowRight className="w-4 h-4 stroke-[2.5]" />
@@ -52,7 +46,7 @@ export default function HomePage() {
             </div>
 
             {/* Minimalist Inline Proof Bar */}
-            <div className="pt-3 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-zinc-400 font-medium">
+            <div className="pt-4 flex flex-wrap items-center gap-4 sm:gap-6 text-xs text-zinc-400 font-medium">
               <span className="flex items-center gap-1.5 text-zinc-300">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                 100% Meta API Compliant
@@ -89,16 +83,16 @@ export default function HomePage() {
       </section>
 
       {/* Feature Showcase Grid */}
-      <section id="features" className="py-20 border-t border-[#1F1F1F] bg-[#000000]">
-        <div className="max-w-5xl mx-auto px-6 space-y-12">
+      <section id="features" className="py-24 border-t border-[#1F1F1F] bg-[#000000]">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 space-y-12">
           <div className="text-center space-y-2 max-w-xl mx-auto">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Built for Instagram creators & brands</h2>
             <p className="text-zinc-400 text-xs sm:text-sm">Everything you need to automate conversations, capture leads, and boost conversions.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="p-6 bg-[#0A0A0A] border border-[#222222] rounded-xl space-y-3 shadow-sm">
-              <div className="w-8 h-8 rounded-lg bg-[#111111] border border-[#222222] flex items-center justify-center text-white">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-6 sm:p-7 bg-[#0A0A0A] border border-[#222222] rounded-2xl space-y-3.5 shadow-sm">
+              <div className="w-9 h-9 rounded-xl bg-[#111111] border border-[#222222] flex items-center justify-center text-white">
                 <MessageSquare className="w-4 h-4" strokeWidth={1.75} />
               </div>
               <h3 className="text-sm font-semibold text-white">Comment-to-DM Triggers</h3>
@@ -107,8 +101,8 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="p-6 bg-[#0A0A0A] border border-[#222222] rounded-xl space-y-3 shadow-sm">
-              <div className="w-8 h-8 rounded-lg bg-[#111111] border border-[#222222] flex items-center justify-center text-white">
+            <div className="p-6 sm:p-7 bg-[#0A0A0A] border border-[#222222] rounded-2xl space-y-3.5 shadow-sm">
+              <div className="w-9 h-9 rounded-xl bg-[#111111] border border-[#222222] flex items-center justify-center text-white">
                 <Camera className="w-4 h-4" strokeWidth={1.75} />
               </div>
               <h3 className="text-sm font-semibold text-white">Story Mention Rewards</h3>
@@ -117,8 +111,8 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="p-6 bg-[#0A0A0A] border border-[#222222] rounded-xl space-y-3 shadow-sm">
-              <div className="w-8 h-8 rounded-lg bg-[#111111] border border-[#222222] flex items-center justify-center text-white">
+            <div className="p-6 sm:p-7 bg-[#0A0A0A] border border-[#222222] rounded-2xl space-y-3.5 shadow-sm">
+              <div className="w-9 h-9 rounded-xl bg-[#111111] border border-[#222222] flex items-center justify-center text-white">
                 <Users className="w-4 h-4" strokeWidth={1.75} />
               </div>
               <h3 className="text-sm font-semibold text-white">Lead Capture & CSV Export</h3>
@@ -137,8 +131,8 @@ export default function HomePage() {
       <FaqAccordion />
 
       {/* Footer */}
-      <footer className="border-t border-[#1F1F1F] bg-[#000000] py-8 text-center text-xs text-zinc-500">
-        <div className="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-[#1F1F1F] bg-[#000000] py-10 text-center text-xs text-zinc-500">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 font-semibold text-white">
             <span className="w-2 h-2 rounded-full bg-white inline-block" />
             AutoDMs
@@ -146,7 +140,7 @@ export default function HomePage() {
           <div>
             © 2026 AutoDMs Inc. 100% Meta Graph API Compliant.
           </div>
-          <div className="flex items-center gap-4 text-zinc-400">
+          <div className="flex items-center gap-5 text-zinc-400">
             <Link href="/login" className="hover:text-white transition-colors">Log In</Link>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
