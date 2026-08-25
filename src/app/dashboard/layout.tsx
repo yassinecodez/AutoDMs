@@ -37,8 +37,9 @@ export default async function DashboardLayout({
     getAllUserAccounts(userId),
   ]);
 
-  const dmsCount = user?.dmsCountThisMonth || 0;
-  const dmsLimit = user?.dmsLimit || 150;
+  const currentWorkspace = activeAccount || allAccounts[0] || null;
+  const dmsCount = currentWorkspace ? currentWorkspace.dmsCountThisMonth : (user?.dmsCountThisMonth || 0);
+  const dmsLimit = currentWorkspace ? currentWorkspace.dmsLimit : (user?.dmsLimit || 150);
   const usagePct = Math.min(Math.round((dmsCount / dmsLimit) * 100), 100);
 
   const userAvatar = user?.image || session.user.image;
@@ -69,7 +70,7 @@ export default async function DashboardLayout({
                 pageName: a.pageName,
                 profilePictureUrl: a.profilePictureUrl,
               }))}
-              activeAccountId={activeAccount?.id || null}
+              activeAccountId={currentWorkspace?.id || null}
             />
           </div>
 
@@ -80,7 +81,7 @@ export default async function DashboardLayout({
         </div>
 
         <div>
-          {/* Monthly Quota Meter */}
+          {/* Monthly Quota Meter for Workspace */}
           <div className="p-3.5 mx-3 mb-3 bg-secondary border border-border rounded-2xl space-y-2.5 shrink-0 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs text-muted-foreground font-medium">

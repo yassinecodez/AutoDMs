@@ -4,7 +4,8 @@ import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { PLANS } from "@/lib/plans";
 import UpgradeButton from "@/components/UpgradeButton";
-import { CreditCard, Zap, Check } from "lucide-react";
+import { CreditCard, Zap, Check, Users } from "lucide-react";
+import { getActiveAccount, getAllUserAccounts } from "@/lib/activeAccount";
 
 export const dynamic = "force-dynamic";
 
@@ -15,23 +16,32 @@ export default async function BillingPage() {
   }
   const userId: string = session.user.id;
 
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      email: true,
-      planType: true,
-      dmsLimit: true,
-      dmsCountThisMonth: true,
-      usageResetAt: true,
-    },
-  });
+  const [user, activeAccount, allAccounts] = await Promise.all([
+    db.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        planType: true,
+        agencyMaxAccounts: true,
+        dmsLimit: true,
+        dmsCountThisMonth: true,
+        usageResetAt: true,
+      },
+    }),
+    getActiveAccount(userId),
+    getAllUserAccounts(userId),
+  ]);
 
   if (!user) {
     redirect("/login");
   }
 
-  const baseDate = user.usageResetAt ? new Date(user.usageResetAt) : new Date();
+  const currentWorkspace = activeAccount || allAccounts[0] || null;
+  const workspaceDmsCount = currentWorkspace ? currentWorkspace.dmsCountThisMonth : user.dmsCountThisMonth;
+  const workspaceDmsLimit = currentWorkspace ? currentWorkspace.dmsLimit : (user.planType === "BUSINESS" ? 15000 : (user.planType === "PRO" ? 3000 : 150));
+
+  const baseDate = currentWorkspace?.usageResetAt ? new Date(currentWorkspace.usageResetAt) : (user.usageResetAt ? new Date(user.usageResetAt) : new Date());
   const resetDate = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
   const resetDateFormatted = resetDate.toLocaleDateString("en-US", {
     month: "short",
@@ -39,10 +49,11 @@ export default async function BillingPage() {
     year: "numeric",
   });
 
+  const maxAllowedAccounts = user.planType === "BUSINESS" ? 3 : 1;
   const currentPlanDetails = PLANS[user.planType] || PLANS.FREE;
-  const remainingDms = Math.max(0, user.dmsLimit - user.dmsCountThisMonth);
+  const remainingDms = Math.max(0, workspaceDmsLimit - workspaceDmsCount);
   const usagePercentage = Math.min(
-    Math.round((user.dmsCountThisMonth / user.dmsLimit) * 100),
+    Math.round((workspaceDmsCount / workspaceDmsLimit) * 100),
     100
   );
 
@@ -52,45 +63,90 @@ export default async function BillingPage() {
       <div className="space-y-1 pb-4 border-b border-border">
         <h1 className="text-2xl font-bold text-foreground tracking-tight">Billing & Plans</h1>
         <p className="text-sm text-muted-foreground">
-          Manage your subscription tier, monthly direct message throughput, and invoices.
+          Manage your subscription tier, workspace direct message throughput, and multi-profile agency slots.
         </p>
       </div>
 
-      {/* Monthly Usage Card */}
-      <div className="p-6 bg-card border border-border rounded-2xl space-y-4 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="space-y-0.5">
-            <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-              <Zap className="w-4 h-4 text-muted-foreground" />
-              Monthly usage
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Track your direct message allowance for this billing period.
-            </p>
+      {/* Grid: Monthly Workspace Usage & Multi-Account Agency Meter */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Card 1: Active Workspace Monthly Usage */}
+        <div className="p-6 bg-card border border-border rounded-2xl space-y-4 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-muted-foreground" />
+                Workspace usage
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {currentWorkspace ? `@${currentWorkspace.pageName} monthly DM quota` : "Current workspace allowance"}
+              </p>
+            </div>
+            <div className="px-3 py-1 rounded-lg bg-secondary border border-border text-foreground text-xs font-semibold">
+              {currentPlanDetails.name}
+            </div>
           </div>
-          <div className="px-3 py-1 rounded-lg bg-secondary border border-border text-foreground text-xs font-medium w-fit">
-            Current plan: <span className="text-foreground font-semibold">{currentPlanDetails.name}</span>
+
+          {/* Progress bar container */}
+          <div className="space-y-2 pt-1">
+            <div className="flex justify-between text-xs font-medium">
+              <span className="text-muted-foreground">
+                <strong className="text-foreground font-bold">{workspaceDmsCount}</strong> of {workspaceDmsLimit} DMs
+              </span>
+              <span className="text-muted-foreground font-medium">{remainingDms} remaining</span>
+            </div>
+            
+            <div className="w-full h-2 bg-secondary border border-border rounded-full overflow-hidden">
+              <div
+                style={{ width: `${usagePercentage}%` }}
+                className="h-full transition-all duration-300 rounded-full bg-primary"
+              />
+            </div>
+
+            <div className="text-xs text-muted-foreground pt-0.5 font-normal">
+              Resets on {resetDateFormatted} • No hidden overage fees
+            </div>
           </div>
         </div>
 
-        {/* Progress bar container */}
-        <div className="space-y-2 pt-1">
-          <div className="flex justify-between text-xs font-medium">
-            <span className="text-muted-foreground">
-              <strong className="text-foreground font-bold">{user.dmsCountThisMonth}</strong> of {user.dmsLimit} DMs sent
-            </span>
-            <span className="text-muted-foreground font-medium">{remainingDms} remaining</span>
-          </div>
-          
-          <div className="w-full h-2 bg-secondary border border-border rounded-full overflow-hidden">
-            <div
-              style={{ width: `${usagePercentage}%` }}
-              className="h-full transition-all duration-300 rounded-full bg-primary"
-            />
+        {/* Card 2: Connected Instagram Profiles (Agency Slots) */}
+        <div className="p-6 bg-card border border-border rounded-2xl space-y-4 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                Connected profiles
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {user.planType === "BUSINESS"
+                  ? "Agency Plan: Multi-account capacity (up to 3 profiles)"
+                  : "Single profile connected. Upgrade to Agency for up to 3."}
+              </p>
+            </div>
+            <div className="px-3 py-1 rounded-lg bg-secondary border border-border text-foreground text-xs font-semibold">
+              {allAccounts.length} / {maxAllowedAccounts} {maxAllowedAccounts === 1 ? "Slot" : "Slots"}
+            </div>
           </div>
 
-          <div className="text-xs text-muted-foreground pt-0.5 font-normal">
-            Resets on {resetDateFormatted} • No hidden overage fees
+          <div className="space-y-2 pt-1">
+            <div className="flex justify-between text-xs font-medium">
+              <span className="text-muted-foreground">
+                <strong className="text-foreground font-bold">{allAccounts.length}</strong> active profiles
+              </span>
+              <span className="text-muted-foreground font-medium">
+                {Math.max(0, maxAllowedAccounts - allAccounts.length)} slots available
+              </span>
+            </div>
+
+            <div className="w-full h-2 bg-secondary border border-border rounded-full overflow-hidden">
+              <div
+                style={{ width: `${Math.min(100, Math.round((allAccounts.length / maxAllowedAccounts) * 100))}%` }}
+                className="h-full transition-all duration-300 rounded-full bg-primary"
+              />
+            </div>
+
+            <div className="text-xs text-muted-foreground pt-0.5 font-normal">
+              {user.planType === "BUSINESS" ? "Agency license active" : "Upgrade to Business/Agency to link 3 accounts"}
+            </div>
           </div>
         </div>
       </div>
@@ -166,11 +222,11 @@ export default async function BillingPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-3.5 h-3.5 text-foreground shrink-0" strokeWidth={2} />
-                  <span>Story mentions & Reel triggers</span>
+                  <span>Connect 1 Instagram profile</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-3.5 h-3.5 text-foreground shrink-0" strokeWidth={2} />
-                  <span>Lead capture with instant CSV export</span>
+                  <span>Story mentions & Reel triggers</span>
                 </li>
               </ul>
             </div>

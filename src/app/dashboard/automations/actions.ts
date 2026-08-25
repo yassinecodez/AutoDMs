@@ -109,6 +109,10 @@ export async function createAutomation(input: FormData | CreateAutomationInput) 
     throw new Error("Please fill in all required fields.");
   }
 
+  if (!igAccountId && activeAccount?.id) {
+    igAccountId = activeAccount.id;
+  }
+
   await db.automation.create({
     data: {
       userId,
@@ -152,6 +156,7 @@ export async function toggleAutomationActive(id: string, active: boolean) {
   });
 
   revalidatePath("/dashboard/automations");
+  revalidatePath("/dashboard");
 }
 
 export async function deleteAutomation(id: string) {

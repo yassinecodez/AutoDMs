@@ -21,30 +21,32 @@ function normalizeText(text: string): string {
 }
 
 /**
- * SaaS Quota Check Helper
+ * SaaS Quota Check Helper (Workspace-scoped)
  */
-async function checkUsageAllowed(userId: string): Promise<{ allowed: boolean; current?: number; limit?: number }> {
+async function checkUsageAllowed(igAccount: any): Promise<{ allowed: boolean; current?: number; limit?: number }> {
   try {
-    const user = await db.user.findUnique({ where: { id: userId } });
-    if (!user) return { allowed: true };
+    if (!igAccount) return { allowed: true };
 
     const oneMonth = 30 * 24 * 60 * 60 * 1000;
-    if (Date.now() - new Date(user.usageResetAt).getTime() > oneMonth) {
-      const updated = await db.user.update({
-        where: { id: userId },
+    const now = new Date();
+    const lastReset = igAccount.usageResetAt ? new Date(igAccount.usageResetAt) : new Date(0);
+
+    if (now.getTime() - lastReset.getTime() > oneMonth) {
+      const updated = await db.igAccount.update({
+        where: { id: igAccount.id },
         data: {
           dmsCountThisMonth: 0,
-          usageResetAt: new Date(),
+          usageResetAt: now,
         },
       });
       return { allowed: true, current: 0, limit: updated.dmsLimit };
     }
 
-    if (user.dmsCountThisMonth >= user.dmsLimit) {
-      return { allowed: false, current: user.dmsCountThisMonth, limit: user.dmsLimit };
+    if (igAccount.dmsCountThisMonth >= igAccount.dmsLimit) {
+      return { allowed: false, current: igAccount.dmsCountThisMonth, limit: igAccount.dmsLimit };
     }
 
-    return { allowed: true, current: user.dmsCountThisMonth, limit: user.dmsLimit };
+    return { allowed: true, current: igAccount.dmsCountThisMonth, limit: igAccount.dmsLimit };
   } catch (err) {
     console.error("[Usage Check Error]", err);
     return { allowed: true };
@@ -52,16 +54,24 @@ async function checkUsageAllowed(userId: string): Promise<{ allowed: boolean; cu
 }
 
 /**
- * Increment SaaS Quota Helper
+ * Increment SaaS Quota Helper (Workspace + User aggregated)
  */
-async function incrementUsage(userId: string) {
+async function incrementUsage(igAccountId: string, userId: string) {
   try {
-    await db.user.update({
-      where: { id: userId },
-      data: {
-        dmsCountThisMonth: { increment: 1 },
-      },
-    });
+    await Promise.all([
+      db.igAccount.update({
+        where: { id: igAccountId },
+        data: {
+          dmsCountThisMonth: { increment: 1 },
+        },
+      }),
+      db.user.update({
+        where: { id: userId },
+        data: {
+          dmsCountThisMonth: { increment: 1 },
+        },
+      }),
+    ]);
   } catch (err) {
     console.error("[Usage Increment Error]", err);
   }
@@ -150,10 +160,18 @@ async function processWebhookPayload(payload: any) {
             continue;
           }
 
-          // Check SaaS Quota Limits
-          const quota = await checkUsageAllowed(igAccount.userId);
+          // Link execution log to this Instagram account
+          await db.executionLog.update({
+            where: { commentId },
+            data: {
+              igAccountId: igAccount.id,
+            },
+          });
+
+          // Check SaaS Quota Limits for this workspace
+          const quota = await checkUsageAllowed(igAccount);
           if (!quota.allowed) {
-            console.warn(`[Webhook Comments] DM Quota Exceeded for user ${igAccount.userId}. Current: ${quota.current}/${quota.limit}`);
+            console.warn(`[Webhook Comments] DM Quota Exceeded for account @${igAccount.pageName}. Current: ${quota.current}/${quota.limit}`);
             await db.executionLog.update({
               where: { commentId },
               data: {
@@ -183,10 +201,10 @@ async function processWebhookPayload(payload: any) {
             continue;
           }
 
-          // 3. Match rules (COMMENTS or ALL)
+          // 3. Match rules strictly for THIS Instagram account (COMMENTS or ALL)
           const automations = await db.automation.findMany({
             where: {
-              userId: igAccount.userId,
+              igAccountId: igAccount.id,
               active: true,
               triggerSource: { in: ["COMMENTS", "ALL"] },
             },
@@ -232,7 +250,7 @@ async function processWebhookPayload(payload: any) {
           }
 
           if (!matchedAutomation) {
-            console.log(`[Webhook Comments] No active automation rule matched comment text.`);
+            console.log(`[Webhook Comments] No active automation rule matched comment text on @${igAccount.pageName}.`);
             const isTest = instagramAccountId === "0" || commenterUsername === "instagram";
             await db.executionLog.update({
               where: { commentId },
@@ -246,7 +264,7 @@ async function processWebhookPayload(payload: any) {
             continue;
           }
 
-          console.log(`[Webhook Comments] Matched automation "${matchedAutomation.name}"`);
+          console.log(`[Webhook Comments] Matched automation "${matchedAutomation.name}" for @${igAccount.pageName}`);
 
           // 4. Execute Actions with Anti-Spam Jitter Pacing
           let dmStatus = "SKIPPED";
@@ -281,7 +299,7 @@ async function processWebhookPayload(payload: any) {
             dmError = dmResult.error || null;
 
             if (dmResult.status === "SUCCESS") {
-              await incrementUsage(igAccount.userId);
+              await incrementUsage(igAccount.id, igAccount.userId);
             }
           } catch (err: any) {
             console.error("[Webhook Comments] Failed to dispatch DM:", err);
@@ -298,23 +316,22 @@ async function processWebhookPayload(payload: any) {
             const chosenPublicReply = options[Math.floor(Math.random() * options.length)];
 
             try {
-              await sleep(Math.floor(Math.random() * 1500) + 500);
-              console.log(`[Webhook Comments] Dispatching Public Reply to comment ${commentId}...`);
-
-              const replyResult = await MetaApi.sendPublicCommentReply(commentId, chosenPublicReply, decryptedToken);
-              commentStatus = replyResult.status;
-              commentError = replyResult.error || null;
+              await sleep(Math.floor(Math.random() * 1000) + 300);
+              const pubResult = await MetaApi.sendPublicCommentReply(commentId, chosenPublicReply, decryptedToken);
+              commentStatus = pubResult.status;
+              commentError = pubResult.error || null;
             } catch (err: any) {
-              console.error("[Webhook Comments] Failed to dispatch public reply:", err);
+              console.error("[Webhook Comments] Failed to send comment reply:", err);
               commentStatus = "FAILED";
-              commentError = err.message || "Failed to dispatch public reply";
+              commentError = err.message || "Failed to send comment reply";
             }
           }
 
-          // 5. Update execution log with final outcomes and follower status
+          // 5. Update execution log with outcomes
           await db.executionLog.update({
             where: { commentId },
             data: {
+              igAccountId: igAccount.id,
               automationId: matchedAutomation.id,
               dmStatus,
               dmError,
@@ -324,7 +341,7 @@ async function processWebhookPayload(payload: any) {
             },
           });
         } catch (err: any) {
-          console.error(`[Webhook Comments] Error executing comment automation:`, err);
+          console.error(`[Webhook Comments] Error executing automation:`, err);
           try {
             await db.executionLog.update({
               where: { commentId },
@@ -343,37 +360,34 @@ async function processWebhookPayload(payload: any) {
     }
 
     // ==========================================
-    // B. PROCESS DIRECT MESSAGES, STORIES, AND POSTBACKS
+    // B. PROCESS DIRECT MESSAGES & STORY MENTIONS
     // ==========================================
     const messaging = entry.messaging || [];
     for (const msgEvent of messaging) {
       const senderId = msgEvent.sender?.id;
+      const recipientId = msgEvent.recipient?.id;
       const message = msgEvent.message;
       const postback = msgEvent.postback;
 
-      if (!senderId || (!message && !postback)) {
+      // Ignore echoes (messages sent by our bot)
+      if (message?.is_echo) {
         continue;
       }
 
-      const messageText = message ? (message.text || "") : (postback.payload || postback.title || "");
-      const messageId = message ? (message.mid || "") : ("postback_" + msgEvent.timestamp + "_" + senderId);
+      const messageId = message?.mid || postback?.mid || `msg_${Date.now()}_${Math.random()}`;
+      const messageText = message?.text || postback?.title || "";
 
-      if (!messageId) {
-        continue;
-      }
-
-      console.log(`[Webhook Messaging] Processing messaging event ${messageId} (Postback: ${!!postback}) from sender ${senderId}`);
+      console.log(`[Webhook Messaging] Event from sender ${senderId}: "${messageText}"`);
 
       // 1. Graceful Atomic Deduplication
       try {
         await db.executionLog.create({
           data: {
             commentId: messageId,
-            commentText: messageText || "[Media/Postback/Attachment]",
-            commenterUsername: "ig_user_" + senderId,
+            commentText: messageText,
+            commenterUsername: senderId,
             triggerSource: "DIRECT_MESSAGE",
             dmStatus: "PROCESSING",
-            commentStatus: "SKIPPED",
           },
         });
       } catch (err: any) {
@@ -414,10 +428,18 @@ async function processWebhookPayload(payload: any) {
           continue;
         }
 
-        // Check SaaS Quota Limits
-        const quota = await checkUsageAllowed(igAccount.userId);
+        // Link execution log to this workspace
+        await db.executionLog.update({
+          where: { commentId: messageId },
+          data: {
+            igAccountId: igAccount.id,
+          },
+        });
+
+        // Check SaaS Quota Limits for this workspace
+        const quota = await checkUsageAllowed(igAccount);
         if (!quota.allowed) {
-          console.warn(`[Webhook Messaging] DM Quota Exceeded for user ${igAccount.userId}. Current: ${quota.current}/${quota.limit}`);
+          console.warn(`[Webhook Messaging] DM Quota Exceeded for account @${igAccount.pageName}. Current: ${quota.current}/${quota.limit}`);
           await db.executionLog.update({
             where: { commentId: messageId },
             data: {
@@ -460,7 +482,6 @@ async function processWebhookPayload(payload: any) {
 
         // 3.5 Inbound Email & International/Moroccan Phone Detection for Lead Capture Guard
         const emailMatch = messageText ? messageText.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/) : null;
-        // Supports Moroccan formats (06..., 07..., +212..., 05...) and global international formats
         const phoneRegex = /(?:(?:\+|00)212[\s.-]?|0)[5-7](?:[\s.-]?\d{2}){4}|(?:\+?\d{1,4}[\s.-]?)?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}/;
         const phoneMatch = messageText ? messageText.match(phoneRegex) : null;
 
@@ -468,11 +489,11 @@ async function processWebhookPayload(payload: any) {
         const phone = phoneMatch ? phoneMatch[0] : null;
 
         if (email || phone) {
-          console.log(`[Webhook Lead Capture] Contact details captured from ${senderId}: email=${email}, phone=${phone}`);
+          console.log(`[Webhook Lead Capture] Contact details captured from ${senderId} on @${igAccount.pageName}: email=${email}, phone=${phone}`);
 
           const leadCaptureAuto = await db.automation.findFirst({
             where: {
-              userId: igAccount.userId,
+              igAccountId: igAccount.id,
               active: true,
               enableLeadCapture: true,
             },
@@ -506,6 +527,7 @@ async function processWebhookPayload(payload: any) {
           await db.executionLog.update({
             where: { commentId: messageId },
             data: {
+              igAccountId: igAccount.id,
               triggerSource: "DIRECT_MESSAGE",
               commenterUsername: resolvedUsername,
               automationId: leadCaptureAuto?.id || null,
@@ -515,7 +537,7 @@ async function processWebhookPayload(payload: any) {
 
           // Send Lead Confirmation DM if configured
           if (leadCaptureAuto && leadCaptureAuto.leadConfirmationDm) {
-            const quotaCheck = await checkUsageAllowed(igAccount.userId);
+            const quotaCheck = await checkUsageAllowed(igAccount);
             if (quotaCheck.allowed) {
               try {
                 await sleep(Math.floor(Math.random() * 1500) + 500);
@@ -524,7 +546,7 @@ async function processWebhookPayload(payload: any) {
                 const confirmationResult = await MetaApi.sendDirectMessage(senderId, { text: dmText }, decryptedToken);
 
                 if (confirmationResult.status === "SUCCESS") {
-                  await incrementUsage(igAccount.userId);
+                  await incrementUsage(igAccount.id, igAccount.userId);
                 }
               } catch (dmErr) {
                 console.error("[Webhook Lead Capture] Failed to send DM confirmation:", dmErr);
@@ -577,7 +599,7 @@ async function processWebhookPayload(payload: any) {
             triggerSourceField = "STORY_MENTION";
             const automations = await db.automation.findMany({
               where: {
-                userId: igAccount.userId,
+                igAccountId: igAccount.id,
                 active: true,
                 triggerSource: { in: ["STORY_MENTIONS", "ALL"] },
               },
@@ -590,7 +612,7 @@ async function processWebhookPayload(payload: any) {
             triggerSourceField = "DIRECT_MESSAGE";
             const automations = await db.automation.findMany({
               where: {
-                userId: igAccount.userId,
+                igAccountId: igAccount.id,
                 active: true,
                 triggerSource: { in: ["DIRECT_MESSAGES", "ALL"] },
               },
@@ -633,6 +655,7 @@ async function processWebhookPayload(payload: any) {
         await db.executionLog.update({
           where: { commentId: messageId },
           data: {
+            igAccountId: igAccount.id,
             triggerSource: triggerSourceField,
             commenterUsername: resolvedUsername,
             isFollower,
@@ -640,7 +663,7 @@ async function processWebhookPayload(payload: any) {
         });
 
         if (!matchedAutomation) {
-          console.log(`[Webhook Messaging] No active automation rule matched DM/Story Mention.`);
+          console.log(`[Webhook Messaging] No active automation rule matched DM/Story Mention on @${igAccount.pageName}.`);
           await db.executionLog.update({
             where: { commentId: messageId },
             data: {
@@ -652,7 +675,7 @@ async function processWebhookPayload(payload: any) {
           continue;
         }
 
-        console.log(`[Webhook Messaging] Matched automation "${matchedAutomation.name}" (RequireFollow: ${matchedAutomation.requireFollow}, IsFollower: ${isFollower})`);
+        console.log(`[Webhook Messaging] Matched automation "${matchedAutomation.name}" for @${igAccount.pageName} (RequireFollow: ${matchedAutomation.requireFollow}, IsFollower: ${isFollower})`);
 
         // 4. Execute Direct Message Reply
         let dmStatus = "SKIPPED";
@@ -672,7 +695,7 @@ async function processWebhookPayload(payload: any) {
           dmError = dmResult.error || null;
 
           if (dmResult.status === "SUCCESS") {
-            await incrementUsage(igAccount.userId);
+            await incrementUsage(igAccount.id, igAccount.userId);
             
             // Record or update lead follower status
             await db.lead.upsert({
@@ -706,6 +729,7 @@ async function processWebhookPayload(payload: any) {
         await db.executionLog.update({
           where: { commentId: messageId },
           data: {
+            igAccountId: igAccount.id,
             automationId: matchedAutomation.id,
             dmStatus,
             dmError,
@@ -758,64 +782,41 @@ export async function POST(request: NextRequest) {
   const signature = request.headers.get("X-Hub-Signature-256") || request.headers.get("x-hub-signature-256");
 
   if (!signature) {
-    console.error("[Webhook] Signature verification failed: X-Hub-Signature-256 header missing.");
-    return new NextResponse("Unauthorized: Signature missing", { status: 401 });
+    console.error("[Webhook Verification] Missing X-Hub-Signature-256 header.");
+    return new NextResponse("Missing Signature", { status: 401 });
   }
 
-  const parts = signature.split("=");
-  if (parts.length !== 2 || parts[0] !== "sha256") {
-    console.error("[Webhook] Signature verification failed: Invalid signature format.");
-    return new NextResponse("Bad Request: Invalid signature format", { status: 400 });
-  }
-
-  const signatureHash = parts[1];
   const rawBody = await request.text();
-  const appSecret = process.env.META_APP_SECRET || process.env.INSTAGRAM_APP_SECRET;
+  const appSecret = process.env.INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET;
 
-  if (!appSecret) {
-    console.error("[Webhook] Configuration error: META_APP_SECRET or INSTAGRAM_APP_SECRET is not configured.");
-    return new NextResponse("Server configuration error: missing App Secret", { status: 500 });
-  }
+  if (appSecret) {
+    const expectedSignature = `sha256=${crypto
+      .createHmac("sha256", appSecret)
+      .update(rawBody)
+      .digest("hex")}`;
 
-  // Verify HMAC-SHA256 signature using timingSafeEqual
-  const expectedHash = crypto
-    .createHmac("sha256", appSecret)
-    .update(rawBody)
-    .digest("hex");
-
-  const signatureBuffer = Buffer.from(signatureHash, "utf8");
-  const expectedBuffer = Buffer.from(expectedHash, "utf8");
-
-  const isMatching =
-    signatureBuffer.length === expectedBuffer.length &&
-    crypto.timingSafeEqual(signatureBuffer, expectedBuffer);
-
-  if (!isMatching) {
-    console.error("[Webhook] Signature verification failed: Signature mismatch.");
-    if (process.env.NODE_ENV === "production") {
-      return new NextResponse("Unauthorized: Signature mismatch", { status: 401 });
-    } else {
-      console.warn("[Webhook] Development mode: proceeding despite signature mismatch...");
+    if (signature !== expectedSignature && process.env.NODE_ENV === "production") {
+      console.error("[Webhook Verification] Signature mismatch.");
+      return new NextResponse("Invalid Signature", { status: 401 });
     }
   }
 
   let payload: any;
   try {
     payload = JSON.parse(rawBody);
-  } catch (jsonErr) {
-    console.error("[Webhook] JSON parse failed:", jsonErr);
-    return new NextResponse("Bad Request: Invalid JSON", { status: 400 });
+  } catch (err) {
+    console.error("[Webhook Payload] Failed to parse JSON body:", err);
+    return new NextResponse("Bad Request", { status: 400 });
   }
 
-  // Fast ACK: Schedule background execution via Next.js 15 after()
+  // Fast ACK: Delegate processing to background execution queue
   after(async () => {
     try {
       await processWebhookPayload(payload);
     } catch (bgErr) {
-      console.error("[Webhook Background Worker Crash]:", bgErr);
+      console.error("[Webhook Background Error]", bgErr);
     }
   });
 
-  // Immediately respond to Meta to prevent timeout / retry storms
-  return new Response("EVENT_RECEIVED", { status: 200 });
+  return new NextResponse("EVENT_RECEIVED", { status: 200 });
 }

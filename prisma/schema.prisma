@@ -14,7 +14,8 @@ model User {
   password           String
   name               String?
   image              String?      // Google / user avatar URL
-  planType           String       @default("FREE")      // "FREE" | "PRO" | "BUSINESS"
+  planType           String       @default("FREE")      // "FREE" | "PRO" | "BUSINESS" (Agency)
+  agencyMaxAccounts  Int          @default(1)           // 1 for FREE/PRO, 3 for BUSINESS/AGENCY
   dmsLimit           Int          @default(150)
   dmsCountThisMonth  Int          @default(0)
   usageResetAt       DateTime     @default(now())
@@ -25,19 +26,29 @@ model User {
 }
 
 model IgAccount {
-  id                 String   @id @default(uuid())
+  id                 String       @id @default(uuid())
   userId             String
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  instagramAccountId String   @unique
-  pageId             String?  @unique
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instagramAccountId String       @unique
+  pageId             String?      @unique
   pageName           String
-  profilePictureUrl  String?  // Instagram profile avatar URL
-  accessToken        String   // Encrypted Page Access Token
+  profilePictureUrl  String?      // Instagram profile avatar URL
+  accessToken        String       // Encrypted Page Access Token
   tokenExpiresAt     DateTime?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  
+  // Workspace-Isolated Usage & Subscription
+  planType           String       @default("FREE")      // "FREE" | "PRO" | "BUSINESS"
+  dmsLimit           Int          @default(150)
+  dmsCountThisMonth  Int          @default(0)
+  usageResetAt       DateTime     @default(now())
+
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
   automations        Automation[]
   leads              Lead[]
+  logs               ExecutionLog[]
+
+  @@index([userId])
 }
 
 model Automation {
@@ -74,6 +85,8 @@ model Automation {
 
 model ExecutionLog {
   id                String      @id @default(uuid())
+  igAccountId       String?
+  igAccount         IgAccount?  @relation(fields: [igAccountId], references: [id], onDelete: Cascade)
   automationId      String?
   automation        Automation? @relation(fields: [automationId], references: [id], onDelete: SetNull)
   commentId         String      @unique
@@ -87,6 +100,7 @@ model ExecutionLog {
   isFollower        Boolean?    @default(false)
   timestamp         DateTime    @default(now())
 
+  @@index([igAccountId, timestamp(sort: Desc)])
   @@index([automationId, timestamp])
   @@index([timestamp(sort: Desc)])
 }

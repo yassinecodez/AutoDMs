@@ -5,7 +5,7 @@ import AutomationsManager from "@/components/AutomationsManager";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { getActiveAccount } from "@/lib/activeAccount";
+import { getActiveAccount, getAllUserAccounts } from "@/lib/activeAccount";
 
 interface PageProps {
   searchParams: Promise<{
@@ -22,40 +22,26 @@ export default async function AutomationsPage({ searchParams }: PageProps) {
     redirect("/login");
   }
   const userId: string = session.user.id;
-  const activeAccount = await getActiveAccount(userId);
-
-  const [automations, connectedAccounts] = await Promise.all([
-    db.automation.findMany({
-      where: {
-        userId,
-        ...(activeAccount
-          ? {
-              OR: [
-                { igAccountId: activeAccount.id },
-                { igAccountId: null },
-              ],
-            }
-          : {}),
-      },
-      orderBy: { createdAt: "desc" },
-      include: {
-        _count: {
-          select: { logs: true, leads: true },
-        },
-      },
-    }),
-    db.igAccount.findMany({
-      where: {
-        userId,
-        NOT: { pageName: "Instagram Account" },
-      },
-      select: {
-        id: true,
-        instagramAccountId: true,
-        pageName: true,
-      },
-    }),
+  const [activeAccount, connectedAccounts] = await Promise.all([
+    getActiveAccount(userId),
+    getAllUserAccounts(userId),
   ]);
+
+  const currentAccount = activeAccount || connectedAccounts[0] || null;
+
+  const automations = currentAccount
+    ? await db.automation.findMany({
+        where: {
+          igAccountId: currentAccount.id,
+        },
+        orderBy: { createdAt: "desc" },
+        include: {
+          _count: {
+            select: { logs: true, leads: true },
+          },
+        },
+      })
+    : [];
 
   const defaultTab = params.tab === "templates" ? "TEMPLATES" : "MY_RULES";
 
@@ -66,14 +52,16 @@ export default async function AutomationsPage({ searchParams }: PageProps) {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Automations</h1>
-            {activeAccount && (
-              <span className="text-xs font-medium text-foreground bg-secondary border border-border px-2.5 py-0.5 rounded-full">
-                @{activeAccount.pageName}
+            {currentAccount && (
+              <span className="text-xs font-semibold text-foreground bg-secondary border border-border px-2.5 py-0.5 rounded-full">
+                @{currentAccount.pageName}
               </span>
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            Manage your active trigger rules and launch pre-built 1-click recipes for this workspace
+            {currentAccount
+              ? `Manage active trigger rules and launch pre-built recipes on @${currentAccount.pageName}`
+              : "Connect an Instagram account to create and run automation rules."}
           </p>
         </div>
 
@@ -89,7 +77,11 @@ export default async function AutomationsPage({ searchParams }: PageProps) {
       {/* Main Manager Client Component */}
       <AutomationsManager
         initialAutomations={automations}
-        connectedAccounts={connectedAccounts}
+        connectedAccounts={connectedAccounts.map((a) => ({
+          id: a.id,
+          instagramAccountId: a.instagramAccountId,
+          pageName: a.pageName,
+        }))}
         defaultTab={defaultTab}
       />
     </div>

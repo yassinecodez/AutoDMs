@@ -7,17 +7,14 @@ import {
   Send,
   Zap,
   Users,
-  MessageCircle,
-  Sparkles,
-  Inbox,
+  Plus,
   ArrowRight,
   ChevronRight,
   CheckCircle2,
   Circle,
-  Plus,
   ScrollText,
 } from "lucide-react";
-import { getActiveAccount } from "@/lib/activeAccount";
+import { getActiveAccount, getAllUserAccounts } from "@/lib/activeAccount";
 import { PLANS } from "@/lib/plans";
 import { getCommenterAvatar } from "@/lib/commenterAvatar";
 import OverviewTemplatesSlider from "@/components/OverviewTemplatesSlider";
@@ -31,22 +28,11 @@ export default async function DashboardOverview() {
   }
   const userId: string = session.user.id;
 
-  const activeAccount = await getActiveAccount(userId);
-
-  // Parallelize metrics and widget queries
-  const [
-    user,
-    accounts,
-    automationsCount,
-    capturedLeadsCount,
-    totalLogsCount,
-    deliveredLogsCount,
-    recentLogs,
-    topAutomations,
-  ] = await Promise.all([
+  const [user, accounts, activeAccount] = await Promise.all([
     db.user.findUnique({
       where: { id: userId },
       select: {
+        id: true,
         name: true,
         email: true,
         dmsCountThisMonth: true,
@@ -54,122 +40,91 @@ export default async function DashboardOverview() {
         planType: true,
       },
     }),
-    db.igAccount.findMany({
-      where: {
-        userId,
-        NOT: { pageName: "Instagram Account" },
-      },
-      select: {
-        id: true,
-        instagramAccountId: true,
-        pageName: true,
-        profilePictureUrl: true,
-      },
-      orderBy: { createdAt: "desc" },
-    }),
-    db.automation.count({
-      where: {
-        userId,
-        ...(activeAccount
-          ? {
-              OR: [
-                { igAccountId: activeAccount.id },
-                { igAccountId: null },
-              ],
-            }
-          : {}),
-      },
-    }),
-    db.lead.count({
-      where: {
-        ...(activeAccount
-          ? { igAccountId: activeAccount.id }
-          : { igAccount: { userId } }),
-      },
-    }),
-    db.executionLog.count({
-      where: {
-        automation: {
-          userId,
-          ...(activeAccount
-            ? {
-                OR: [
-                  { igAccountId: activeAccount.id },
-                  { igAccountId: null },
-                ],
-              }
-            : {}),
-        },
-      },
-    }),
-    db.executionLog.count({
-      where: {
-        dmStatus: "SUCCESS",
-        automation: {
-          userId,
-          ...(activeAccount
-            ? {
-                OR: [
-                  { igAccountId: activeAccount.id },
-                  { igAccountId: null },
-                ],
-              }
-            : {}),
-        },
-      },
-    }),
-    db.executionLog.findMany({
-      where: {
-        automation: {
-          userId,
-          ...(activeAccount
-            ? {
-                OR: [
-                  { igAccountId: activeAccount.id },
-                  { igAccountId: null },
-                ],
-              }
-            : {}),
-        },
-      },
-      orderBy: { timestamp: "desc" },
-      take: 4,
-      include: {
-        automation: {
+    getAllUserAccounts(userId),
+    getActiveAccount(userId),
+  ]);
+
+  const currentAccount = activeAccount || accounts[0] || null;
+
+  // Parallelize scoped queries strictly for the active workspace
+  const [
+    automationsCount,
+    capturedLeadsCount,
+    totalLogsCount,
+    deliveredLogsCount,
+    recentLogs,
+    topAutomations,
+  ] = await Promise.all([
+    currentAccount
+      ? db.automation.count({
+          where: { igAccountId: currentAccount.id },
+        })
+      : 0,
+    currentAccount
+      ? db.lead.count({
+          where: { igAccountId: currentAccount.id },
+        })
+      : 0,
+    currentAccount
+      ? db.executionLog.count({
+          where: {
+            OR: [
+              { igAccountId: currentAccount.id },
+              { automation: { igAccountId: currentAccount.id } },
+            ],
+          },
+        })
+      : 0,
+    currentAccount
+      ? db.executionLog.count({
+          where: {
+            dmStatus: "SUCCESS",
+            OR: [
+              { igAccountId: currentAccount.id },
+              { automation: { igAccountId: currentAccount.id } },
+            ],
+          },
+        })
+      : 0,
+    currentAccount
+      ? db.executionLog.findMany({
+          where: {
+            OR: [
+              { igAccountId: currentAccount.id },
+              { automation: { igAccountId: currentAccount.id } },
+            ],
+          },
+          orderBy: { timestamp: "desc" },
+          take: 4,
+          include: {
+            automation: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        })
+      : [],
+    currentAccount
+      ? db.automation.findMany({
+          where: { igAccountId: currentAccount.id },
+          orderBy: { createdAt: "desc" },
+          take: 4,
           select: {
             id: true,
             name: true,
+            triggerSource: true,
+            triggerKeyword: true,
+            triggerScope: true,
+            replyDmMessage: true,
+            active: true,
+            _count: {
+              select: { logs: true },
+            },
           },
-        },
-      },
-    }),
-    db.automation.findMany({
-      where: {
-        userId,
-        ...(activeAccount
-          ? {
-              OR: [
-                { igAccountId: activeAccount.id },
-                { igAccountId: null },
-              ],
-            }
-          : {}),
-      },
-      orderBy: { createdAt: "desc" },
-      take: 4,
-      select: {
-        id: true,
-        name: true,
-        triggerSource: true,
-        triggerKeyword: true,
-        triggerScope: true,
-        replyDmMessage: true,
-        active: true,
-        _count: {
-          select: { logs: true },
-        },
-      },
-    }),
+        })
+      : [],
   ]);
 
   function formatFirstName(rawName?: string | null, rawEmail?: string | null): string {
@@ -206,17 +161,18 @@ export default async function DashboardOverview() {
     return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   }
 
-  const currentAccount = activeAccount || accounts[0] || null;
-  const totalDmsCount = user?.dmsCountThisMonth || deliveredLogsCount || 0;
+  const totalDmsCount = currentAccount?.dmsCountThisMonth || deliveredLogsCount || 0;
   const firstName = formatFirstName(
     user?.name || session.user.name,
     user?.email || session.user.email
   );
 
-  const dmsUsed = user?.dmsCountThisMonth || 0;
-  const dmsLimit = user?.dmsLimit || 150;
+  const dmsUsed = currentAccount?.dmsCountThisMonth || deliveredLogsCount || 0;
+  const dmsLimit = currentAccount?.dmsLimit || (user?.planType === "BUSINESS" ? 15000 : (user?.planType === "PRO" ? 3000 : 150));
   const usagePercent = Math.min(100, Math.round((dmsUsed / dmsLimit) * 100));
-  const planDetails = PLANS[user?.planType || "FREE"] || PLANS.FREE;
+  
+  const planKey = user?.planType === "BUSINESS" ? "BUSINESS" : (currentAccount?.planType || user?.planType || "FREE");
+  const planDetails = PLANS[planKey] || PLANS.FREE;
 
   // Checklist calculations
   const step1Done = accounts.length > 0;
@@ -228,15 +184,24 @@ export default async function DashboardOverview() {
   return (
     <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
       {/* ========================================================================= */}
-      {/* SECTION 1: Personalized First-Name Greeting */}
+      {/* SECTION 1: Personalized Greeting with Workspace Badge */}
       {/* ========================================================================= */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-border">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Hello, {firstName}!
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">
+              Hello, {firstName}!
+            </h1>
+            {currentAccount && (
+              <span className="text-xs font-semibold text-foreground bg-secondary border border-border px-2.5 py-0.5 rounded-full">
+                @{currentAccount.pageName}
+              </span>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">
-            Monitor incoming leads, auto-DMs, and conversation triggers in real-time.
+            {currentAccount
+              ? `Workspace for @${currentAccount.pageName} — real-time triggers, leads, and automated DMs.`
+              : "Connect your Instagram profile to launch your automated DM pipeline."}
           </p>
         </div>
 
@@ -262,24 +227,26 @@ export default async function DashboardOverview() {
       </div>
 
       {/* ========================================================================= */}
-      {/* SECTION 2: 4-Column Stat Metric Cards */}
+      {/* SECTION 2: 4-Column Stat Metric Cards (Strictly Scoped to Workspace) */}
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-        {/* Card 1: Total DMs Sent */}
+        {/* Card 1: Total DMs Sent in Workspace */}
         <div className="p-5 bg-card border border-border rounded-2xl space-y-3 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">DMs sent</span>
+            <span className="text-xs font-medium text-muted-foreground">Workspace DMs sent</span>
             <div className="w-8 h-8 rounded-lg bg-secondary border border-border flex items-center justify-center text-foreground">
               <Send className="w-4 h-4" />
             </div>
           </div>
           <div>
             <div className="text-2xl font-bold text-foreground tracking-tight">{totalDmsCount}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Automated direct deliveries</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {currentAccount ? `@${currentAccount.pageName} automated direct deliveries` : "Direct deliveries"}
+            </p>
           </div>
         </div>
 
-        {/* Card 2: Active Rules */}
+        {/* Card 2: Active Rules in Workspace */}
         <div className="p-5 bg-card border border-border rounded-2xl space-y-3 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">Active rules</span>
@@ -289,11 +256,11 @@ export default async function DashboardOverview() {
           </div>
           <div>
             <div className="text-2xl font-bold text-foreground tracking-tight">{automationsCount}</div>
-            <p className="text-xs text-muted-foreground mt-0.5">Live triggers running</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Live triggers on this account</p>
           </div>
         </div>
 
-        {/* Card 3: Captured Leads */}
+        {/* Card 3: Captured Leads for this Account */}
         <div className="p-5 bg-card border border-border rounded-2xl space-y-3 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">Captured leads</span>
@@ -307,7 +274,7 @@ export default async function DashboardOverview() {
           </div>
         </div>
 
-        {/* Card 4: Quota Usage */}
+        {/* Card 4: Quota Usage for Workspace */}
         <div className="p-5 bg-card border border-border rounded-2xl space-y-3 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">Monthly usage</span>
@@ -334,22 +301,22 @@ export default async function DashboardOverview() {
       </div>
 
       {/* ========================================================================= */}
-      {/* SECTION 3: 6-Template Arrow Slider ("Start here") */}
+      {/* SECTION 3: 6-Template Arrow Slider */}
       {/* ========================================================================= */}
       <OverviewTemplatesSlider customTemplates={topAutomations} />
 
       {/* ========================================================================= */}
-      {/* SECTION 4: Simplified Operations & Activity Feed */}
+      {/* SECTION 4: Workspace Operations & Activity Feed */}
       {/* ========================================================================= */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Operations & Activity
+            Operations & Activity ({currentAccount ? `@${currentAccount.pageName}` : "No Workspace Selected"})
           </h2>
           {completedSteps === 3 && (
             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Pipeline active</span>
+              <span>Workspace active</span>
             </span>
           )}
         </div>
@@ -363,7 +330,7 @@ export default async function DashboardOverview() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-semibold text-foreground">Getting started</h3>
-                    <p className="text-xs text-muted-foreground">Complete setup to launch your Instagram pipeline</p>
+                    <p className="text-xs text-muted-foreground">Complete setup to launch this workspace&apos;s pipeline</p>
                   </div>
                   <span className="text-xs font-medium text-foreground bg-secondary border border-border px-3 py-1 rounded-full">
                     {completedSteps} of 3 completed
@@ -447,7 +414,7 @@ export default async function DashboardOverview() {
                           3. Test and send your first DM
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {step3Done ? `${totalLogsCount} total interaction(s) recorded` : "Comment on your post from a test account"}
+                          {step3Done ? `${totalLogsCount} interaction(s) recorded` : "Comment on your post from a test account"}
                         </p>
                       </div>
                     </div>
@@ -484,14 +451,14 @@ export default async function DashboardOverview() {
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold text-foreground">Recent activity</h3>
-                      <p className="text-xs text-muted-foreground">Live webhook interaction stream</p>
+                      <p className="text-xs text-muted-foreground">Live webhook stream for this workspace</p>
                     </div>
                   </div>
                   <Link
                     href="/dashboard/logs"
                     className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
                   >
-                    <span>View all logs ({totalLogsCount})</span>
+                    <span>View all ({totalLogsCount})</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
@@ -504,7 +471,7 @@ export default async function DashboardOverview() {
                     <div className="space-y-0.5">
                       <p className="text-xs font-semibold text-foreground">Waiting for interactions</p>
                       <p className="text-[11px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                        When followers comment your trigger keywords or mention you in stories, live dispatch logs will stream here.
+                        When followers comment your trigger keywords or mention @{currentAccount?.pageName || "you"}, live dispatch logs will stream here.
                       </p>
                     </div>
                   </div>
@@ -591,14 +558,14 @@ export default async function DashboardOverview() {
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold text-foreground">Recent activity</h3>
-                      <p className="text-xs text-muted-foreground">Live webhook interaction stream</p>
+                      <p className="text-xs text-muted-foreground">Live webhook stream for this workspace</p>
                     </div>
                   </div>
                   <Link
                     href="/dashboard/logs"
                     className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
                   >
-                    <span>View all logs ({totalLogsCount})</span>
+                    <span>View all ({totalLogsCount})</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
@@ -611,7 +578,7 @@ export default async function DashboardOverview() {
                     <div className="space-y-0.5">
                       <p className="text-xs font-semibold text-foreground">Waiting for interactions</p>
                       <p className="text-[11px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                        When followers comment your trigger keywords or mention you in stories, live dispatch logs will stream here.
+                        When followers comment your trigger keywords or mention @{currentAccount?.pageName || "you"}, live dispatch logs will stream here.
                       </p>
                     </div>
                   </div>
@@ -685,7 +652,7 @@ export default async function DashboardOverview() {
               </div>
             </div>
 
-            {/* Right Card: Simplified Active Automations List */}
+            {/* Right Card: Active Automations in Workspace */}
             <div className="bg-card border border-border rounded-2xl p-6 space-y-5 flex flex-col justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -695,7 +662,7 @@ export default async function DashboardOverview() {
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold text-foreground">Active automations</h3>
-                      <p className="text-xs text-muted-foreground">Running Instagram rules</p>
+                      <p className="text-xs text-muted-foreground">Running rules on @{currentAccount?.pageName || "workspace"}</p>
                     </div>
                   </div>
                   <Link
@@ -713,9 +680,9 @@ export default async function DashboardOverview() {
                       <Zap className="w-4 h-4" />
                     </div>
                     <div className="space-y-0.5">
-                      <p className="text-xs font-semibold text-foreground">No automations created yet</p>
+                      <p className="text-xs font-semibold text-foreground">No automations on this workspace</p>
                       <p className="text-[11px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                        Create your first keyword trigger to automatically send DM responses.
+                        Create your first keyword trigger to automatically send DM responses for @{currentAccount?.pageName || "this account"}.
                       </p>
                     </div>
                   </div>
@@ -782,7 +749,7 @@ export default async function DashboardOverview() {
                   href="/dashboard/automations"
                   className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
                 >
-                  <span>Manage all rules</span>
+                  <span>Manage rules</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>

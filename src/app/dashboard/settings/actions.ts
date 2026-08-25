@@ -14,15 +14,26 @@ export async function upgradePlanAction(plan: "FREE" | "PRO" | "BUSINESS") {
 
   const selectedPlan = PLANS[plan] || PLANS.FREE;
 
-  await db.user.update({
-    where: { id: session.user.id },
-    data: {
-      planType: plan,
-      dmsLimit: selectedPlan.dmsLimit,
-    },
-  });
+  await Promise.all([
+    db.user.update({
+      where: { id: session.user.id },
+      data: {
+        planType: plan,
+        agencyMaxAccounts: plan === "BUSINESS" ? 3 : 1,
+        dmsLimit: selectedPlan.dmsLimit,
+      },
+    }),
+    db.igAccount.updateMany({
+      where: { userId: session.user.id },
+      data: {
+        planType: plan,
+        dmsLimit: selectedPlan.dmsLimit,
+      },
+    }),
+  ]);
 
   revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard/billing");
   revalidatePath("/dashboard");
   return { success: true };
 }

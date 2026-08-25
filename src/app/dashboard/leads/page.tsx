@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import LeadsTable from "@/components/LeadsTable";
-import { getActiveAccount } from "@/lib/activeAccount";
+import { getActiveAccount, getAllUserAccounts } from "@/lib/activeAccount";
 
 export const dynamic = "force-dynamic";
 
@@ -13,25 +13,30 @@ export default async function LeadsPage() {
     redirect("/login");
   }
   const userId: string = session.user.id;
-  const activeAccount = await getActiveAccount(userId);
+  const [activeAccount, connectedAccounts] = await Promise.all([
+    getActiveAccount(userId),
+    getAllUserAccounts(userId),
+  ]);
 
-  const leads = await db.lead.findMany({
-    where: {
-      ...(activeAccount
-        ? { igAccountId: activeAccount.id }
-        : { igAccount: { userId } }),
-    },
-    include: {
-      automation: {
-        select: {
-          name: true,
+  const currentAccount = activeAccount || connectedAccounts[0] || null;
+
+  const leads = currentAccount
+    ? await db.lead.findMany({
+        where: {
+          igAccountId: currentAccount.id,
         },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+        include: {
+          automation: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      })
+    : [];
 
   return (
     <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
