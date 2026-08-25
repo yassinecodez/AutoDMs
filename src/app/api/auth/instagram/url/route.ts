@@ -6,7 +6,11 @@ import { db } from "@/lib/db";
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const acceptHeader = request.headers.get("accept") || "";
+    if (acceptHeader.includes("application/json")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   const { searchParams } = new URL(request.url);
@@ -26,7 +30,7 @@ export async function GET(request: NextRequest) {
         resolvedUserId = dbUser.id;
       }
     } catch (err) {
-      console.warn("[Instagram URL] Could not resolve user by email:", err);
+      console.warn("[Meta Business URL] Could not resolve user by email:", err);
     }
   }
 
@@ -34,6 +38,7 @@ export async function GET(request: NextRequest) {
     process.env.NODE_ENV === "production" || process.env.VERCEL
       ? "https://autodms-project.vercel.app/api/auth/facebook/callback"
       : "http://localhost:3000/api/auth/facebook/callback";
+
   const clientId = process.env.META_APP_ID || "954476037671354";
 
   const statePayload = {
@@ -55,5 +60,11 @@ export async function GET(request: NextRequest) {
   });
 
   const url = `https://www.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
-  return NextResponse.json({ url, redirectUri, targetHandle: cleanTargetHandle });
+
+  const acceptHeader = request.headers.get("accept") || "";
+  if (acceptHeader.includes("application/json")) {
+    return NextResponse.json({ url, redirectUri, targetHandle: cleanTargetHandle });
+  }
+
+  return NextResponse.redirect(url);
 }

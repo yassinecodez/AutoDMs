@@ -6,8 +6,16 @@ import { db } from "@/lib/db";
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const acceptHeader = request.headers.get("accept") || "";
+    if (acceptHeader.includes("application/json")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.redirect(new URL("/login", request.url));
   }
+
+  const { searchParams } = new URL(request.url);
+  const targetHandle = searchParams.get("targetHandle") || searchParams.get("handle") || undefined;
+  const cleanTargetHandle = targetHandle ? targetHandle.trim().replace(/^@+/, "").toLowerCase() : undefined;
 
   let resolvedUserId = session.user.id;
   const userEmail = session.user.email;
@@ -36,6 +44,7 @@ export async function GET(request: NextRequest) {
   const statePayload = {
     userId: resolvedUserId,
     email: userEmail,
+    targetHandle: cleanTargetHandle,
     timestamp: Date.now(),
   };
 
@@ -52,5 +61,10 @@ export async function GET(request: NextRequest) {
 
   const url = `https://www.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
 
-  return NextResponse.json({ url, redirectUri });
+  const acceptHeader = request.headers.get("accept") || "";
+  if (acceptHeader.includes("application/json")) {
+    return NextResponse.json({ url, redirectUri, targetHandle: cleanTargetHandle });
+  }
+
+  return NextResponse.redirect(url);
 }
