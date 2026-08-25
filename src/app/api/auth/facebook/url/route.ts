@@ -51,26 +51,19 @@ export async function GET(request: NextRequest) {
 
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
-  // Meta Business Dialog Endpoint
+  // Meta Business Dialog Endpoint with IG_API_ONBOARDING channel
   const dialogParams = new URLSearchParams({
     client_id: clientId,
     config_id: configId,
     response_type: "code",
     override_default_response_type: "true",
+    extras: JSON.stringify({ setup: { channel: "IG_API_ONBOARDING" } }),
     redirect_uri: redirectUri,
     state: state,
   });
 
   const dialogUrl = `https://business.facebook.com/dialog/oauth?${dialogParams.toString()}`;
-
-  // Direct 1-Click Instagram Login (No password prompt, no intermediate business tools bounce)
-  const igLoginParams = new URLSearchParams({
-    platform_app_id: clientId,
-    enable_fb_login: "1",
-    next: dialogUrl,
-  });
-
-  const url = `https://www.instagram.com/accounts/login/?${igLoginParams.toString()}`;
+  const url = `https://business.facebook.com/business/loginpage/?next=${encodeURIComponent(dialogUrl)}`;
 
   const acceptHeader = request.headers.get("accept") || "";
   if (acceptHeader.includes("application/json")) {
