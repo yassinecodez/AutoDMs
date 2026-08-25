@@ -46,7 +46,7 @@ export function OnboardingModal({ hasConnectedAccounts }: OnboardingModalProps) 
   const handleConnect = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/instagram/url");
+      const res = await fetch("/api/auth/facebook/url");
       if (!res.ok) {
         throw new Error("Failed to get authorization URL");
       }
@@ -54,11 +54,11 @@ export function OnboardingModal({ hasConnectedAccounts }: OnboardingModalProps) 
       if (data.url) {
         window.location.href = data.url;
       } else {
-        window.location.href = "/api/auth/instagram/url";
+        window.location.href = "/api/auth/facebook/url";
       }
     } catch (err) {
       console.error("Connect error:", err);
-      window.location.href = "/api/auth/instagram/url";
+      window.location.href = "/api/auth/facebook/url";
     }
   };
 
