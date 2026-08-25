@@ -29,7 +29,7 @@ export function ConnectFacebookButton() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/instagram/url");
+      const res = await fetch("/api/auth/facebook/url");
       if (!res.ok) {
         throw new Error("Failed to fetch integration URL.");
       }
@@ -50,12 +50,12 @@ export function ConnectFacebookButton() {
       <button
         onClick={handleConnect}
         disabled={loading}
-        className="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-lg bg-white hover:bg-zinc-200 font-medium text-sm text-black transition-colors shadow-sm disabled:opacity-50"
+        className="h-10 inline-flex items-center justify-center gap-2 px-4 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-sm transition-colors shadow-sm disabled:opacity-50"
       >
         {loading ? (
-          <Loader2 className="w-4 h-4 animate-spin text-black" />
+          <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" />
         ) : (
-          <InstagramIcon className="w-4 h-4 text-black" />
+          <InstagramIcon className="w-4 h-4" />
         )}
         Connect Instagram Account
       </button>
@@ -63,4 +63,5 @@ export function ConnectFacebookButton() {
     </div>
   );
 }
+
 export default ConnectFacebookButton;
