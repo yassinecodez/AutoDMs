@@ -3,36 +3,68 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root, .dark {
     --background: 0 0% 0%; /* Pure #000000 */
-    --foreground: 0 0% 98%; /* Pure #FAFAFA / #FFFFFF */
+    --foreground: 240 5% 96%; /* #F4F4F5 */
     
-    --card: 0 0% 3.9%; /* #0A0A0A */
-    --card-foreground: 0 0% 98%;
+    --card: 0 0% 4%; /* #0A0A0A */
+    --card-foreground: 240 5% 96%;
+    --card-footer: 240 5% 6%; /* #0E0E10 */
     
     --popover: 0 0% 6.7%; /* #111111 */
-    --popover-foreground: 0 0% 98%;
+    --popover-foreground: 240 5% 96%;
     
     --primary: 0 0% 98%; /* Solid White */
     --primary-foreground: 0 0% 0%; /* Pitch Black */
     
-    --secondary: 0 0% 6.7%; /* #111111 */
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 240 4% 11%; /* #1A1A1E */
+    --secondary-foreground: 240 5% 96%;
     
-    --muted: 0 0% 6.7%;
-    --muted-foreground: 240 5% 64.9%; /* #A1A1AA */
+    --muted: 240 4% 11%;
+    --muted-foreground: 240 5% 65%; /* #A1A1AA */
     
-    --accent: 0 0% 12%; /* #1F1F1F */
-    --accent-foreground: 0 0% 98%;
+    --accent: 240 4% 16%; /* #27272A */
+    --accent-foreground: 240 5% 96%;
     
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 0 0% 13.3%; /* #222222 */
-    --input: 0 0% 14.9%; /* #262626 */
+    --border: 240 6% 13%; /* #1F1F23 */
+    --input: 240 6% 15%; /* #26262A */
     --ring: 0 0% 98%;
     
     --radius: 0.75rem; /* 12px */
+  }
+
+  .light {
+    --background: 0 0% 98%; /* #FAFAFA */
+    --foreground: 240 10% 4%; /* #09090B */
+    
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 240 10% 4%;
+    --card-footer: 210 20% 98%; /* #F9FAFB */
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 4%;
+    
+    --primary: 240 10% 4%; /* #09090B */
+    --primary-foreground: 0 0% 98%;
+    
+    --secondary: 240 5% 96%; /* #F4F4F5 */
+    --secondary-foreground: 240 10% 4%;
+    
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%; /* #71717A */
+    
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 10% 4%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 240 6% 90%; /* #E4E4E7 */
+    --input: 240 6% 90%; /* #E4E4E7 */
+    --ring: 240 10% 4%;
   }
 }
 
@@ -47,8 +79,8 @@
   html,
   body {
     font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: #000000;
-    color: #EDEDED;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
