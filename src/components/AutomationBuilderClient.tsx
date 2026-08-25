@@ -237,14 +237,14 @@ export default function AutomationBuilderClient({
   const firstKeyword = triggerKeyword ? triggerKeyword.split(",")[0].trim() : "PRICE";
 
   return (
-    <div className="flex flex-col h-screen bg-[#000000] text-zinc-100 overflow-hidden font-sans selection:bg-white/20 selection:text-white">
+    <div className="flex flex-col min-h-screen bg-[#000000] text-zinc-100 font-sans selection:bg-white/20 selection:text-white">
       
       {/* Sleek Minimalist Header */}
-      <header className="h-14 px-6 bg-[#000000] border-b border-[#222222] flex items-center justify-between shrink-0">
+      <header className="h-14 px-4 sm:px-6 bg-[#000000] border-b border-[#222222] flex items-center justify-between shrink-0 sticky top-0 z-20">
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard/automations"
-            className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors font-medium"
+            className="flex items-center gap-1 text-sm text-zinc-400 hover:text-white transition-colors font-medium"
           >
             <ChevronLeft className="w-4 h-4" strokeWidth={1.75} />
             Automations
@@ -255,11 +255,11 @@ export default function AutomationBuilderClient({
               type="text"
               value={ruleName}
               onChange={(e) => setRuleName(e.target.value)}
-              className="bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-white font-medium text-xs text-white focus:outline-none px-1 py-0.5 max-w-[200px] truncate"
+              className="bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-white font-semibold text-sm text-white focus:outline-none px-1.5 py-0.5 max-w-[240px] truncate"
               title="Click to rename rule"
             />
-            <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 font-medium">
-              <span className={`w-1.5 h-1.5 rounded-full ${isSavedDot ? "bg-white" : "bg-zinc-600"}`} />
+            <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-medium">
+              <span className={`w-2 h-2 rounded-full ${isSavedDot ? "bg-emerald-400 animate-pulse" : "bg-zinc-600"}`} />
               <span>{isSavedDot ? "Saved" : "Saving..."}</span>
             </div>
           </div>
@@ -268,24 +268,24 @@ export default function AutomationBuilderClient({
         <button
           onClick={handleGoLive}
           disabled={loading}
-          className="h-9 px-4 bg-white hover:bg-zinc-200 text-black font-medium rounded-lg text-xs transition-colors disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+          className="h-10 px-5 bg-white hover:bg-zinc-200 text-black font-medium rounded-xl text-sm transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
         >
           {loading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
+            <Loader2 className="w-4 h-4 animate-spin text-black" />
           ) : (
             "Go live"
           )}
         </button>
       </header>
 
-      {/* Main 50/50 Split Builder Area */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      {/* Main Responsive Grid Layout (7 cols Form / 5 cols iPhone Preview) */}
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* LEFT PANEL: 4-Step Interactive Configuration */}
-        <div className="flex-1 lg:w-1/2 p-6 md:p-8 flex flex-col justify-between overflow-y-auto border-r border-[#222222] bg-[#000000]">
+        <div className="lg:col-span-7 bg-[#0A0A0A] border border-[#222222] rounded-2xl p-6 sm:p-8 flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] space-y-6">
           
           {/* Connected Timeline Stepper */}
-          <div className="mb-8 shrink-0">
+          <div className="mb-2 shrink-0">
             <div className="relative flex items-center justify-between px-2">
               {/* Background horizontal connecting track */}
               <div className="absolute left-6 right-6 top-3.5 h-[2px] bg-[#1F1F1F] -z-0" />
@@ -328,7 +328,7 @@ export default function AutomationBuilderClient({
                       )}
                     </div>
                     <span
-                      className={`text-[11px] font-medium mt-1.5 transition-colors ${
+                      className={`text-xs font-medium mt-2 transition-colors ${
                         isCurrent
                           ? "text-white font-semibold"
                           : isCompleted
@@ -858,31 +858,31 @@ export default function AutomationBuilderClient({
           </div>
 
           {/* Stepper Footer Controls */}
-          <div className="flex items-center justify-between pt-5 mt-5 border-t border-[#222222] shrink-0">
+          <div className="flex items-center justify-between pt-5 border-t border-[#222222] shrink-0">
             <button
               onClick={handleBack}
               disabled={step === 1}
-              className="h-9 px-3.5 border border-[#222222] hover:bg-[#111111] text-zinc-300 font-medium rounded-lg text-xs flex items-center gap-1 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+              className="h-10 px-4 border border-[#222222] hover:bg-[#111111] text-zinc-300 font-medium rounded-xl text-sm flex items-center gap-1.5 transition-colors disabled:opacity-30 disabled:pointer-events-none"
             >
-              <ChevronLeft className="w-3.5 h-3.5" />
+              <ChevronLeft className="w-4 h-4" />
               Back
             </button>
 
             {step < 4 ? (
               <button
                 onClick={handleNext}
-                className="h-9 px-4 bg-white hover:bg-zinc-200 text-black font-medium rounded-lg text-xs flex items-center gap-1 transition-colors shadow-sm"
+                className="h-10 px-5 bg-white hover:bg-zinc-200 text-black font-medium rounded-xl text-sm flex items-center gap-1.5 transition-colors shadow-sm"
               >
                 Next
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             ) : (
               <button
                 onClick={handleGoLive}
                 disabled={loading}
-                className="h-9 px-4 bg-white hover:bg-zinc-200 text-black font-medium rounded-lg text-xs flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
+                className="h-10 px-5 bg-white hover:bg-zinc-200 text-black font-medium rounded-xl text-sm flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50"
               >
-                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin text-black" /> : "Go live"}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : "Go live"}
               </button>
             )}
           </div>
@@ -890,7 +890,7 @@ export default function AutomationBuilderClient({
         </div>
 
         {/* RIGHT PANEL: Authentic 1:1 Instagram iOS Dark Mode Preview */}
-        <div className="flex-1 lg:w-1/2 bg-[#050505] p-6 flex flex-col items-center justify-center border-l border-[#222222] overflow-y-auto">
+        <div className="lg:col-span-5 lg:sticky lg:top-20 flex flex-col items-center justify-center">
           <InstagramPreview
             username={username}
             triggerKeyword={firstKeyword}

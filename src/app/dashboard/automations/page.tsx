@@ -51,7 +51,7 @@ export default async function AutomationsPage() {
   ]);
 
   return (
-    <div className="p-6 md:p-10 space-y-6 max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
       {/* Top Bar Layout */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-[#222222]">
         <div className="space-y-1">

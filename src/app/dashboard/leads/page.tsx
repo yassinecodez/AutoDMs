@@ -34,7 +34,7 @@ export default async function LeadsPage() {
   });
 
   return (
-    <div className="p-6 md:p-10 space-y-6 max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
       {/* Leads Table & Controls Manager */}
       <LeadsTable initialLeads={leads} />
     </div>

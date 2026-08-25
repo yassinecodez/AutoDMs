@@ -44,17 +44,17 @@ export default async function DashboardLayout({
   const displayEmail = user?.email || session.user.email || "";
 
   return (
-    <div className="flex h-screen bg-[#000000] overflow-hidden text-zinc-100 font-sans selection:bg-white/20 selection:text-white">
+    <div className="min-h-screen bg-[#000000] text-zinc-100 flex overflow-x-hidden font-sans selection:bg-white/20 selection:text-white">
       {/* 240px Fixed Sidebar */}
-      <aside className="w-[240px] bg-[#0A0A0A] border-r border-[#222222] flex flex-col justify-between shrink-0">
+      <aside className="w-60 flex-shrink-0 fixed inset-y-0 left-0 z-30 bg-[#0A0A0A] border-r border-[#222222] flex flex-col justify-between">
         <div className="flex flex-col">
           {/* Brand Header */}
           <div className="h-14 flex items-center justify-between px-5 border-b border-[#222222]">
-            <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-white text-sm tracking-tight select-none">
+            <Link href="/dashboard" className="flex items-center gap-2.5 font-semibold text-white text-sm tracking-tight select-none">
               <span className="w-2 h-2 rounded-full bg-white inline-block shrink-0" />
               <span>AutoDMs</span>
             </Link>
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#111111] text-zinc-400 border border-[#222222]">
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-[#111111] text-zinc-400 border border-[#222222]">
               v1.0
             </span>
           </div>
@@ -79,9 +79,9 @@ export default async function DashboardLayout({
 
         <div>
           {/* Monthly Quota Meter */}
-          <div className="p-3 mx-3 mb-3 bg-[#111111] border border-[#222222] rounded-2xl space-y-2.5 shrink-0 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-            <div className="space-y-1">
-              <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
+          <div className="p-3.5 mx-3 mb-3 bg-[#111111] border border-[#222222] rounded-2xl space-y-2.5 shrink-0 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-xs text-zinc-400 font-medium">
                 <span>DMs: <strong className="text-white font-semibold">{dmsCount}</strong>/{dmsLimit}</span>
                 <span className="text-zinc-300 font-medium">{usagePct}%</span>
               </div>
@@ -95,7 +95,7 @@ export default async function DashboardLayout({
 
             <Link
               href="/dashboard/settings"
-              className="block text-center text-[10px] font-medium text-zinc-400 hover:text-white transition-colors pt-0.5"
+              className="block text-center text-xs font-medium text-zinc-400 hover:text-white transition-colors pt-0.5"
             >
               Manage plan &rarr;
             </Link>
@@ -119,7 +119,7 @@ export default async function DashboardLayout({
               </div>
               <div className="truncate">
                 <p className="text-xs font-semibold text-white truncate">{displayName}</p>
-                <p className="text-[10px] text-zinc-500 truncate">{displayEmail}</p>
+                <p className="text-xs text-zinc-400 truncate">{displayEmail}</p>
               </div>
             </div>
             <SignOutButton />
@@ -128,7 +128,7 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col overflow-y-auto bg-[#000000]">
+      <main className="pl-60 flex-1 flex flex-col min-w-0 w-full min-h-screen bg-[#000000]">
         {children}
       </main>
     </div>
