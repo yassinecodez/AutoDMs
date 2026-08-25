@@ -26,27 +26,28 @@ export function FaqAccordion() {
   ];
 
   return (
-    <section id="faq" className="py-20 border-t border-[#1F1F1F] bg-[#000000]">
-      <div className="max-w-3xl mx-auto px-6 space-y-10">
+    <section id="faq" className="py-24 border-t border-[#1F1F1F] bg-[#000000]">
+      <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16 space-y-12">
         
         {/* Header */}
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Frequently asked questions</h2>
+        <div className="text-center space-y-2 max-w-xl mx-auto">
+          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-white">Frequently asked questions</h2>
+          <p className="text-zinc-400 text-sm">Everything you need to know about AutoDMs</p>
         </div>
 
-        {/* FAQs */}
-        <div className="space-y-2.5">
+        {/* FAQs List */}
+        <div className="max-w-3xl mx-auto space-y-3">
           {faqs.map((faq, idx) => {
             const isOpen = openIdx === idx;
             return (
               <div
                 key={idx}
-                className="bg-[#0A0A0A] border border-[#222222] rounded-xl overflow-hidden transition-colors"
+                className="bg-[#0A0A0A] border border-[#222222] rounded-2xl overflow-hidden transition-colors"
               >
                 <button
                   type="button"
                   onClick={() => setOpenIdx(isOpen ? null : idx)}
-                  className="w-full px-5 py-4 flex items-center justify-between text-left text-white font-medium text-xs sm:text-sm"
+                  className="w-full px-6 py-5 flex items-center justify-between text-left text-white font-semibold text-sm sm:text-base"
                 >
                   <span>{faq.q}</span>
                   {isOpen ? (
@@ -57,7 +58,7 @@ export function FaqAccordion() {
                 </button>
 
                 {isOpen && (
-                  <div className="px-5 pb-4 text-xs text-zinc-400 leading-relaxed border-t border-[#1F1F1F] pt-3">
+                  <div className="px-6 pb-5 text-sm text-zinc-400 leading-relaxed border-t border-[#1F1F1F] pt-4">
                     {faq.a}
                   </div>
                 )}
@@ -70,4 +71,5 @@ export function FaqAccordion() {
     </section>
   );
 }
+
 export default FaqAccordion;

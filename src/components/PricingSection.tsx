@@ -41,7 +41,7 @@ export function PricingSection() {
       popular: true,
       href: "/login",
       cardStyle: "bg-[#0A0A0A] border-white/40 ring-1 ring-white/20 shadow-xl",
-      buttonStyle: "bg-white text-black hover:bg-zinc-200"
+      buttonStyle: "bg-white text-black hover:bg-zinc-200 font-semibold"
     },
     {
       name: "Business / Agency",
@@ -64,20 +64,20 @@ export function PricingSection() {
   ];
 
   return (
-    <section id="pricing" className="py-20 border-t border-[#1F1F1F] bg-[#000000]">
-      <div className="max-w-5xl mx-auto px-6 text-center space-y-10">
+    <section id="pricing" className="py-24 border-t border-[#1F1F1F] bg-[#000000]">
+      <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16 text-center space-y-12">
         
         {/* Section Header */}
-        <div className="space-y-2 max-w-xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Simple, predictable pricing</h2>
-          <p className="text-zinc-400 text-xs sm:text-sm">
+        <div className="space-y-3 max-w-xl mx-auto">
+          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-white">Simple, predictable pricing</h2>
+          <p className="text-zinc-400 text-sm sm:text-base leading-relaxed">
             Start for free, test your automation flows, and scale as your followers grow.
           </p>
         </div>
 
         {/* Currency Switch Toggle */}
         <div className="flex items-center justify-center gap-3">
-          <span className={`text-xs font-medium transition-colors ${currency === "USD" ? "text-white" : "text-zinc-500"}`}>
+          <span className={`text-xs font-medium transition-colors ${currency === "USD" ? "text-white font-semibold" : "text-zinc-500"}`}>
             USD ($)
           </span>
           <button
@@ -92,53 +92,55 @@ export function PricingSection() {
               }`}
             />
           </button>
-          <span className={`text-xs font-medium transition-colors ${currency === "MAD" ? "text-white" : "text-zinc-500"}`}>
+          <span className={`text-xs font-medium transition-colors ${currency === "MAD" ? "text-white font-semibold" : "text-zinc-500"}`}>
             MAD (Dirham)
           </span>
         </div>
 
-        {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 text-left">
+        {/* Pricing Cards Grid (Spread across 1400px) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left mt-8">
           {plans.map((plan, idx) => (
             <div
               key={idx}
-              className={`p-6 border rounded-xl flex flex-col justify-between h-[390px] transition-all relative ${plan.cardStyle}`}
+              className={`p-7 sm:p-8 border rounded-2xl flex flex-col justify-between min-h-[420px] transition-all relative ${plan.cardStyle}`}
             >
               {plan.popular && (
-                <span className="absolute -top-2.5 right-5 px-2 py-0.5 rounded-full bg-white text-black font-semibold text-[10px] tracking-tight">
+                <span className="absolute -top-3 right-6 px-3 py-0.5 rounded-full bg-white text-black font-semibold text-xs tracking-tight shadow-md">
                   Popular
                 </span>
               )}
 
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-white">{plan.name}</h3>
+              <div className="space-y-5">
+                <div className="space-y-1.5">
+                  <h3 className="text-base font-bold text-white">{plan.name}</h3>
                   <p className="text-xs text-zinc-400 leading-normal">{plan.desc}</p>
                 </div>
 
                 <div className="space-y-0.5 py-1">
-                  <p className="text-2xl font-bold text-white">
+                  <p className="text-3xl font-bold text-white tracking-tight">
                     {plan.price}
-                    <span className="text-xs font-normal text-zinc-500 ml-1">/{plan.period}</span>
+                    <span className="text-xs font-normal text-zinc-500 ml-1.5">/{plan.period}</span>
                   </p>
                 </div>
 
-                <ul className="text-xs space-y-2 text-zinc-300 border-t border-[#1F1F1F] pt-4">
+                <ul className="text-xs space-y-2.5 text-zinc-300 border-t border-[#1F1F1F] pt-5">
                   {plan.features.map((feat, fIdx) => (
-                    <li key={fIdx} className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-zinc-400 shrink-0" strokeWidth={2} />
+                    <li key={fIdx} className="flex items-center gap-2.5">
+                      <Check className="w-4 h-4 text-zinc-400 shrink-0" strokeWidth={2} />
                       <span>{feat}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <Link
-                href={plan.href}
-                className={`w-full h-10 flex items-center justify-center font-medium rounded-lg text-sm transition-colors ${plan.buttonStyle}`}
-              >
-                {plan.cta}
-              </Link>
+              <div className="pt-6">
+                <Link
+                  href={plan.href}
+                  className={`w-full h-11 flex items-center justify-center font-medium rounded-xl text-sm transition-colors ${plan.buttonStyle}`}
+                >
+                  {plan.cta}
+                </Link>
+              </div>
             </div>
           ))}
         </div>
@@ -147,4 +149,5 @@ export function PricingSection() {
     </section>
   );
 }
+
 export default PricingSection;
