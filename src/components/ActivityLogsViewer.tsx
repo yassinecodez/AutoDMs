@@ -26,6 +26,7 @@ export interface ExecutionLogItem {
   dmError: string | null;
   commentStatus: string;
   commentError: string | null;
+  isFollower?: boolean | null;
   timestamp: any;
   automation?: {
     id: string;
@@ -306,9 +307,20 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
                           </div>
 
                           <div className="space-y-0.5 truncate">
-                            <p className="text-sm font-semibold text-white truncate">
-                              @{log.commenterUsername}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-white truncate">
+                                @{log.commenterUsername}
+                              </p>
+                              {log.isFollower ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-950/60 border border-emerald-800/40 text-emerald-400">
+                                  Follower
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#141414] border border-[#262626] text-zinc-400">
+                                  Not following
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-zinc-400 font-normal truncate max-w-xs sm:max-w-md">
                               {isComment ? (
                                 <span>

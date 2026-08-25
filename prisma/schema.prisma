@@ -60,6 +60,8 @@ model Automation {
   buttonUrl           String?        // Generic template primary button URL
   secondaryButtonTitle String?       // Generic template secondary button title
   secondaryButtonUrl  String?        // Generic template secondary button URL
+  requireFollow       Boolean        @default(false)
+  followPromptMessage String?        // Custom prompt requesting non-followers to follow
   active              Boolean        @default(true)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
@@ -82,6 +84,7 @@ model ExecutionLog {
   dmError           String?
   commentStatus     String      @default("SKIPPED")  // "SUCCESS", "FAILED", "SKIPPED"
   commentError      String?
+  isFollower        Boolean?    @default(false)
   timestamp         DateTime    @default(now())
 
   @@index([automationId, timestamp])
@@ -98,6 +101,7 @@ model Lead {
   username      String?
   email         String?
   phone         String?
+  isFollower    Boolean?     @default(false)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 

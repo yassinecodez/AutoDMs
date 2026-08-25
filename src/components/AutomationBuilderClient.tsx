@@ -57,6 +57,12 @@ export default function AutomationBuilderClient({
   const [secondaryButtonTitle, setSecondaryButtonTitle] = useState("");
   const [secondaryButtonUrl, setSecondaryButtonUrl] = useState("");
 
+  // Growth Gate: Follow-to-Unlock
+  const [requireFollow, setRequireFollow] = useState(false);
+  const [followPromptMessage, setFollowPromptMessage] = useState(
+    "Hey {{username}}! Follow our profile first to unlock your private link 🚀"
+  );
+
   // Apply template on mount if template query param is present
   useEffect(() => {
     if (!templateParam) return;
@@ -143,7 +149,7 @@ export default function AutomationBuilderClient({
     setIsSavedDot(false);
     const t = setTimeout(() => setIsSavedDot(true), 400);
     return () => clearTimeout(t);
-  }, [ruleName, triggerSource, triggerScope, targetMediaIds, triggerType, triggerKeyword, replyDmMessage, enableLeadCapture, leadConfirmationDm, leavePublicReply, replyCommentOptions, enableButtons, buttonTitle, buttonUrl, secondaryButtonTitle, secondaryButtonUrl]);
+  }, [ruleName, triggerSource, triggerScope, targetMediaIds, triggerType, triggerKeyword, replyDmMessage, enableLeadCapture, leadConfirmationDm, leavePublicReply, replyCommentOptions, enableButtons, buttonTitle, buttonUrl, secondaryButtonTitle, secondaryButtonUrl, requireFollow, followPromptMessage]);
 
   // Fetch Instagram posts if target is SPECIFIC_POSTS and media list is empty
   useEffect(() => {
@@ -218,6 +224,10 @@ export default function AutomationBuilderClient({
     formData.append("buttonUrl", enableButtons ? buttonUrl : "");
     formData.append("secondaryButtonTitle", enableButtons ? secondaryButtonTitle : "");
     formData.append("secondaryButtonUrl", enableButtons ? secondaryButtonUrl : "");
+
+    // Follow-to-Unlock Growth Gate
+    formData.append("requireFollow", String(requireFollow));
+    formData.append("followPromptMessage", requireFollow ? followPromptMessage : "");
 
     if (activeAccountId) {
       formData.append("igAccountId", activeAccountId);
@@ -750,6 +760,40 @@ export default function AutomationBuilderClient({
                                 />
                               </div>
                             </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Growth Gate: Require Follow Before Link */}
+                      <div className="p-3.5 bg-[#0A0A0A] border border-[#222222] rounded-xl space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-medium text-white">Require follow before receiving link</p>
+                            <p className="text-[10px] text-zinc-400">
+                              Encourage commenters to follow your profile before unlocking their private link or discount.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setRequireFollow(!requireFollow)}
+                            className={`w-9 h-5 rounded-full transition-colors relative ${requireFollow ? "bg-white" : "bg-zinc-700"}`}
+                          >
+                            <span className={`w-3.5 h-3.5 rounded-full bg-black absolute top-0.5 transition-transform ${requireFollow ? "right-1" : "left-1"}`} />
+                          </button>
+                        </div>
+
+                        {requireFollow && (
+                          <div className="space-y-1.5 pt-2 border-t border-[#222222]">
+                            <label className="text-[10px] font-medium text-zinc-300 block">
+                              Follow prompt message (sent to non-followers)
+                            </label>
+                            <textarea
+                              rows={2}
+                              value={followPromptMessage}
+                              onChange={(e) => setFollowPromptMessage(e.target.value)}
+                              placeholder="Hey {{username}}! Please follow our profile first to unlock your private link 🚀"
+                              className="w-full px-3 py-2 bg-[#111111] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors leading-relaxed resize-none"
+                            />
                           </div>
                         )}
                       </div>

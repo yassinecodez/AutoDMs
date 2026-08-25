@@ -126,6 +126,47 @@ export function buildMessagePayload(matchedAutomation: any, resolvedUsername: st
 }
 
 /**
+ * Formats a follow-gate message payload prompting followers to follow first before unlocking the link.
+ */
+export function buildFollowGatePayload(matchedAutomation: any, resolvedUsername: string, pageName?: string): any {
+  const defaultText = `Hey {{username}}! Follow our profile @${pageName || "our profile"} first to unlock your private link 🚀`;
+  const dmText = matchedAutomation.followPromptMessage
+    ? matchedAutomation.followPromptMessage.replace(/\{\{username\}\}/g, resolvedUsername)
+    : defaultText.replace(/\{\{username\}\}/g, resolvedUsername);
+
+  const buttons: any[] = [];
+  if (pageName) {
+    buttons.push({
+      type: "web_url",
+      url: `https://instagram.com/${pageName}`,
+      title: `Follow @${pageName.slice(0, 11)}`,
+    });
+  }
+
+  buttons.push({
+    type: "postback",
+    title: "I'm Following 🔓",
+    payload: `CONFIRM_FOLLOW_${matchedAutomation.id}`,
+  });
+
+  return {
+    attachment: {
+      type: "template",
+      payload: {
+        template_type: "generic",
+        elements: [
+          {
+            title: "Follow Required 🔒",
+            subtitle: dmText.slice(0, 80),
+            buttons: buttons.slice(0, 3),
+          }
+        ]
+      }
+    }
+  };
+}
+
+/**
  * Helper to parse Meta Graph API errors
  */
 function parseMetaError(data: any): {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import crypto from "crypto";
 import { db } from "@/lib/db";
 import { decrypt } from "@/lib/crypto";
-import { MetaApi, buildMessagePayload } from "@/lib/meta";
+import { MetaApi, buildMessagePayload, buildFollowGatePayload } from "@/lib/meta";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -254,12 +254,27 @@ async function processWebhookPayload(payload: any) {
           let commentStatus = "SKIPPED";
           let commentError: string | null = null;
 
+          // Check if commenter is known follower from previous events
+          const existingLead = commenterUsername
+            ? await db.lead.findFirst({
+                where: {
+                  igAccountId: igAccount.id,
+                  username: commenterUsername,
+                },
+              })
+            : null;
+
+          const isFollower = existingLead?.isFollower ?? false;
+
           // A. Send Private Reply (DM)
           try {
             await sleep(Math.floor(Math.random() * 1500) + 500);
-            console.log("Dispatching DM for comment:", commentId);
+            console.log("Dispatching DM for comment:", commentId, "RequireFollow:", matchedAutomation.requireFollow, "IsFollower:", isFollower);
 
-            const dmPayload = buildMessagePayload(matchedAutomation, commenterUsername || "there");
+            const dmPayload = (matchedAutomation.requireFollow && !isFollower)
+              ? buildFollowGatePayload(matchedAutomation, commenterUsername || "there", igAccount.pageName)
+              : buildMessagePayload(matchedAutomation, commenterUsername || "there");
+
             const dmResult = await MetaApi.sendPrivateReply(commentId, dmPayload, decryptedToken);
 
             dmStatus = dmResult.status;
@@ -296,7 +311,7 @@ async function processWebhookPayload(payload: any) {
             }
           }
 
-          // 5. Update execution log with final outcomes
+          // 5. Update execution log with final outcomes and follower status
           await db.executionLog.update({
             where: { commentId },
             data: {
@@ -305,6 +320,7 @@ async function processWebhookPayload(payload: any) {
               dmError,
               commentStatus,
               commentError,
+              isFollower,
             },
           });
         } catch (err: any) {
@@ -519,75 +535,107 @@ async function processWebhookPayload(payload: any) {
           continue; // Lead successfully handled; skip subsequent keyword rules
         }
 
+        let matchedAutomation: any = null;
+
+        // Check if user confirmed follow via postback button
+        const isFollowConfirmation = postback?.payload?.startsWith("CONFIRM_FOLLOW");
+        let isFollower = false;
+
+        // Check if user is known follower
+        const existingLead = senderId
+          ? await db.lead.findUnique({
+              where: {
+                igAccountId_instagramId: {
+                  igAccountId: igAccount.id,
+                  instagramId: senderId,
+                },
+              },
+            })
+          : null;
+
+        if (isFollowConfirmation) {
+          isFollower = true;
+          const autoId = postback.payload.replace("CONFIRM_FOLLOW_", "");
+          if (autoId) {
+            matchedAutomation = await db.automation.findUnique({
+              where: { id: autoId },
+            });
+          }
+        } else {
+          isFollower = existingLead?.isFollower ?? false;
+        }
+
         // Check if Story Mention
         const isStoryMention = message?.attachments?.some(
           (att: any) => att.type === "story_mention" || att.type === "ig_story_mention"
         ) || false;
 
-        let matchedAutomation = null;
         let triggerSourceField = "DIRECT_MESSAGE";
 
-        if (isStoryMention) {
-          triggerSourceField = "STORY_MENTION";
-          const automations = await db.automation.findMany({
-            where: {
-              userId: igAccount.userId,
-              active: true,
-              triggerSource: { in: ["STORY_MENTIONS", "ALL"] },
-            },
-          });
+        if (!matchedAutomation) {
+          if (isStoryMention) {
+            triggerSourceField = "STORY_MENTION";
+            const automations = await db.automation.findMany({
+              where: {
+                userId: igAccount.userId,
+                active: true,
+                triggerSource: { in: ["STORY_MENTIONS", "ALL"] },
+              },
+            });
 
-          if (automations.length > 0) {
-            matchedAutomation = automations[0];
-          }
-        } else if (messageText) {
-          triggerSourceField = "DIRECT_MESSAGE";
-          const automations = await db.automation.findMany({
-            where: {
-              userId: igAccount.userId,
-              active: true,
-              triggerSource: { in: ["DIRECT_MESSAGES", "ALL"] },
-            },
-          });
-
-          const normalizedMsg = normalizeText(messageText);
-
-          for (const auto of automations) {
-            const triggerType = auto.triggerType.toUpperCase();
-
-            if (triggerType === "ALL") {
-              matchedAutomation = auto;
-              break;
+            if (automations.length > 0) {
+              matchedAutomation = automations[0];
             }
+          } else if (messageText) {
+            triggerSourceField = "DIRECT_MESSAGE";
+            const automations = await db.automation.findMany({
+              where: {
+                userId: igAccount.userId,
+                active: true,
+                triggerSource: { in: ["DIRECT_MESSAGES", "ALL"] },
+              },
+            });
 
-            const targetKeywords = auto.triggerKeyword
-              ? auto.triggerKeyword.split(",").map((k) => normalizeText(k)).filter((k) => k.length > 0)
-              : [];
+            const normalizedMsg = normalizeText(messageText);
 
-            if (targetKeywords.length === 0) {
-              continue;
-            }
+            for (const auto of automations) {
+              const triggerType = auto.triggerType.toUpperCase();
 
-            if (triggerType === "EXACT") {
-              if (targetKeywords.includes(normalizedMsg)) {
+              if (triggerType === "ALL") {
                 matchedAutomation = auto;
                 break;
               }
-            } else if (triggerType === "KEYWORD") {
-              if (targetKeywords.some((k) => normalizedMsg.includes(k))) {
-                matchedAutomation = auto;
-                break;
+
+              const targetKeywords = auto.triggerKeyword
+                ? auto.triggerKeyword.split(",").map((k) => normalizeText(k)).filter((k) => k.length > 0)
+                : [];
+
+              if (targetKeywords.length === 0) {
+                continue;
+              }
+
+              if (triggerType === "EXACT") {
+                if (targetKeywords.includes(normalizedMsg)) {
+                  matchedAutomation = auto;
+                  break;
+                }
+              } else if (triggerType === "KEYWORD") {
+                if (targetKeywords.some((k) => normalizedMsg.includes(k))) {
+                  matchedAutomation = auto;
+                  break;
+                }
               }
             }
           }
         }
 
-        // Update triggerSource and resolvedUsername in Log
+        // Update triggerSource, commenterUsername, and isFollower in Log
         await db.executionLog.update({
           where: { commentId: messageId },
           data: {
             triggerSource: triggerSourceField,
             commenterUsername: resolvedUsername,
+            isFollower,
           },
         });
 
@@ -598,12 +646,13 @@ async function processWebhookPayload(payload: any) {
             data: {
               dmStatus: "SKIPPED",
               dmError: "No matching automation trigger",
+              isFollower,
             },
           });
           continue;
         }
 
-        console.log(`[Webhook Messaging] Matched automation "${matchedAutomation.name}"`);
+        console.log(`[Webhook Messaging] Matched automation "${matchedAutomation.name}" (RequireFollow: ${matchedAutomation.requireFollow}, IsFollower: ${isFollower})`);
 
         // 4. Execute Direct Message Reply
         let dmStatus = "SKIPPED";
@@ -613,7 +662,10 @@ async function processWebhookPayload(payload: any) {
           await sleep(Math.floor(Math.random() * 1500) + 500);
           console.log("Dispatching Direct Message to user:", senderId);
 
-          const dmPayload = buildMessagePayload(matchedAutomation, resolvedUsername);
+          const dmPayload = (matchedAutomation.requireFollow && !isFollower)
+            ? buildFollowGatePayload(matchedAutomation, resolvedUsername, igAccount.pageName)
+            : buildMessagePayload(matchedAutomation, resolvedUsername);
+
           const dmResult = await MetaApi.sendDirectMessage(senderId, dmPayload, decryptedToken);
 
           dmStatus = dmResult.status;
@@ -621,6 +673,28 @@ async function processWebhookPayload(payload: any) {
 
           if (dmResult.status === "SUCCESS") {
             await incrementUsage(igAccount.userId);
+            
+            // Record or update lead follower status
+            await db.lead.upsert({
+              where: {
+                igAccountId_instagramId: {
+                  igAccountId: igAccount.id,
+                  instagramId: senderId,
+                },
+              },
+              update: {
+                username: resolvedUsername,
+                isFollower,
+                automationId: matchedAutomation.id,
+              },
+              create: {
+                igAccountId: igAccount.id,
+                instagramId: senderId,
+                username: resolvedUsername,
+                isFollower,
+                automationId: matchedAutomation.id,
+              },
+            });
           }
         } catch (err: any) {
           console.error("[Webhook Messaging] Failed to dispatch DM:", err);
@@ -635,6 +709,7 @@ async function processWebhookPayload(payload: any) {
             automationId: matchedAutomation.id,
             dmStatus,
             dmError,
+            isFollower,
           },
         });
       } catch (err: any) {

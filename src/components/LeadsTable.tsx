@@ -21,6 +21,7 @@ interface Lead {
   username: string | null;
   email: string | null;
   phone: string | null;
+  isFollower?: boolean | null;
   createdAt: any;
   automation: { name: string } | null;
 }
@@ -203,26 +204,26 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-xs font-medium text-zinc-400 bg-[#0D0D0D] border-b border-[#222222]">
-                  <th className="py-3.5 px-4">Contact</th>
-                  <th className="py-3.5 px-4">Email address</th>
-                  <th className="py-3.5 px-4">Phone number</th>
-                  <th className="py-3.5 px-4">Captured via</th>
-                  <th className="py-3.5 px-4 text-right">Date captured</th>
+                <tr className="text-xs font-medium text-zinc-400 bg-[#0A0A0A] border-b border-[#1F1F23]">
+                  <th className="py-3 px-4 font-medium">Contact</th>
+                  <th className="py-3 px-4 font-medium">Follower status</th>
+                  <th className="py-3 px-4 font-medium">Email address</th>
+                  <th className="py-3 px-4 font-medium">Phone number</th>
+                  <th className="py-3 px-4 font-medium">Captured via</th>
+                  <th className="py-3 px-4 font-medium text-right">Date captured</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#222222] text-xs">
+              <tbody className="divide-y divide-[#1F1F23] text-xs">
                 {filteredLeads.map((lead) => {
-                  const initial = (lead.username ? lead.username[0] : "U").toUpperCase();
                   const waUrl = lead.phone ? getWhatsAppUrl(lead.phone) : null;
 
                   return (
                     <tr
                       key={lead.id}
-                      className="bg-[#0A0A0A] hover:bg-[#111111] transition-colors group"
+                      className="bg-[#0A0A0A] hover:bg-[#0E0E10] border-b border-[#1F1F23] transition-colors group"
                     >
                       {/* 1. Contact Column */}
-                      <td className="py-4 px-4 whitespace-nowrap">
+                      <td className="py-3.5 px-4 whitespace-nowrap align-middle">
                         <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-full overflow-hidden bg-[#181818] border border-[#262626] flex items-center justify-center shrink-0 shadow-inner">
                             <img
@@ -233,11 +234,24 @@ export function LeadsTable({ initialLeads }: { initialLeads: Lead[] }) {
                             />
                           </div>
                           <div>
-                            <span className="text-sm font-medium text-white">
+                            <span className="text-sm font-semibold text-white">
                               {lead.username ? `@${lead.username}` : "unknown"}
                             </span>
                           </div>
                         </div>
+                      </td>
+
+                      {/* 2. Follower Status Column */}
+                      <td className="py-3.5 px-4 whitespace-nowrap align-middle">
+                        {lead.isFollower ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-950/60 border border-emerald-800/40 text-emerald-400">
+                            Follower
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-[#141414] border border-[#262626] text-zinc-400">
+                            Not following
+                          </span>
+                        )}
                       </td>
 
                       {/* 2. Email Address Column */}

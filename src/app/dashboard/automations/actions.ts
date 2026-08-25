@@ -27,6 +27,9 @@ export async function createAutomation(formData: FormData) {
   const formIgAccountId = formData.get("igAccountId") as string;
   const igAccountId = formIgAccountId || activeAccount?.id || null;
 
+  const requireFollow = formData.get("requireFollow") === "true";
+  const followPromptMessage = formData.get("followPromptMessage") as string;
+
   const buttonTitle = formData.get("buttonTitle") as string;
   const buttonUrl = formData.get("buttonUrl") as string;
   const secondaryButtonTitle = formData.get("secondaryButtonTitle") as string;
@@ -65,6 +68,8 @@ export async function createAutomation(formData: FormData) {
       triggerSource,
       enableLeadCapture,
       leadConfirmationDm: enableLeadCapture ? leadConfirmationDm : null,
+      requireFollow,
+      followPromptMessage: requireFollow ? followPromptMessage : null,
       buttonTitle: buttonTitle || null,
       buttonUrl: buttonUrl || null,
       secondaryButtonTitle: secondaryButtonTitle || null,
