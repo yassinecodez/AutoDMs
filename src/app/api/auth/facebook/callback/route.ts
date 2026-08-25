@@ -26,6 +26,38 @@ function extractStatePayload(stateParam: string | null): {
   }
 }
 
+function renderPopupResult(targetUrl: string, title = "Instagram Connected!", isError = false) {
+  const html = `<!DOCTYPE html>
+<html>
+  <head><title>${title}</title></head>
+  <body style="background:#09090b;color:#fff;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;padding:20px;box-sizing:border-box;">
+    <div style="text-align:center;max-width:360px;">
+      <h3 style="font-size:16px;margin:0 0 8px 0;color:${isError ? '#ef4444' : '#10b981'};">${title}</h3>
+      <p style="font-size:13px;color:#a1a1aa;margin:0;">Returning to AutoDMs...</p>
+    </div>
+    <script>
+      setTimeout(function() {
+        try {
+          if (window.opener && !window.opener.closed) {
+            window.opener.location.href = "${targetUrl}";
+            window.close();
+          } else {
+            window.location.href = "${targetUrl}";
+          }
+        } catch(e) {
+          window.location.href = "${targetUrl}";
+        }
+      }, 500);
+    </script>
+  </body>
+</html>`;
+
+  return new NextResponse(html, {
+    status: 200,
+    headers: { "Content-Type": "text/html" },
+  });
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
@@ -84,9 +116,7 @@ export async function GET(request: NextRequest) {
 
   if (!verifiedUser) {
     console.error("[Meta Callback] No user record exists in the database to link.");
-    return NextResponse.redirect(
-      new URL("/dashboard/accounts?error=USER_NOT_FOUND", request.url)
-    );
+    return renderPopupResult("/dashboard/accounts?error=USER_NOT_FOUND", "User Not Found", true);
   }
 
   console.log(`[Meta Callback] Resolved database user: ID=${verifiedUser.id}, Email=${verifiedUser.email}`);
@@ -94,9 +124,7 @@ export async function GET(request: NextRequest) {
   if (error || !code) {
     console.error("[Meta Callback] OAuth callback error from Meta:", error, errorReason, errorDescription);
     const errCode = errorReason === "user_denied" ? "USER_DENIED" : (error || "NO_CODE");
-    return NextResponse.redirect(
-      new URL(`/dashboard/accounts?error=${encodeURIComponent(errCode)}`, request.url)
-    );
+    return renderPopupResult(`/dashboard/accounts?error=${encodeURIComponent(errCode)}`, "Authorization Cancelled", true);
   }
 
   const sanitizedCode = code.split("#")[0].replace(/_$/, "").trim();
@@ -121,18 +149,14 @@ export async function GET(request: NextRequest) {
 
     if (!tokenRes.ok) {
       console.error("[Meta Callback] Code exchange failed:", rawTokenText);
-      return NextResponse.redirect(
-        new URL("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", request.url)
-      );
+      return renderPopupResult("/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED", "Token Exchange Failed", true);
     }
 
     const tokenData = JSON.parse(rawTokenText);
     const shortLivedToken = tokenData.access_token;
 
     if (!shortLivedToken) {
-      return NextResponse.redirect(
-        new URL("/dashboard/accounts?error=NO_ACCESS_TOKEN", request.url)
-      );
+      return renderPopupResult("/dashboard/accounts?error=NO_ACCESS_TOKEN", "No Access Token", true);
     }
 
     // 3. Exchange short-lived token for long-lived User Access Token (60 days)
@@ -167,9 +191,7 @@ export async function GET(request: NextRequest) {
 
     if (!accountsRes.ok) {
       console.error("[Meta Callback] Failed to fetch accounts:", rawAccountsText);
-      return NextResponse.redirect(
-        new URL("/dashboard/accounts?error=FAILED_TO_FETCH_PAGES", request.url)
-      );
+      return renderPopupResult("/dashboard/accounts?error=FAILED_TO_FETCH_PAGES", "Failed to Fetch Pages", true);
     }
 
     const accountsData = JSON.parse(rawAccountsText);
@@ -177,9 +199,7 @@ export async function GET(request: NextRequest) {
 
     if (pages.length === 0) {
       console.warn("[Meta Callback] No Facebook Pages found for user.");
-      return NextResponse.redirect(
-        new URL("/dashboard/accounts?error=NO_FACEBOOK_PAGES", request.url)
-      );
+      return renderPopupResult("/dashboard/accounts?error=NO_FACEBOOK_PAGES", "No Facebook Pages Found", true);
     }
 
     let accountsLinkedCount = 0;
@@ -204,7 +224,7 @@ export async function GET(request: NextRequest) {
         try {
           console.log(`[Meta Callback] Subscribing Page ${page.id} to Webhooks...`);
           const subUrl = `https://graph.facebook.com/${version}/${page.id}/subscribed_apps`;
-          const subRes = await fetch(subUrl, {
+          await fetch(subUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -212,8 +232,6 @@ export async function GET(request: NextRequest) {
               access_token: page.access_token,
             }),
           });
-          const subText = await subRes.text();
-          console.log(`[Meta Callback] Subscribed apps response for Page ${page.id}:`, subText);
         } catch (subErr) {
           console.warn(`[Meta Callback] Webhook subscription warning for Page ${page.id}:`, subErr);
         }
@@ -235,8 +253,6 @@ export async function GET(request: NextRequest) {
 
         if (existingAccounts.length > 0) {
           const existing = existingAccounts[0];
-          console.log(`[Meta Callback] Updating existing account @${username} (ID: ${existing.id})...`);
-
           savedAcc = await db.igAccount.update({
             where: { id: existing.id },
             data: {
@@ -245,7 +261,7 @@ export async function GET(request: NextRequest) {
               pageName: username,
               profilePictureUrl: profilePictureUrl || existing.profilePictureUrl,
               accessToken: encryptedToken,
-              tokenExpiresAt: null, // Page tokens do not expire
+              tokenExpiresAt: null, // Page tokens are permanent
               planType: userPlan,
               dmsLimit: userLimit,
             },
@@ -266,7 +282,6 @@ export async function GET(request: NextRequest) {
             });
           }
         } else {
-          console.log(`[Meta Callback] Creating new account @${username}...`);
           savedAcc = await db.igAccount.create({
             data: {
               userId: verifiedUser.id,
@@ -287,8 +302,6 @@ export async function GET(request: NextRequest) {
         }
 
         accountsLinkedCount++;
-      } else {
-        console.log(`[Meta Callback] Page ${page.name} (ID: ${page.id}) has no connected Instagram Business Account.`);
       }
     }
 
@@ -302,8 +315,10 @@ export async function GET(request: NextRequest) {
 
     if (accountsLinkedCount === 0) {
       console.warn("[Meta Callback] No Instagram Business Account connected to any of the user's Facebook Pages.");
-      return NextResponse.redirect(
-        new URL("/dashboard/accounts?error=NO_INSTAGRAM_BUSINESS_ACCOUNT", request.url)
+      return renderPopupResult(
+        "/dashboard/accounts?error=NO_INSTAGRAM_BUSINESS_ACCOUNT&details=No+Instagram+account+found+connected+to+your+selected+Facebook+Page",
+        "No Instagram Account Linked",
+        true
       );
     }
 
@@ -314,8 +329,9 @@ export async function GET(request: NextRequest) {
     revalidatePath("/dashboard/leads");
     revalidatePath("/dashboard/logs");
 
-    const response = NextResponse.redirect(
-      new URL(`/dashboard/accounts?status=SUCCESS&count=${accountsLinkedCount}`, request.url)
+    const response = renderPopupResult(
+      `/dashboard/accounts?status=SUCCESS&count=${accountsLinkedCount}`,
+      "Instagram Profile Connected!"
     );
 
     // 7. Set newly connected account as active workspace cookie
@@ -332,8 +348,10 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (err: any) {
     console.error("[Meta Callback] Unexpected error during OAuth callback:", err);
-    return NextResponse.redirect(
-      new URL(`/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED&details=${encodeURIComponent(err.message || "UNEXPECTED_ERROR")}`, request.url)
+    return renderPopupResult(
+      `/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED&details=${encodeURIComponent(err.message || "UNEXPECTED_ERROR")}`,
+      "Connection Error",
+      true
     );
   }
 }

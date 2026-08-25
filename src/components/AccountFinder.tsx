@@ -60,14 +60,34 @@ export function AccountFinder() {
     }, 300);
   };
 
+  const openAuthPopup = (url: string) => {
+    const width = 600;
+    const height = 750;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    const popup = window.open(
+      url,
+      "MetaBusinessLogin",
+      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes`
+    );
+
+    const checkPopup = setInterval(() => {
+      if (!popup || popup.closed) {
+        clearInterval(checkPopup);
+        setConnecting(false);
+        window.location.reload();
+      }
+    }, 1000);
+  };
+
   const handleConnect = async (targetHandle?: string) => {
     setConnecting(true);
 
     try {
       const handleToPass = targetHandle || (foundProfile ? foundProfile.username : cleanHandle(handleInput));
       const urlEndpoint = handleToPass
-        ? `/api/auth/instagram/url?targetHandle=${encodeURIComponent(handleToPass)}`
-        : "/api/auth/instagram/url";
+        ? `/api/auth/facebook/url?targetHandle=${encodeURIComponent(handleToPass)}`
+        : "/api/auth/facebook/url";
 
       const res = await fetch(urlEndpoint);
       if (!res.ok) {
@@ -75,15 +95,13 @@ export function AccountFinder() {
       }
       const data = await res.json();
       if (data.url) {
-        window.location.href = data.url;
+        openAuthPopup(data.url);
       } else {
-        window.location.href = "/api/auth/instagram/url";
+        openAuthPopup("/api/auth/facebook/url");
       }
     } catch (err: any) {
       console.error("Connection initiation error:", err);
-      window.location.href = "/api/auth/instagram/url";
-    } finally {
-      setConnecting(false);
+      openAuthPopup("/api/auth/facebook/url");
     }
   };
 
@@ -98,7 +116,7 @@ export function AccountFinder() {
           <div className="space-y-1">
             <h2 className="text-base font-semibold text-foreground">Connect Professional Account</h2>
             <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-              Link your Instagram Creator or Business profile directly via official Instagram consent to enable automated DMs and comment replies.
+              Link your Instagram Creator or Business profile via official Meta Business Login to enable automated DMs and comment replies.
             </p>
           </div>
         </div>

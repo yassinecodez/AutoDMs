@@ -51,8 +51,7 @@ export async function GET(request: NextRequest) {
 
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
-  // Official Meta Instagram Onboarding (IG_API_ONBOARDING)
-  // This triggers the native Instagram account chooser & asset linking window used by ManyChat
+  // Meta Business Login for Instagram (Using business.facebook.com endpoint)
   const params = new URLSearchParams({
     client_id: clientId,
     config_id: configId,
@@ -62,7 +61,7 @@ export async function GET(request: NextRequest) {
     state: state,
   });
 
-  const url = `https://www.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
+  const url = `https://business.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
 
   const acceptHeader = request.headers.get("accept") || "";
   if (acceptHeader.includes("application/json")) {

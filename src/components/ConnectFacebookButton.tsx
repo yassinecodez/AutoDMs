@@ -24,26 +24,44 @@ export function ConnectFacebookButton() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const openAuthPopup = (url: string) => {
+    const width = 600;
+    const height = 750;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    const popup = window.open(
+      url,
+      "MetaBusinessLogin",
+      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes`
+    );
+
+    const checkPopup = setInterval(() => {
+      if (!popup || popup.closed) {
+        clearInterval(checkPopup);
+        setLoading(false);
+        window.location.reload();
+      }
+    }, 1000);
+  };
+
   const handleConnect = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const res = await fetch("/api/auth/instagram/url");
+      const res = await fetch("/api/auth/facebook/url");
       if (!res.ok) {
         throw new Error("Failed to fetch integration URL.");
       }
       const data = await res.json();
       if (data.url) {
-        window.location.href = data.url;
+        openAuthPopup(data.url);
       } else {
-        window.location.href = "/api/auth/instagram/url";
+        openAuthPopup("/api/auth/facebook/url");
       }
     } catch (err: any) {
       setError(err.message || "An error occurred starting connection.");
-      window.location.href = "/api/auth/instagram/url";
-    } finally {
-      setLoading(false);
+      openAuthPopup("/api/auth/facebook/url");
     }
   };
 
