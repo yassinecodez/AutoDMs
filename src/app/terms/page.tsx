@@ -74,8 +74,8 @@ export default function TermsOfServicePage() {
             <h2 className="text-lg font-semibold text-foreground">6. Contact</h2>
             <p>
               For questions regarding these Terms, please contact{" "}
-              <a href="mailto:support@autodms-project.vercel.app" className="text-blue-500 hover:underline">
-                support@autodms-project.vercel.app
+              <a href="mailto:yassinzarouk08@gmail.com" className="text-blue-500 hover:underline">
+                yassinzarouk08@gmail.com
               </a>
               .
             </p>

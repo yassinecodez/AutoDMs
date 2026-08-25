@@ -94,8 +94,8 @@ export default function PrivacyPolicyPage() {
             <h2 className="text-lg font-semibold text-foreground">6. Contact Us</h2>
             <p>
               If you have any questions or concerns regarding our privacy practices, you can contact our privacy team at{" "}
-              <a href="mailto:support@autodms-project.vercel.app" className="text-blue-500 hover:underline">
-                support@autodms-project.vercel.app
+              <a href="mailto:yassinzarouk08@gmail.com" className="text-blue-500 hover:underline">
+                yassinzarouk08@gmail.com
               </a>
               .
             </p>

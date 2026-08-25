@@ -70,8 +70,8 @@ export default function DataDeletionPage() {
             </h2>
             <p>
               If you wish to request manual deletion of your user account and all associated records, send an email to our data privacy team at{" "}
-              <a href="mailto:privacy@autodms-project.vercel.app" className="text-blue-500 hover:underline font-medium">
-                privacy@autodms-project.vercel.app
+              <a href="mailto:yassinzarouk08@gmail.com" className="text-blue-500 hover:underline font-medium">
+                yassinzarouk08@gmail.com
               </a>{" "}
               with the subject line <em>&quot;Data Deletion Request&quot;</em>.
             </p>
