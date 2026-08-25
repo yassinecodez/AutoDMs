@@ -31,18 +31,13 @@ export async function GET(request: NextRequest) {
     const igAccountId = igAccount.instagramAccountId;
     const fields = "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count";
 
-    // 3. Query Instagram Media endpoints
-    const endpointsToTry = decryptedToken.startsWith("IGAA")
-      ? [
-          `https://graph.instagram.com/me/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
-          `https://graph.instagram.com/v24.0/me/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
-          `https://graph.facebook.com/v24.0/${igAccountId}/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
-        ]
-      : [
-          `https://graph.facebook.com/v24.0/${igAccountId}/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
-          `https://graph.instagram.com/v24.0/me/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
-          `https://graph.instagram.com/me/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
-        ];
+    // 3. Query all available Instagram & Meta media endpoints
+    const endpointsToTry = [
+      `https://graph.instagram.com/v24.0/me/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
+      `https://graph.instagram.com/me/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
+      `https://graph.facebook.com/v24.0/${igAccountId}/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
+      `https://graph.facebook.com/v24.0/me/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
+    ];
 
     let rawList: any[] = [];
     let lastError: any = null;
@@ -51,7 +46,7 @@ export async function GET(request: NextRequest) {
       try {
         const res = await fetch(url);
         const data = await res.json();
-        if (res.ok && Array.isArray(data.data)) {
+        if (res.ok && Array.isArray(data.data) && data.data.length > 0) {
           rawList = data.data;
           break;
         } else if (data.error) {
@@ -63,16 +58,16 @@ export async function GET(request: NextRequest) {
     }
 
     if (rawList.length === 0 && lastError) {
-      console.warn("[Instagram Media API] Warning fetching media:", lastError);
+      console.warn("[Instagram Media API] Notice from API:", lastError);
     }
 
     // Format list into clean typed items
     const formattedMedia = rawList.map((item: any) => ({
       id: item.id,
-      caption: item.caption || "",
+      caption: item.caption || `Post from @${igAccount.pageName}`,
       thumbnail: item.thumbnail_url || item.media_url || "",
       mediaUrl: item.media_url || item.thumbnail_url || "",
-      permalink: item.permalink || "",
+      permalink: item.permalink || `https://www.instagram.com/${igAccount.pageName}/`,
       type: item.media_type || "IMAGE",
       likeCount: item.like_count ?? 0,
       commentCount: item.comments_count ?? 0,
@@ -85,6 +80,7 @@ export async function GET(request: NextRequest) {
         id: igAccount.id,
         pageName: igAccount.pageName,
         instagramAccountId: igAccount.instagramAccountId,
+        profilePictureUrl: igAccount.profilePictureUrl,
       },
     });
   } catch (err: any) {
