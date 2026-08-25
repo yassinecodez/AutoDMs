@@ -30,7 +30,7 @@ export function GuidedConnectionHelper({
   const handleConnectAgain = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/facebook/url");
+      const res = await fetch("/api/auth/instagram/url");
       if (!res.ok) {
         throw new Error("Failed to get authorization URL");
       }
@@ -38,11 +38,11 @@ export function GuidedConnectionHelper({
       if (data.url) {
         window.location.href = data.url;
       } else {
-        window.location.href = "/api/auth/facebook/url";
+        window.location.href = "/api/auth/instagram/url";
       }
     } catch (err) {
       console.error("Connect retry error:", err);
-      window.location.href = "/api/auth/facebook/url";
+      window.location.href = "/api/auth/instagram/url";
     } finally {
       setLoading(false);
     }
@@ -61,7 +61,7 @@ export function GuidedConnectionHelper({
           <div>
             <h3 className="text-sm font-semibold text-foreground">Instagram Profile Connected Successfully</h3>
             <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-              Your Instagram profile is now linked via official Meta Business consent. Webhooks for comments and direct messages are active in real-time.
+              Your Instagram profile is now linked via official Instagram consent. Webhooks for comments and direct messages are active in real-time.
             </p>
           </div>
         </div>
@@ -88,10 +88,8 @@ export function GuidedConnectionHelper({
             <h3 className="text-sm font-semibold text-foreground">Instagram Authorization Incomplete</h3>
             <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
               {errorParam === "USER_DENIED"
-                ? "The connection request was cancelled. To enable automatic DM replies, please approve the requested permissions."
-                : errorParam === "NO_INSTAGRAM_BUSINESS_ACCOUNT"
-                ? "No Instagram Business or Creator account was found connected to your selected Facebook Page. Please ensure your Instagram account is linked to your Facebook Page."
-                : "Meta was unable to complete the authorization handshake. Click below to reconnect your profile."}
+                ? "The connection request was cancelled. To enable automatic DM replies, please approve the requested permissions on Instagram."
+                : "Instagram was unable to complete the authorization handshake. Click below to reconnect your profile."}
             </p>
             {detailsParam && (
               <p className="text-[11px] font-normal text-red-500 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-lg">

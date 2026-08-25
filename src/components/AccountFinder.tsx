@@ -66,8 +66,8 @@ export function AccountFinder() {
     try {
       const handleToPass = targetHandle || (foundProfile ? foundProfile.username : cleanHandle(handleInput));
       const urlEndpoint = handleToPass
-        ? `/api/auth/facebook/url?targetHandle=${encodeURIComponent(handleToPass)}`
-        : "/api/auth/facebook/url";
+        ? `/api/auth/instagram/url?targetHandle=${encodeURIComponent(handleToPass)}`
+        : "/api/auth/instagram/url";
 
       const res = await fetch(urlEndpoint);
       if (!res.ok) {
@@ -77,11 +77,11 @@ export function AccountFinder() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        throw new Error("Invalid OAuth response.");
+        window.location.href = "/api/auth/instagram/url";
       }
     } catch (err: any) {
       console.error("Connection initiation error:", err);
-      window.location.href = "/api/auth/facebook/url";
+      window.location.href = "/api/auth/instagram/url";
     } finally {
       setConnecting(false);
     }
@@ -98,7 +98,7 @@ export function AccountFinder() {
           <div className="space-y-1">
             <h2 className="text-base font-semibold text-foreground">Connect Professional Account</h2>
             <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-              Link your Instagram Creator or Business profile via official Meta consent to enable automated DMs and comment replies.
+              Link your Instagram Creator or Business profile directly via official Instagram consent to enable automated DMs and comment replies.
             </p>
           </div>
         </div>
@@ -144,7 +144,7 @@ export function AccountFinder() {
                   setFoundProfile(null);
                 }
               }}
-              placeholder="your_brand"
+              placeholder="eartech.ma"
               className="w-full h-10 pl-8 pr-4 bg-secondary border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
             />
           </div>
@@ -203,16 +203,16 @@ export function AccountFinder() {
             <div className="flex items-center gap-1.5">
               <Info className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
               <span>
-                Meta will prompt you to select <strong className="text-foreground">@{foundProfile.username}</strong> and its connected Facebook Page.
+                Ensure you are logged into <strong className="text-foreground">@{foundProfile.username}</strong> on instagram.com in this browser.
               </span>
             </div>
             <a
-              href="https://www.facebook.com/pages"
+              href="https://www.instagram.com/accounts/logout/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-foreground hover:underline inline-flex items-center gap-1 font-medium shrink-0"
             >
-              <span>Manage Meta Pages</span>
+              <span>Switch account on Instagram</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>

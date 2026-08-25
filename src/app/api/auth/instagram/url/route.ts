@@ -30,16 +30,16 @@ export async function GET(request: NextRequest) {
         resolvedUserId = dbUser.id;
       }
     } catch (err) {
-      console.warn("[Meta Business URL] Could not resolve user by email:", err);
+      console.warn("[Instagram URL] Could not resolve user by email:", err);
     }
   }
 
   const redirectUri =
     process.env.NODE_ENV === "production" || process.env.VERCEL
-      ? "https://autodms-project.vercel.app/api/auth/facebook/callback"
-      : "http://localhost:3000/api/auth/facebook/callback";
+      ? "https://autodms-project.vercel.app/api/auth/instagram/callback"
+      : "http://localhost:3000/api/auth/instagram/callback";
 
-  const clientId = process.env.META_APP_ID || "954476037671354";
+  const clientId = process.env.INSTAGRAM_APP_ID || "1041048208692049";
 
   const statePayload = {
     userId: resolvedUserId,
@@ -54,12 +54,11 @@ export async function GET(request: NextRequest) {
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: "code",
-    scope: "instagram_basic,instagram_manage_messages,instagram_manage_comments,pages_show_list,pages_read_engagement",
-    auth_type: "rerequest",
+    scope: "instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments",
     state: state,
   });
 
-  const url = `https://www.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
+  const url = `https://www.instagram.com/oauth/authorize?${params.toString()}`;
 
   const acceptHeader = request.headers.get("accept") || "";
   if (acceptHeader.includes("application/json")) {

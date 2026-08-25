@@ -29,7 +29,7 @@ export function ConnectFacebookButton() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/facebook/url");
+      const res = await fetch("/api/auth/instagram/url");
       if (!res.ok) {
         throw new Error("Failed to fetch integration URL.");
       }
@@ -37,10 +37,12 @@ export function ConnectFacebookButton() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        throw new Error("Invalid redirect response.");
+        window.location.href = "/api/auth/instagram/url";
       }
     } catch (err: any) {
       setError(err.message || "An error occurred starting connection.");
+      window.location.href = "/api/auth/instagram/url";
+    } finally {
       setLoading(false);
     }
   };

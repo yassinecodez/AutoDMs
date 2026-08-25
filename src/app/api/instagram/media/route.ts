@@ -29,31 +29,42 @@ export async function GET(request: NextRequest) {
     // 2. Decrypt token
     const decryptedToken = decrypt(igAccount.accessToken);
     const igAccountId = igAccount.instagramAccountId;
-
-    // 3. Query Meta Graph API (or Instagram Graph API fallback)
     const fields = "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count";
-    let mediaUrl = `https://graph.facebook.com/v24.0/${igAccountId}/media?fields=${fields}&limit=30&access_token=${decryptedToken}`;
 
-    let res = await fetch(mediaUrl);
-    let data = await res.json();
+    // 3. Query Instagram Media endpoints
+    const endpointsToTry = decryptedToken.startsWith("IGAA")
+      ? [
+          `https://graph.instagram.com/me/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
+          `https://graph.instagram.com/v24.0/me/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
+          `https://graph.facebook.com/v24.0/${igAccountId}/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
+        ]
+      : [
+          `https://graph.facebook.com/v24.0/${igAccountId}/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
+          `https://graph.instagram.com/v24.0/me/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
+          `https://graph.instagram.com/me/media?fields=${fields}&limit=30&access_token=${decryptedToken}`,
+        ];
 
-    // Fallback to Instagram Graph endpoint if Facebook node call fails
-    if (!res.ok || data.error) {
-      console.warn("[Instagram Media API] Facebook endpoint fallback to Instagram node:", data.error?.message);
-      mediaUrl = `https://graph.instagram.com/v24.0/me/media?fields=${fields}&limit=30&access_token=${decryptedToken}`;
-      res = await fetch(mediaUrl);
-      data = await res.json();
+    let rawList: any[] = [];
+    let lastError: any = null;
+
+    for (const url of endpointsToTry) {
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (res.ok && Array.isArray(data.data)) {
+          rawList = data.data;
+          break;
+        } else if (data.error) {
+          lastError = data.error;
+        }
+      } catch (fetchErr) {
+        lastError = fetchErr;
+      }
     }
 
-    if (!res.ok || data.error) {
-      console.error("[Instagram Media API] Meta API Error:", data.error);
-      return NextResponse.json({
-        media: [],
-        error: data.error?.message || "Failed to fetch Instagram media from Meta API.",
-      }, { status: res.status >= 400 ? res.status : 500 });
+    if (rawList.length === 0 && lastError) {
+      console.warn("[Instagram Media API] Warning fetching media:", lastError);
     }
-
-    const rawList = Array.isArray(data.data) ? data.data : [];
 
     // Format list into clean typed items
     const formattedMedia = rawList.map((item: any) => ({
