@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
       : "http://localhost:3000/api/auth/facebook/callback";
 
   const clientId = process.env.META_APP_ID || "954476037671354";
+  const configId = process.env.META_CONFIG_ID || "3012437062432078";
 
   const statePayload = {
     userId: resolvedUserId,
@@ -52,9 +53,9 @@ export async function GET(request: NextRequest) {
 
   const params = new URLSearchParams({
     client_id: clientId,
+    config_id: configId,
     redirect_uri: redirectUri,
     response_type: "code",
-    scope: "instagram_basic,instagram_manage_messages,instagram_manage_comments,pages_show_list,pages_read_engagement",
     auth_type: "rerequest",
     state: state,
   });
