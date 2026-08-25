@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
-  Search,
   ArrowRight,
   Loader2,
-  ExternalLink,
-  Info,
-  AlertCircle,
+  ShieldCheck,
+  Zap,
 } from "lucide-react";
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -27,42 +25,8 @@ const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-interface AccountProfile {
-  username: string;
-  fullName: string;
-  isBusiness: boolean;
-  avatarUrl?: string;
-}
-
 export function AccountFinder() {
-  const [handleInput, setHandleInput] = useState("");
-  const [searching, setSearching] = useState(false);
-  const [foundProfile, setFoundProfile] = useState<AccountProfile | null>(null);
   const [connecting, setConnecting] = useState(false);
-  const [promptInputWarning, setPromptInputWarning] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const cleanHandle = (input: string) => {
-    return input.trim().replace(/^@+/, "").toLowerCase();
-  };
-
-  const handleSearch = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const handle = cleanHandle(handleInput);
-    if (!handle) return;
-
-    setSearching(true);
-    setPromptInputWarning(false);
-
-    setTimeout(() => {
-      setFoundProfile({
-        username: handle,
-        fullName: handle.charAt(0).toUpperCase() + handle.slice(1),
-        isBusiness: true,
-      });
-      setSearching(false);
-    }, 300);
-  };
 
   const openAuthPopup = (url: string) => {
     const width = 600;
@@ -71,7 +35,7 @@ export function AccountFinder() {
     const top = window.screenY + (window.outerHeight - height) / 2;
     const popup = window.open(
       url,
-      "InstagramLogin",
+      "MetaAuthLogin",
       `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes`
     );
 
@@ -84,21 +48,11 @@ export function AccountFinder() {
     }, 1000);
   };
 
-  const handleConnect = async (targetHandle?: string) => {
-    const handleToPass = targetHandle || (foundProfile ? foundProfile.username : cleanHandle(handleInput));
-
-    if (!handleToPass) {
-      setPromptInputWarning(true);
-      inputRef.current?.focus();
-      return;
-    }
-
+  const handleConnect = async () => {
     setConnecting(true);
-    setPromptInputWarning(false);
 
     try {
-      const urlEndpoint = `/api/auth/instagram/url?targetHandle=${encodeURIComponent(handleToPass)}`;
-      const res = await fetch(urlEndpoint);
+      const res = await fetch("/api/auth/facebook/url");
       if (!res.ok) {
         throw new Error("Failed to generate authorization session.");
       }
@@ -106,156 +60,60 @@ export function AccountFinder() {
       if (data.url) {
         openAuthPopup(data.url);
       } else {
-        openAuthPopup(urlEndpoint);
+        openAuthPopup("/api/auth/facebook/url");
       }
     } catch (err: any) {
       console.error("Connection initiation error:", err);
-      openAuthPopup(`/api/auth/instagram/url?targetHandle=${encodeURIComponent(handleToPass)}`);
+      openAuthPopup("/api/auth/facebook/url");
     }
   };
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-      {/* Direct Instagram Connection Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
+      {/* Clean Direct Connect Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="flex items-start gap-4">
-          <div className="w-11 h-11 rounded-xl bg-secondary border border-border flex items-center justify-center text-foreground shrink-0">
-            <InstagramIcon className="w-5 h-5 text-pink-500" />
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 p-[1.5px] shrink-0">
+            <div className="w-full h-full bg-card rounded-[14px] flex items-center justify-center">
+              <InstagramIcon className="w-6 h-6 text-foreground" />
+            </div>
           </div>
-          <div className="space-y-1">
-            <h2 className="text-base font-semibold text-foreground">Connect Instagram Account</h2>
+          <div className="space-y-1.5">
+            <h2 className="text-lg font-semibold text-foreground tracking-tight">Connect Instagram Account</h2>
             <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-              Enter your Instagram @handle below and click connect to authorize your account.
+              Connect your Instagram Professional or Creator account to enable automated DM replies, comment responses, and live media synchronization.
             </p>
           </div>
         </div>
 
-        {/* Primary 1-Click Instagram Button */}
+        {/* Primary CTA Button */}
         <button
           type="button"
-          onClick={() => handleConnect()}
+          onClick={handleConnect}
           disabled={connecting}
-          className="h-11 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm inline-flex items-center justify-center gap-2.5 transition-colors shadow-sm disabled:opacity-50 shrink-0"
+          className="h-11 px-7 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm inline-flex items-center justify-center gap-2.5 transition-all shadow-sm hover:shadow active:scale-[0.98] disabled:opacity-50 shrink-0"
         >
           {connecting ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <InstagramIcon className="w-4 h-4" />
           )}
-          <span>Connect with Instagram</span>
+          <span>Connect Account</span>
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Account Verification Search */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <label htmlFor="ig-handle-input" className="text-xs font-semibold text-foreground">
-            Instagram Handle (@username)
-          </label>
-          <span className="text-xs text-muted-foreground">Type handle to link</span>
+      {/* Feature Highlights */}
+      <div className="pt-4 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+          <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+          <span>Official Meta Graph API with end-to-end encrypted token storage</span>
         </div>
-
-        {promptInputWarning && (
-          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-2 text-xs text-amber-500 animate-in fade-in duration-150">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>Please type your Instagram @username in the box below before connecting.</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-stretch gap-3">
-          <div className="relative flex-1">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">
-              @
-            </span>
-            <input
-              ref={inputRef}
-              id="ig-handle-input"
-              type="text"
-              value={handleInput}
-              onChange={(e) => {
-                setHandleInput(e.target.value);
-                setPromptInputWarning(false);
-                if (foundProfile && cleanHandle(e.target.value) !== foundProfile.username) {
-                  setFoundProfile(null);
-                }
-              }}
-              placeholder="your_instagram_handle"
-              className={`w-full h-10 pl-8 pr-4 bg-secondary border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 transition-colors ${
-                promptInputWarning ? "border-amber-500 focus:ring-amber-500" : "border-border focus:ring-ring"
-              }`}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={searching || !handleInput.trim()}
-            className="h-10 px-5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground border border-border text-sm font-medium inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-40 shrink-0"
-          >
-            {searching ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Search className="w-4 h-4" />
-            )}
-            <span>Verify Handle</span>
-          </button>
-        </form>
+        <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+          <Zap className="w-4 h-4 text-blue-500 shrink-0" />
+          <span>Automatic real-time post, reel, and comment synchronization</span>
+        </div>
       </div>
-
-      {/* Profile Preview Card (when handle searched) */}
-      {foundProfile && (
-        <div className="p-5 bg-secondary/50 border border-border rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-full bg-secondary border border-border flex items-center justify-center text-foreground font-bold text-base shrink-0">
-                {foundProfile.username[0].toUpperCase()}
-              </div>
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-sm font-semibold text-foreground">@{foundProfile.username}</h3>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-xs text-emerald-500 font-medium">Ready to Link</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Instagram Account</p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleConnect(foundProfile.username)}
-              disabled={connecting}
-              className="h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm inline-flex items-center justify-center gap-2 transition-colors shadow-sm disabled:opacity-50 shrink-0"
-            >
-              {connecting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <InstagramIcon className="w-4 h-4" />
-              )}
-              <span>Continue with @{foundProfile.username}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Clean reminder and Account Switch helper */}
-          <div className="pt-3 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <Info className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-              <span>
-                Ensure you are logged into <strong className="text-foreground">@{foundProfile.username}</strong> on instagram.com in this browser.
-              </span>
-            </div>
-            <a
-              href="https://www.instagram.com/accounts/logout/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-foreground hover:underline inline-flex items-center gap-1 font-medium shrink-0"
-            >
-              <span>Switch account on Instagram</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

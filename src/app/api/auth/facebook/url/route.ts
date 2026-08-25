@@ -13,10 +13,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const { searchParams } = new URL(request.url);
-  const targetHandle = searchParams.get("targetHandle") || searchParams.get("handle") || undefined;
-  const cleanTargetHandle = targetHandle ? targetHandle.trim().replace(/^@+/, "").toLowerCase() : undefined;
-
   let resolvedUserId = session.user.id;
   const userEmail = session.user.email;
 
@@ -30,7 +26,7 @@ export async function GET(request: NextRequest) {
         resolvedUserId = dbUser.id;
       }
     } catch (err) {
-      console.warn("[Meta Business URL] Could not resolve user by email:", err);
+      console.warn("[Meta Auth URL] Could not resolve user by email:", err);
     }
   }
 
@@ -40,34 +36,31 @@ export async function GET(request: NextRequest) {
       : "http://localhost:3000/api/auth/facebook/callback";
 
   const clientId = process.env.META_APP_ID || "954476037671354";
-  const configId = process.env.META_CONFIG_ID || "3012437062432078";
+  const version = "v24.0";
+  const scopes = [
+    "instagram_basic",
+    "instagram_manage_messages",
+    "instagram_manage_comments",
+    "pages_show_list",
+    "pages_read_engagement",
+  ].join(",");
 
   const statePayload = {
     userId: resolvedUserId,
     email: userEmail,
-    targetHandle: cleanTargetHandle,
     timestamp: Date.now(),
   };
 
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
-  // Meta Business Dialog Endpoint with IG_API_ONBOARDING channel
-  const dialogParams = new URLSearchParams({
-    client_id: clientId,
-    config_id: configId,
-    response_type: "code",
-    override_default_response_type: "true",
-    extras: JSON.stringify({ setup: { channel: "IG_API_ONBOARDING" } }),
-    redirect_uri: redirectUri,
-    state: state,
-  });
-
-  const dialogUrl = `https://business.facebook.com/dialog/oauth?${dialogParams.toString()}`;
-  const url = `https://business.facebook.com/business/loginpage/?next=${encodeURIComponent(dialogUrl)}`;
+  // Direct Meta Graph OAuth URL
+  const url = `https://www.facebook.com/${version}/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(
+    redirectUri
+  )}&scope=${encodeURIComponent(scopes)}&response_type=code&state=${state}`;
 
   const acceptHeader = request.headers.get("accept") || "";
   if (acceptHeader.includes("application/json")) {
-    return NextResponse.json({ url, redirectUri, targetHandle: cleanTargetHandle });
+    return NextResponse.json({ url, redirectUri });
   }
 
   return NextResponse.redirect(url);
