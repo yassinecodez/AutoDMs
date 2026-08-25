@@ -1,32 +1,65 @@
 "use server";
 
-import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { PLANS } from "@/lib/plans";
+import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { PLANS } from "@/lib/plans";
 
-export async function upgradePlanAction(planType: "FREE" | "PRO" | "BUSINESS") {
+export async function upgradePlanAction(plan: "FREE" | "PRO" | "BUSINESS") {
   const session = await getServerSession(authOptions);
-  if (!session || !session.user) {
+  if (!session?.user?.id) {
     throw new Error("Unauthorized");
   }
 
-  const userId = session.user.id;
-  const selectedPlan = PLANS[planType];
-
-  if (!selectedPlan) {
-    throw new Error("Invalid plan selection");
-  }
+  const selectedPlan = PLANS[plan] || PLANS.FREE;
 
   await db.user.update({
-    where: { id: userId },
+    where: { id: session.user.id },
     data: {
-      planType: planType,
+      planType: plan,
       dmsLimit: selectedPlan.dmsLimit,
-    }
+    },
   });
 
   revalidatePath("/dashboard/settings");
   revalidatePath("/dashboard");
+  return { success: true };
+}
+
+export async function updateProfileName(name: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const trimmed = name.trim();
+  if (!trimmed) {
+    throw new Error("Name cannot be empty.");
+  }
+
+  await db.user.update({
+    where: { id: session.user.id },
+    data: { name: trimmed },
+  });
+
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
+export async function submitFeedbackAction(message: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const trimmed = message.trim();
+  if (!trimmed) {
+    throw new Error("Message cannot be empty.");
+  }
+
+  console.log(`[AutoDMs User Feedback] User ${session.user.email} (${session.user.id}): "${trimmed}"`);
+
+  return { success: true };
 }
