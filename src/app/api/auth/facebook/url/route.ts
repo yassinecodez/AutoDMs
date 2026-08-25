@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
       : "http://localhost:3000/api/auth/facebook/callback";
 
   const clientId = process.env.META_APP_ID || "954476037671354";
+  const configId = process.env.META_CONFIG_ID || "3012437062432078";
 
   const statePayload = {
     userId: resolvedUserId,
@@ -50,17 +51,20 @@ export async function GET(request: NextRequest) {
 
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
-  // Clean Meta Graph API OAuth with Page & Instagram scopes
-  const params = new URLSearchParams({
+  // Exact ManyChat OAuth Dialog Parameters
+  const dialogParams = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: redirectUri,
+    config_id: configId,
     response_type: "code",
-    scope: "instagram_basic,instagram_manage_messages,instagram_manage_comments,pages_show_list,pages_read_engagement",
-    auth_type: "rerequest",
+    override_default_response_type: "true",
+    redirect_uri: redirectUri,
     state: state,
   });
 
-  const url = `https://www.facebook.com/v24.0/dialog/oauth?${params.toString()}`;
+  const dialogUrl = `https://business.facebook.com/dialog/oauth?${dialogParams.toString()}`;
+  
+  // Wrap with business/loginpage to trigger exact ManyChat workflow
+  const url = `https://business.facebook.com/business/loginpage/?next=${encodeURIComponent(dialogUrl)}`;
 
   const acceptHeader = request.headers.get("accept") || "";
   if (acceptHeader.includes("application/json")) {
