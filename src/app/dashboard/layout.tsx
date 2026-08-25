@@ -114,12 +114,12 @@ export default async function DashboardLayout({
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <span>{displayName[0].toUpperCase()}</span>
+                  <span>{(displayName && displayName.length > 0 ? displayName[0] : "U").toUpperCase()}</span>
                 )}
               </div>
               <div className="truncate">
-                <p className="text-xs font-semibold text-white truncate">{displayName}</p>
-                <p className="text-xs text-zinc-400 truncate">{displayEmail}</p>
+                <p className="text-xs font-semibold text-white truncate">{displayName || "User"}</p>
+                <p className="text-xs text-zinc-400 truncate">{displayEmail || ""}</p>
               </div>
             </div>
             <SignOutButton />

@@ -77,7 +77,7 @@ export function SidebarNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors group relative",
+              "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors group relative",
               isActive
                 ? "bg-white/10 text-white"
                 : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"

@@ -1,33 +1,46 @@
 import crypto from "crypto";
 
 const ALGORITHM = "aes-256-cbc";
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || ""; // Must be 32 characters
 
 export function encrypt(text: string): string {
   if (!text) return "";
-  if (ENCRYPTION_KEY.length !== 32) {
-    throw new Error("ENCRYPTION_KEY must be exactly 32 characters long. Current length: " + ENCRYPTION_KEY.length);
+  const key = process.env.ENCRYPTION_KEY || "";
+  if (key.length !== 32) {
+    console.warn("ENCRYPTION_KEY must be exactly 32 characters long. Current length: " + key.length);
+    return text;
   }
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY), iv);
-  let encrypted = cipher.update(text, "utf8", "hex");
-  encrypted += cipher.final("hex");
-  return `${iv.toString("hex")}:${encrypted}`;
+  try {
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(key), iv);
+    let encrypted = cipher.update(text, "utf8", "hex");
+    encrypted += cipher.final("hex");
+    return `${iv.toString("hex")}:${encrypted}`;
+  } catch (err) {
+    console.warn("Encryption failed:", err);
+    return text;
+  }
 }
 
 export function decrypt(encryptedText: string): string {
   if (!encryptedText) return "";
-  if (ENCRYPTION_KEY.length !== 32) {
-    throw new Error("ENCRYPTION_KEY must be exactly 32 characters long. Current length: " + ENCRYPTION_KEY.length);
+  const key = process.env.ENCRYPTION_KEY || "";
+  if (key.length !== 32) {
+    console.warn("ENCRYPTION_KEY must be exactly 32 characters long. Current length: " + key.length);
+    return encryptedText;
   }
-  const parts = encryptedText.split(":");
-  if (parts.length !== 2) {
-    throw new Error("Invalid encrypted text format. Missing IV separator.");
+  try {
+    const parts = encryptedText.split(":");
+    if (parts.length !== 2) {
+      return encryptedText;
+    }
+    const iv = Buffer.from(parts[0], "hex");
+    const encrypted = parts[1];
+    const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(key), iv);
+    let decrypted = decipher.update(encrypted, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+    return decrypted;
+  } catch (err) {
+    console.warn("Decryption failed:", err);
+    return encryptedText;
   }
-  const iv = Buffer.from(parts[0], "hex");
-  const encrypted = parts[1];
-  const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY), iv);
-  let decrypted = decipher.update(encrypted, "hex", "utf8");
-  decrypted += decipher.final("utf8");
-  return decrypted;
 }

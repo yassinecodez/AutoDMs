@@ -87,26 +87,26 @@ export default function AccountSwitcher({
             {activeAccount.profilePictureUrl ? (
               <img
                 src={activeAccount.profilePictureUrl}
-                alt={activeAccount.pageName}
+                alt={activeAccount.pageName || "Instagram"}
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <span className="text-[10px] font-bold text-white">
-                {(activeAccount.pageName ? activeAccount.pageName[0] : "I").toUpperCase()}
+              <span className="text-xs font-bold text-white">
+                {(activeAccount.pageName && activeAccount.pageName.length > 0 ? activeAccount.pageName[0] : "I").toUpperCase()}
               </span>
             )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-white truncate">
-                @{activeAccount.pageName}
+                @{activeAccount.pageName || "instagram"}
               </span>
-              <svg className="w-3 h-3 text-[#0095F6] fill-current shrink-0" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5 text-[#0095F6] fill-current shrink-0" viewBox="0 0 24 24">
                 <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1.9 14.7l-4.2-4.2 1.4-1.4 2.8 2.8 6.8-6.8 1.4 1.4-8.2 8.2z" />
               </svg>
             </div>
-            <span className="text-[10px] text-zinc-500 block -mt-0.5 font-medium">Workspace</span>
+            <span className="text-xs text-zinc-400 block -mt-0.5 font-medium">Workspace</span>
           </div>
         </div>
 
@@ -118,14 +118,14 @@ export default function AccountSwitcher({
         <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#0D0D0D] border border-[#262626] rounded-2xl p-1.5 shadow-2xl space-y-1 animate-in fade-in zoom-in-95 duration-150">
           {/* Header */}
           <div className="px-2.5 py-1.5 flex items-center justify-between border-b border-[#202020] mb-1">
-            <span className="text-[11px] font-medium text-zinc-400">Switch workspace</span>
-            <span className="text-[10px] font-medium text-zinc-500 bg-[#161616] px-1.5 py-0.5 rounded border border-[#262626]">
+            <span className="text-xs font-medium text-zinc-400">Switch workspace</span>
+            <span className="text-xs font-medium text-zinc-400 bg-[#161616] px-2 py-0.5 rounded border border-[#262626]">
               {accounts.length} {accounts.length === 1 ? "profile" : "profiles"}
             </span>
           </div>
 
           {/* Account List */}
-          <div className="max-h-48 overflow-y-auto space-y-0.5">
+          <div className="space-y-0.5 max-h-56 overflow-y-auto">
             {accounts.map((acc) => {
               const isSelected = acc.id === activeAccount.id;
               const isSwitching = switchingId === acc.id;
@@ -147,17 +147,17 @@ export default function AccountSwitcher({
                       {acc.profilePictureUrl ? (
                         <img
                           src={acc.profilePictureUrl}
-                          alt={acc.pageName}
+                          alt={acc.pageName || "Instagram"}
                           className="w-full h-full object-cover"
                           referrerPolicy="no-referrer"
                         />
                       ) : (
-                        <span className="text-[9px] font-bold text-white">
-                          {(acc.pageName ? acc.pageName[0] : "I").toUpperCase()}
+                        <span className="text-xs font-bold text-white">
+                          {(acc.pageName && acc.pageName.length > 0 ? acc.pageName[0] : "I").toUpperCase()}
                         </span>
                       )}
                     </div>
-                    <span className="font-medium truncate">@{acc.pageName}</span>
+                    <span className="font-medium truncate">@{acc.pageName || "instagram"}</span>
                   </div>
 
                   <div className="shrink-0 ml-2">
