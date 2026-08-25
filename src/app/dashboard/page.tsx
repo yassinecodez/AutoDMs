@@ -99,7 +99,7 @@ export default async function DashboardOverview() {
     }),
     db.executionLog.count({
       where: {
-        status: "DELIVERED",
+        dmStatus: "SUCCESS",
         automation: {
           userId,
           ...(activeAccount
