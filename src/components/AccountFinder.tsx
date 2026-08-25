@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Search,
   ArrowRight,
   Loader2,
   ExternalLink,
   Info,
+  AlertCircle,
 } from "lucide-react";
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -38,6 +39,8 @@ export function AccountFinder() {
   const [searching, setSearching] = useState(false);
   const [foundProfile, setFoundProfile] = useState<AccountProfile | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [promptInputWarning, setPromptInputWarning] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const cleanHandle = (input: string) => {
     return input.trim().replace(/^@+/, "").toLowerCase();
@@ -49,6 +52,7 @@ export function AccountFinder() {
     if (!handle) return;
 
     setSearching(true);
+    setPromptInputWarning(false);
 
     setTimeout(() => {
       setFoundProfile({
@@ -81,14 +85,19 @@ export function AccountFinder() {
   };
 
   const handleConnect = async (targetHandle?: string) => {
+    const handleToPass = targetHandle || (foundProfile ? foundProfile.username : cleanHandle(handleInput));
+
+    if (!handleToPass) {
+      setPromptInputWarning(true);
+      inputRef.current?.focus();
+      return;
+    }
+
     setConnecting(true);
+    setPromptInputWarning(false);
 
     try {
-      const handleToPass = targetHandle || (foundProfile ? foundProfile.username : cleanHandle(handleInput));
-      const urlEndpoint = handleToPass
-        ? `/api/auth/instagram/url?targetHandle=${encodeURIComponent(handleToPass)}`
-        : "/api/auth/instagram/url";
-
+      const urlEndpoint = `/api/auth/instagram/url?targetHandle=${encodeURIComponent(handleToPass)}`;
       const res = await fetch(urlEndpoint);
       if (!res.ok) {
         throw new Error("Failed to generate authorization session.");
@@ -97,11 +106,11 @@ export function AccountFinder() {
       if (data.url) {
         openAuthPopup(data.url);
       } else {
-        openAuthPopup("/api/auth/instagram/url");
+        openAuthPopup(urlEndpoint);
       }
     } catch (err: any) {
       console.error("Connection initiation error:", err);
-      openAuthPopup("/api/auth/instagram/url");
+      openAuthPopup(`/api/auth/instagram/url?targetHandle=${encodeURIComponent(handleToPass)}`);
     }
   };
 
@@ -116,7 +125,7 @@ export function AccountFinder() {
           <div className="space-y-1">
             <h2 className="text-base font-semibold text-foreground">Connect Instagram Account</h2>
             <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-              Link your Instagram profile directly. 1-click authorization connects your active Instagram account to AutoDMs.
+              Enter your Instagram @handle below and click connect to authorize your account.
             </p>
           </div>
         </div>
@@ -142,10 +151,17 @@ export function AccountFinder() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label htmlFor="ig-handle-input" className="text-xs font-semibold text-foreground">
-            Target account lookup & verification
+            Instagram Handle (@username)
           </label>
-          <span className="text-xs text-muted-foreground">Pre-check handle</span>
+          <span className="text-xs text-muted-foreground">Type handle to link</span>
         </div>
+
+        {promptInputWarning && (
+          <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-2 text-xs text-amber-500 animate-in fade-in duration-150">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>Please type your Instagram @username in the box below before connecting.</span>
+          </div>
+        )}
 
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-stretch gap-3">
           <div className="relative flex-1">
@@ -153,17 +169,21 @@ export function AccountFinder() {
               @
             </span>
             <input
+              ref={inputRef}
               id="ig-handle-input"
               type="text"
               value={handleInput}
               onChange={(e) => {
                 setHandleInput(e.target.value);
+                setPromptInputWarning(false);
                 if (foundProfile && cleanHandle(e.target.value) !== foundProfile.username) {
                   setFoundProfile(null);
                 }
               }}
               placeholder="your_instagram_handle"
-              className="w-full h-10 pl-8 pr-4 bg-secondary border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
+              className={`w-full h-10 pl-8 pr-4 bg-secondary border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 transition-colors ${
+                promptInputWarning ? "border-amber-500 focus:ring-amber-500" : "border-border focus:ring-ring"
+              }`}
             />
           </div>
 
@@ -177,7 +197,7 @@ export function AccountFinder() {
             ) : (
               <Search className="w-4 h-4" />
             )}
-            <span>Find account</span>
+            <span>Verify Handle</span>
           </button>
         </form>
       </div>
