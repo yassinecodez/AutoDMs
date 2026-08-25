@@ -31,8 +31,8 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
-  const resetDate = new Date(user.usageResetAt);
-  resetDate.setDate(resetDate.getDate() + 30);
+  const baseDate = user.usageResetAt ? new Date(user.usageResetAt) : new Date();
+  const resetDate = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
   const diffTime = resetDate.getTime() - Date.now();
   const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   const resetsInDays = daysLeft > 0 ? daysLeft : 0;
