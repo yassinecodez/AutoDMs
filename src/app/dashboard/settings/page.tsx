@@ -33,11 +33,14 @@ export default async function SettingsPage() {
 
   const baseDate = user.usageResetAt ? new Date(user.usageResetAt) : new Date();
   const resetDate = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const diffTime = resetDate.getTime() - Date.now();
-  const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  const resetsInDays = daysLeft > 0 ? daysLeft : 0;
+  const resetDateFormatted = resetDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
   const currentPlanDetails = PLANS[user.planType] || PLANS.FREE;
+  const remainingDms = Math.max(0, user.dmsLimit - user.dmsCountThisMonth);
   const usagePercentage = Math.min(
     Math.round((user.dmsCountThisMonth / user.dmsLimit) * 100),
     100
@@ -47,9 +50,9 @@ export default async function SettingsPage() {
     <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
       {/* Header */}
       <div className="space-y-1 pb-4 border-b border-[#222222]">
-        <h1 className="text-2xl font-bold text-white tracking-tight">Billing & limits</h1>
+        <h1 className="text-2xl font-bold text-white tracking-tight">Billing & usage</h1>
         <p className="text-sm text-zinc-400">
-          Monitor your Direct Message quota consumption and manage your subscription tier
+          Track your monthly direct message allowance and manage your subscription plan
         </p>
       </div>
 
@@ -59,14 +62,14 @@ export default async function SettingsPage() {
           <div className="space-y-0.5">
             <h2 className="text-sm font-semibold text-white flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-zinc-300" />
-              SaaS quota meter
+              Monthly usage
             </h2>
             <p className="text-xs text-zinc-400">
-              Usage cycles automatically reset every 30 days.
+              Track your direct message allowance for this billing period.
             </p>
           </div>
-          <div className="px-3 py-1 rounded-lg bg-[#111111] border border-[#262626] text-white text-xs font-medium w-fit">
-            Current tier: {currentPlanDetails.name}
+          <div className="px-3 py-1 rounded-lg bg-[#111111] border border-[#262626] text-zinc-300 text-xs font-medium w-fit">
+            Current plan: <span className="text-white font-semibold">{currentPlanDetails.name}</span>
           </div>
         </div>
 
@@ -74,9 +77,9 @@ export default async function SettingsPage() {
         <div className="space-y-2 pt-1">
           <div className="flex justify-between text-xs font-medium">
             <span className="text-zinc-400">
-              DMs dispatched: <strong className="text-white font-semibold">{user.dmsCountThisMonth}</strong> / {user.dmsLimit}
+              <strong className="text-white font-bold">{user.dmsCountThisMonth}</strong> of {user.dmsLimit} DMs sent
             </span>
-            <span className="text-zinc-300 font-medium">{usagePercentage}% consumed</span>
+            <span className="text-zinc-400 font-medium">{remainingDms} remaining</span>
           </div>
           
           <div className="w-full h-2 bg-[#111111] border border-[#222222] rounded-full overflow-hidden">
@@ -86,8 +89,8 @@ export default async function SettingsPage() {
             />
           </div>
 
-          <div className="text-[11px] text-zinc-500 pt-0.5 text-right font-medium">
-            Cycle resets in <strong className="text-zinc-300">{resetsInDays} days</strong> ({new Date(resetDate).toLocaleDateString()})
+          <div className="text-xs text-zinc-500 pt-0.5 font-normal">
+            Resets on {resetDateFormatted} • No hidden overage fees
           </div>
         </div>
       </div>
@@ -108,26 +111,26 @@ export default async function SettingsPage() {
           }`}>
             <div className="space-y-4">
               <div className="space-y-1">
-                <span className="text-[11px] font-medium text-zinc-400">Starter tier</span>
+                <span className="text-[11px] font-medium text-zinc-400">Free Starter</span>
                 <h3 className="text-base font-bold text-white">Free Starter</h3>
-                <p className="text-xs text-zinc-400 leading-normal">Basic triggers for content creators.</p>
+                <p className="text-xs text-zinc-400 leading-normal">Essential comment triggers for creators getting started.</p>
               </div>
               <div className="space-y-0.5 py-1">
-                <p className="text-2xl font-bold text-white tracking-tight">$0 <span className="text-xs font-normal text-zinc-500">/ forever</span></p>
-                <p className="text-[10px] text-zinc-500 font-medium">0 DH per month</p>
+                <p className="text-2xl font-bold text-white tracking-tight">$0 <span className="text-xs font-normal text-zinc-500">/ month</span></p>
+                <p className="text-[10px] text-zinc-500 font-medium">0 DH / month</p>
               </div>
               <ul className="text-xs space-y-2 text-zinc-300 border-t border-[#1F1F1F] pt-4">
                 <li className="flex items-center gap-2">
                   <Check className="w-3.5 h-3.5 text-zinc-400 shrink-0" strokeWidth={2} />
-                  <span>150 DMs / month quota</span>
+                  <span>150 automated DMs per month</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-3.5 h-3.5 text-zinc-400 shrink-0" strokeWidth={2} />
-                  <span>Link 1 IG Business profile</span>
+                  <span>Connect 1 Instagram profile</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-3.5 h-3.5 text-zinc-400 shrink-0" strokeWidth={2} />
-                  <span>Basic keyword matching</span>
+                  <span>Keyword matching for comments & DMs</span>
                 </li>
               </ul>
             </div>
@@ -148,26 +151,26 @@ export default async function SettingsPage() {
 
             <div className="space-y-4">
               <div className="space-y-1">
-                <span className="text-[11px] font-medium text-zinc-400">Professional tier</span>
+                <span className="text-[11px] font-medium text-zinc-400">Creator Pro</span>
                 <h3 className="text-base font-bold text-white">Creator Pro</h3>
-                <p className="text-xs text-zinc-400 leading-normal">High volume triggers & story rewards.</p>
+                <p className="text-xs text-zinc-400 leading-normal">High-volume growth engine with story rewards & leads.</p>
               </div>
               <div className="space-y-0.5 py-1">
                 <p className="text-2xl font-bold text-white tracking-tight">$5 <span className="text-xs font-normal text-zinc-500">/ month</span></p>
-                <p className="text-[10px] text-zinc-400 font-medium">50 DH per month</p>
+                <p className="text-[10px] text-zinc-400 font-medium">50 DH / month</p>
               </div>
               <ul className="text-xs space-y-2 text-zinc-300 border-t border-[#1F1F1F] pt-4">
                 <li className="flex items-center gap-2">
                   <Check className="w-3.5 h-3.5 text-zinc-400 shrink-0" strokeWidth={2} />
-                  <span>3,000 DMs / month quota</span>
+                  <span>3,000 automated DMs per month</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-3.5 h-3.5 text-zinc-400 shrink-0" strokeWidth={2} />
-                  <span>Story mentions triggers</span>
+                  <span>Story mentions & Reel triggers</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-3.5 h-3.5 text-zinc-400 shrink-0" strokeWidth={2} />
-                  <span>Lead capture & CSV export</span>
+                  <span>Lead capture with instant CSV export</span>
                 </li>
               </ul>
             </div>
@@ -182,22 +185,22 @@ export default async function SettingsPage() {
           }`}>
             <div className="space-y-4">
               <div className="space-y-1">
-                <span className="text-[11px] font-medium text-zinc-400">Agency tier</span>
+                <span className="text-[11px] font-medium text-zinc-400">Business / Agency</span>
                 <h3 className="text-base font-bold text-white">Business / Agency</h3>
-                <p className="text-xs text-zinc-400 leading-normal">Multi-account scale for agencies & brands.</p>
+                <p className="text-xs text-zinc-400 leading-normal">Multi-account scale for agencies and fast-growing brands.</p>
               </div>
               <div className="space-y-0.5 py-1">
                 <p className="text-2xl font-bold text-white tracking-tight">$15 <span className="text-xs font-normal text-zinc-500">/ month</span></p>
-                <p className="text-[10px] text-zinc-400 font-medium">150 DH per month</p>
+                <p className="text-[10px] text-zinc-400 font-medium">150 DH / month</p>
               </div>
               <ul className="text-xs space-y-2 text-zinc-300 border-t border-[#1F1F1F] pt-4">
                 <li className="flex items-center gap-2">
                   <Check className="w-3.5 h-3.5 text-zinc-400 shrink-0" strokeWidth={2} />
-                  <span>15,000 DMs / month quota</span>
+                  <span>15,000 automated DMs per month</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-3.5 h-3.5 text-zinc-400 shrink-0" strokeWidth={2} />
-                  <span>Link up to 3 IG accounts</span>
+                  <span>Connect up to 3 Instagram profiles</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="w-3.5 h-3.5 text-zinc-400 shrink-0" strokeWidth={2} />

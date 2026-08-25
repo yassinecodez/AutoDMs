@@ -263,15 +263,18 @@ export default async function DashboardOverview() {
         {/* Card 4: Quota Usage */}
         <div className="p-5 bg-[#0A0A0A] border border-[#222222] rounded-2xl space-y-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-700 transition-all duration-200">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-zinc-400">Monthly quota</span>
+            <span className="text-xs font-medium text-zinc-400">Monthly usage</span>
             <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-[#161616] border border-[#262626] text-zinc-300">
               {planDetails.name}
             </span>
           </div>
           <div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-white tracking-tight">{dmsUsed}</span>
-              <span className="text-xs text-zinc-500">/{dmsLimit}</span>
+            <div className="flex items-baseline justify-between">
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold text-white tracking-tight">{dmsUsed}</span>
+                <span className="text-xs text-zinc-500">/ {dmsLimit} DMs</span>
+              </div>
+              <span className="text-xs text-zinc-400 font-medium">{Math.max(0, dmsLimit - dmsUsed)} left</span>
             </div>
             <div className="w-full h-1.5 bg-[#141414] rounded-full overflow-hidden mt-2.5 border border-[#222222]">
               <div
