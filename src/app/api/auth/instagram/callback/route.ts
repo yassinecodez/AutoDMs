@@ -298,12 +298,10 @@ export async function GET(request: NextRequest) {
       instagramId = String(igUserId || `ig_${Date.now()}`);
     }
 
-    // If username is still not returned by Meta API, use targetHandle from state, or verified user's name
+    // If username is still not returned by Meta API, use targetHandle from state
     if (!username) {
       if (statePayload.targetHandle) {
         username = statePayload.targetHandle.trim();
-      } else if (verifiedUser.name && !verifiedUser.name.includes("@")) {
-        username = verifiedUser.name.trim();
       } else {
         username = `ig_${instagramId}`;
       }
@@ -404,6 +402,8 @@ export async function GET(request: NextRequest) {
               profilePictureUrl: profilePictureUrl,
               accessToken: encryptedToken,
               tokenExpiresAt: tokenExpiresAt,
+              planType: verifiedUser.planType || "FREE",
+              dmsLimit: verifiedUser.dmsLimit || (verifiedUser.planType === "BUSINESS" ? 15000 : (verifiedUser.planType === "PRO" ? 3000 : 150)),
             },
           });
         }

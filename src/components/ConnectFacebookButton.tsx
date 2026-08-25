@@ -29,7 +29,7 @@ export function ConnectFacebookButton() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/instagram/url");
+      const res = await fetch("/api/auth/facebook/url");
       if (!res.ok) {
         throw new Error("Failed to fetch integration URL.");
       }

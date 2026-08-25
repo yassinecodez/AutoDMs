@@ -8,17 +8,18 @@ import { revalidatePath } from "next/cache";
 function extractStatePayload(stateParam: string | null): {
   userId: string | null;
   email: string | null;
+  targetHandle?: string | null;
 } {
   if (!stateParam) return { userId: null, email: null };
   try {
     const jsonStr = Buffer.from(stateParam, "base64url").toString("utf-8");
     const parsed = JSON.parse(jsonStr);
-    return { userId: parsed.userId || null, email: parsed.email || null };
+    return { userId: parsed.userId || null, email: parsed.email || null, targetHandle: parsed.targetHandle || null };
   } catch {
     try {
       const jsonStr = Buffer.from(stateParam, "base64").toString("utf-8");
       const parsed = JSON.parse(jsonStr);
-      return { userId: parsed.userId || null, email: parsed.email || null };
+      return { userId: parsed.userId || null, email: parsed.email || null, targetHandle: parsed.targetHandle || null };
     } catch {
       return { userId: null, email: null };
     }
@@ -183,6 +184,8 @@ export async function GET(request: NextRequest) {
 
     let accountsLinkedCount = 0;
     let primaryConnectedAccount: any = null;
+    const userPlan = verifiedUser.planType || "FREE";
+    const userLimit = verifiedUser.dmsLimit || (userPlan === "BUSINESS" ? 15000 : (userPlan === "PRO" ? 3000 : 150));
 
     // 5. Iterate through all returned pages and import linked Instagram accounts
     for (const page of pages) {
@@ -243,6 +246,8 @@ export async function GET(request: NextRequest) {
               profilePictureUrl: profilePictureUrl || existing.profilePictureUrl,
               accessToken: encryptedToken,
               tokenExpiresAt: null, // Page tokens do not expire
+              planType: userPlan,
+              dmsLimit: userLimit,
             },
           });
 
@@ -271,6 +276,8 @@ export async function GET(request: NextRequest) {
               profilePictureUrl: profilePictureUrl,
               accessToken: encryptedToken,
               tokenExpiresAt: null,
+              planType: userPlan,
+              dmsLimit: userLimit,
             },
           });
         }

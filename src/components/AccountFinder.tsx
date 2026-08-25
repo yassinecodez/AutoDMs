@@ -66,8 +66,8 @@ export function AccountFinder() {
     try {
       const handleToPass = targetHandle || (foundProfile ? foundProfile.username : cleanHandle(handleInput));
       const urlEndpoint = handleToPass
-        ? `/api/auth/instagram/url?targetHandle=${encodeURIComponent(handleToPass)}`
-        : "/api/auth/instagram/url";
+        ? `/api/auth/facebook/url?targetHandle=${encodeURIComponent(handleToPass)}`
+        : "/api/auth/facebook/url";
 
       const res = await fetch(urlEndpoint);
       if (!res.ok) {
@@ -81,7 +81,7 @@ export function AccountFinder() {
       }
     } catch (err: any) {
       console.error("Connection initiation error:", err);
-      window.location.href = "/api/auth/instagram/url";
+      window.location.href = "/api/auth/facebook/url";
     } finally {
       setConnecting(false);
     }
@@ -203,16 +203,16 @@ export function AccountFinder() {
             <div className="flex items-center gap-1.5">
               <Info className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
               <span>
-                Ensure you are logged into <strong className="text-foreground">@{foundProfile.username}</strong> on instagram.com in this browser.
+                Meta will prompt you to select <strong className="text-foreground">@{foundProfile.username}</strong> and its connected Facebook Page.
               </span>
             </div>
             <a
-              href="https://www.instagram.com/accounts/logout/"
+              href="https://www.facebook.com/pages"
               target="_blank"
               rel="noopener noreferrer"
               className="text-foreground hover:underline inline-flex items-center gap-1 font-medium shrink-0"
             >
-              <span>Switch account on Instagram</span>
+              <span>Manage Meta Pages</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
