@@ -136,7 +136,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                         src={acc.profilePictureUrl}
                         alt={acc.pageName}
                         className="w-full h-full object-cover"
-                        crossOrigin="anonymous"
+                        referrerPolicy="no-referrer"
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-tr from-amber-500/20 via-rose-500/20 to-purple-600/20 flex items-center justify-center font-bold text-sm text-white">

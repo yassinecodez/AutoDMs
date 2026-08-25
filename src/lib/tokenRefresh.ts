@@ -52,11 +52,29 @@ export async function inspectAndRefreshAccountToken(instagramAccountId: string):
       expiresAt = new Date(info.expires_at * 1000);
     }
 
-    // Update database record with fresh expiration details
+    // Refresh profile details (profile_picture_url & username) if missing or on refresh
+    let freshProfilePic: string | undefined = undefined;
+    let freshUsername: string | undefined = undefined;
+
+    try {
+      const profileUrl = `https://graph.instagram.com/v24.0/me?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(decryptedToken)}`;
+      const profileRes = await fetch(profileUrl);
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        if (profileData.profile_picture_url) freshProfilePic = profileData.profile_picture_url;
+        if (profileData.username) freshUsername = profileData.username;
+      }
+    } catch (profErr) {
+      console.warn("[Profile Picture Refresh Warning]", profErr);
+    }
+
+    // Update database record with fresh expiration and profile details
     await db.igAccount.update({
       where: { id: igAccount.id },
       data: {
         tokenExpiresAt: expiresAt,
+        ...(freshProfilePic ? { profilePictureUrl: freshProfilePic } : {}),
+        ...(freshUsername ? { pageName: freshUsername } : {}),
       },
     });
 
@@ -82,7 +100,7 @@ export async function inspectAndRefreshAccountToken(instagramAccountId: string):
 }
 
 /**
- * Manually inspects and updates token expiration with Meta debug_token
+ * Manually inspects and updates token expiration and profile picture with Meta
  */
 export async function refreshLongLivedToken(instagramAccountId: string) {
   const result = await inspectAndRefreshAccountToken(instagramAccountId);

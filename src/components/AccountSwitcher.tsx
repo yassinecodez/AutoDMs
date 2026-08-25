@@ -89,7 +89,7 @@ export default function AccountSwitcher({
                 src={activeAccount.profilePictureUrl}
                 alt={activeAccount.pageName}
                 className="w-full h-full object-cover"
-                crossOrigin="anonymous"
+                referrerPolicy="no-referrer"
               />
             ) : (
               <span className="text-[10px] font-bold text-white">
@@ -149,7 +149,7 @@ export default function AccountSwitcher({
                           src={acc.profilePictureUrl}
                           alt={acc.pageName}
                           className="w-full h-full object-cover"
-                          crossOrigin="anonymous"
+                          referrerPolicy="no-referrer"
                         />
                       ) : (
                         <span className="text-[9px] font-bold text-white">
