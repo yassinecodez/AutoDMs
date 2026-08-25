@@ -15,9 +15,16 @@ import {
   CheckCircle2,
   Circle,
   Plus,
+  ScrollText,
+  Camera,
+  ExternalLink,
+  Gift,
+  FileText,
 } from "lucide-react";
 import { getActiveAccount } from "@/lib/activeAccount";
 import { PLANS } from "@/lib/plans";
+import { getCommenterAvatar } from "@/lib/commenterAvatar";
+import ActiveAutomationsWidget from "@/components/ActiveAutomationsWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +37,7 @@ export default async function DashboardOverview() {
 
   const activeAccount = await getActiveAccount(userId);
 
-  // Parallelize metrics queries
+  // Parallelize metrics and widget queries
   const [
     user,
     accounts,
@@ -38,6 +45,8 @@ export default async function DashboardOverview() {
     capturedLeadsCount,
     totalLogsCount,
     deliveredLogsCount,
+    recentLogs,
+    topAutomations,
   ] = await Promise.all([
     db.user.findUnique({
       where: { id: userId },
@@ -113,6 +122,57 @@ export default async function DashboardOverview() {
         },
       },
     }),
+    db.executionLog.findMany({
+      where: {
+        automation: {
+          userId,
+          ...(activeAccount
+            ? {
+                OR: [
+                  { igAccountId: activeAccount.id },
+                  { igAccountId: null },
+                ],
+              }
+            : {}),
+        },
+      },
+      orderBy: { timestamp: "desc" },
+      take: 4,
+      include: {
+        automation: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    }),
+    db.automation.findMany({
+      where: {
+        userId,
+        ...(activeAccount
+          ? {
+              OR: [
+                { igAccountId: activeAccount.id },
+                { igAccountId: null },
+              ],
+            }
+          : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+      select: {
+        id: true,
+        name: true,
+        triggerSource: true,
+        triggerKeyword: true,
+        triggerScope: true,
+        active: true,
+        _count: {
+          select: { logs: true },
+        },
+      },
+    }),
   ]);
 
   function formatFirstName(rawName?: string | null, rawEmail?: string | null): string {
@@ -130,6 +190,23 @@ export default async function DashboardOverview() {
       }
     }
     return "Creator";
+  }
+
+  function formatTimeAgo(dateInput: any) {
+    const date = new Date(dateInput);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (seconds < 30) return "Just now";
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   }
 
   const currentAccount = activeAccount || accounts[0] || null;
@@ -150,33 +227,6 @@ export default async function DashboardOverview() {
   const step3Done = totalLogsCount > 0;
   const completedSteps = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (step3Done ? 1 : 0);
   const checklistPercent = Math.round((completedSteps / 3) * 100);
-
-  const quickTemplates = [
-    {
-      id: "comments",
-      title: "Auto-DM links from comments",
-      tag: "Popular",
-      description: "Send links, discounts, or prices when followers comment on your Reels or Posts.",
-      icon: MessageCircle,
-      href: "/dashboard/automations/builder?template=comment_to_dm",
-    },
-    {
-      id: "stories",
-      title: "Generate leads with stories",
-      tag: "High conversion",
-      description: "Automatically reward followers with coupon codes or links when they mention you in stories.",
-      icon: Sparkles,
-      href: "/dashboard/automations/builder?template=story_mention",
-    },
-    {
-      id: "dms",
-      title: "Respond to all your DMs",
-      tag: "Instant reply",
-      description: "Send instant automated replies and lead capture forms to direct message inquiries.",
-      icon: Inbox,
-      href: "/dashboard/automations/builder?template=direct_dm",
-    },
-  ];
 
   return (
     <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
@@ -287,7 +337,7 @@ export default async function DashboardOverview() {
       </div>
 
       {/* ========================================================================= */}
-      {/* SECTION 2: "Quick Automations" (Starter Templates Grid) */}
+      {/* SECTION 2: Dynamic Visual Flow Cards ("Start here") */}
       {/* ========================================================================= */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -304,229 +354,498 @@ export default async function DashboardOverview() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {quickTemplates.map((template) => {
-            const Icon = template.icon;
-            return (
-              <Link
-                key={template.id}
-                href={template.href}
-                className="bg-card hover:bg-zinc-50 dark:hover:bg-[#0D0D0D] border border-border hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl p-6 transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[200px] shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center text-foreground group-hover:border-zinc-400 dark:group-hover:border-zinc-500 transition-colors">
-                      <Icon className="w-5 h-5" strokeWidth={1.75} />
-                    </div>
-                    {template.tag && (
-                      <span className="bg-secondary border border-border text-foreground text-xs px-2.5 py-0.5 rounded-full font-medium">
-                        {template.tag}
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
-                      {template.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {template.description}
-                    </p>
-                  </div>
+          {/* Card 1: Comment to DM Link Flow */}
+          <div className="bg-card hover:bg-zinc-50 dark:hover:bg-[#0D0D0D] border border-border hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl p-6 transition-all duration-200 flex flex-col justify-between min-h-[290px] shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] group">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center text-foreground group-hover:border-zinc-400 dark:group-hover:border-zinc-500 transition-colors">
+                  <MessageCircle className="w-5 h-5" strokeWidth={1.75} />
                 </div>
+                <span className="bg-secondary border border-border text-foreground text-xs px-2.5 py-0.5 rounded-full font-medium">
+                  Popular
+                </span>
+              </div>
 
-                <div className="pt-4 flex items-center text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                  <span>Use template</span>
-                  <ArrowRight className="w-3.5 h-3.5 ml-1.5 transform group-hover:translate-x-1 transition-transform stroke-[2.5]" />
+              <div className="space-y-1">
+                <h3 className="text-base font-semibold text-foreground">
+                  Auto-DM links from comments
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Send direct checkout links or pricing when followers comment on your Reels or Posts.
+                </p>
+              </div>
+
+              {/* Visual Micro-Flow Mockup */}
+              <div className="p-3 bg-secondary/60 border border-border rounded-xl flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-1.5 min-w-0 bg-card px-2.5 py-1 rounded-lg border border-border shadow-xs">
+                  <span className="text-[11px] font-mono font-medium text-foreground">&quot;PRICE&quot;</span>
                 </div>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <div className="flex items-center gap-1.5 min-w-0 bg-card px-2.5 py-1 rounded-lg border border-border text-foreground font-medium text-[11px] shadow-xs">
+                  <span>Shop Link</span>
+                  <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <Link
+                href="/dashboard/automations/builder?template=comment_to_dm"
+                className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+              >
+                <span>Use template</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
-            );
-          })}
+            </div>
+          </div>
+
+          {/* Card 2: Story Mention Reward Flow */}
+          <div className="bg-card hover:bg-zinc-50 dark:hover:bg-[#0D0D0D] border border-border hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl p-6 transition-all duration-200 flex flex-col justify-between min-h-[290px] shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] group">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center text-foreground group-hover:border-zinc-400 dark:group-hover:border-zinc-500 transition-colors">
+                  <Sparkles className="w-5 h-5 text-amber-500" strokeWidth={1.75} />
+                </div>
+                <span className="bg-secondary border border-border text-foreground text-xs px-2.5 py-0.5 rounded-full font-medium">
+                  High conversion
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                <h3 className="text-base font-semibold text-foreground">
+                  Reward story mentions
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Automatically reward followers with coupon codes or VIP links when they mention you in stories.
+                </p>
+              </div>
+
+              {/* Visual Micro-Flow Mockup */}
+              <div className="p-3 bg-secondary/60 border border-border rounded-xl flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-1.5 min-w-0 bg-card px-2.5 py-1 rounded-lg border border-border shadow-xs">
+                  <Camera className="w-3 h-3 text-amber-500 shrink-0" />
+                  <span className="text-[11px] font-medium text-foreground truncate">@story tag</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <div className="flex items-center gap-1.5 min-w-0 bg-card px-2.5 py-1 rounded-lg border border-border text-foreground font-medium text-[11px] shadow-xs">
+                  <Gift className="w-3 h-3 text-amber-500 shrink-0" />
+                  <span>15% Coupon</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <Link
+                href="/dashboard/automations/builder?template=story_mention"
+                className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+              >
+                <span>Use template</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 3: Inbound Direct DM Reply Flow */}
+          <div className="bg-card hover:bg-zinc-50 dark:hover:bg-[#0D0D0D] border border-border hover:border-zinc-300 dark:hover:border-zinc-700 rounded-2xl p-6 transition-all duration-200 flex flex-col justify-between min-h-[290px] shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] group">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-secondary border border-border flex items-center justify-center text-foreground group-hover:border-zinc-400 dark:group-hover:border-zinc-500 transition-colors">
+                  <Inbox className="w-5 h-5" strokeWidth={1.75} />
+                </div>
+                <span className="bg-secondary border border-border text-foreground text-xs px-2.5 py-0.5 rounded-full font-medium">
+                  Instant reply
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                <h3 className="text-base font-semibold text-foreground">
+                  Respond to all your DMs
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Send instant automated replies and lead capture forms to direct message inquiries.
+                </p>
+              </div>
+
+              {/* Visual Micro-Flow Mockup */}
+              <div className="p-3 bg-secondary/60 border border-border rounded-xl flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-1.5 min-w-0 bg-card px-2.5 py-1 rounded-lg border border-border shadow-xs">
+                  <span className="text-[11px] font-mono font-medium text-foreground">&quot;PRICING&quot;</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <div className="flex items-center gap-1.5 min-w-0 bg-card px-2.5 py-1 rounded-lg border border-border text-foreground font-medium text-[11px] shadow-xs">
+                  <FileText className="w-3 h-3 text-blue-500 shrink-0" />
+                  <span>Rate Sheet</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <Link
+                href="/dashboard/automations/builder?template=direct_dm"
+                className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+              >
+                <span>Use template</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* SECTION 3: "Your Next Steps" (2-Column Grid) */}
+      {/* SECTION 3: Smart Onboarding & Operations Hub */}
       {/* ========================================================================= */}
       <div className="space-y-4">
-        <h2 className="text-base font-semibold text-foreground">
-          Your next steps
-        </h2>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Card: Setup Progress Checklist */}
-          <div className="bg-card border border-border rounded-2xl p-6 space-y-5 flex flex-col justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold text-foreground">Getting started</h3>
-                  <p className="text-xs text-muted-foreground">Complete setup to launch your Instagram pipeline</p>
-                </div>
-                <span className="text-xs font-medium text-foreground bg-secondary border border-border px-3 py-1 rounded-full">
-                  {completedSteps} of 3 completed
-                </span>
-              </div>
-
-              {/* Progress track */}
-              <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden border border-border">
-                <div
-                  style={{ width: `${checklistPercent}%` }}
-                  className="h-full bg-primary rounded-full transition-all duration-300"
-                />
-              </div>
-
-              {/* Step Checklist Items */}
-              <div className="space-y-3 pt-1">
-                {/* Step 1: Connect Account */}
-                <div className="flex items-center justify-between p-3.5 rounded-xl bg-secondary/50 border border-border">
-                  <div className="flex items-center gap-3">
-                    {step1Done ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    ) : (
-                      <Circle className="w-4 h-4 text-muted-foreground shrink-0" />
-                    )}
-                    <div>
-                      <p className={`text-xs font-medium ${step1Done ? "text-foreground" : "text-muted-foreground"}`}>
-                        1. Connect your professional Instagram account
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {step1Done ? `Connected as @${currentAccount?.pageName}` : "Link your Creator or Business account"}
-                      </p>
-                    </div>
-                  </div>
-                  {!step1Done && (
-                    <Link
-                      href="/dashboard/accounts"
-                      className="text-xs text-foreground hover:underline font-semibold"
-                    >
-                      Connect &rarr;
-                    </Link>
-                  )}
-                </div>
-
-                {/* Step 2: Create First Rule */}
-                <div className="flex items-center justify-between p-3.5 rounded-xl bg-secondary/50 border border-border">
-                  <div className="flex items-center gap-3">
-                    {step2Done ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    ) : (
-                      <Circle className="w-4 h-4 text-muted-foreground shrink-0" />
-                    )}
-                    <div>
-                      <p className={`text-xs font-medium ${step2Done ? "text-foreground" : "text-muted-foreground"}`}>
-                        2. Create your first auto-DM rule
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {step2Done ? `${automationsCount} active automation(s) live` : "Set a trigger keyword and reply message"}
-                      </p>
-                    </div>
-                  </div>
-                  {!step2Done && (
-                    <Link
-                      href="/dashboard/automations/builder"
-                      className="text-xs text-foreground hover:underline font-semibold"
-                    >
-                      Create &rarr;
-                    </Link>
-                  )}
-                </div>
-
-                {/* Step 3: Test on Instagram */}
-                <div className="flex items-center justify-between p-3.5 rounded-xl bg-secondary/50 border border-border">
-                  <div className="flex items-center gap-3">
-                    {step3Done ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                    ) : (
-                      <Circle className="w-4 h-4 text-muted-foreground shrink-0" />
-                    )}
-                    <div>
-                      <p className={`text-xs font-medium ${step3Done ? "text-foreground" : "text-muted-foreground"}`}>
-                        3. Test and send your first DM
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {step3Done ? `${totalLogsCount} total interaction(s) recorded` : "Comment on your post from a test account"}
-                      </p>
-                    </div>
-                  </div>
-                  {!step3Done && (
-                    <Link
-                      href="/dashboard/logs"
-                      className="text-xs text-foreground hover:underline font-semibold"
-                    >
-                      Audit logs &rarr;
-                    </Link>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <Link
-                href="/dashboard/automations/builder"
-                className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-sm flex items-center justify-center gap-2 transition-colors shadow-sm"
-              >
-                <span>Launch new automation</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Right Card: How AutoDMs Works Explanation */}
-          <div className="bg-card border border-border rounded-2xl p-6 space-y-5 flex flex-col justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <h3 className="text-base font-semibold text-foreground">How comment-to-DM works</h3>
-                <p className="text-xs text-muted-foreground">Three automated steps to convert engagement into revenue</p>
-              </div>
-
-              <div className="space-y-3 pt-1">
-                <div className="p-3.5 rounded-xl bg-secondary/50 border border-border flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-secondary border border-border flex items-center justify-center text-xs font-semibold text-foreground shrink-0 mt-0.5">
-                    1
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-semibold text-foreground">Follower comments on your post or reel</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      You publish content asking followers to comment a keyword (e.g. &quot;LINK&quot; or &quot;PRICE&quot;).
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-secondary/50 border border-border flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-secondary border border-border flex items-center justify-center text-xs font-semibold text-foreground shrink-0 mt-0.5">
-                    2
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-semibold text-foreground">AutoDMs delivers instant DM & public reply</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Our official Meta webhook triggers within seconds to send the DM and leave a public reply comment.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-secondary/50 border border-border flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-lg bg-secondary border border-border flex items-center justify-center text-xs font-semibold text-foreground shrink-0 mt-0.5">
-                    3
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-xs font-semibold text-foreground">Capture contacts and track conversions</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Followers receive direct buttons to your website, store, or lead capture forms automatically.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <Link
-                href="/dashboard/automations?tab=templates"
-                className="w-full h-10 rounded-xl border border-border hover:bg-secondary text-foreground font-medium text-sm flex items-center justify-center gap-2 transition-colors"
-              >
-                <span>Browse starter templates</span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              </Link>
-            </div>
-          </div>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-foreground">
+            Operations & Live Feed
+          </h2>
+          {completedSteps === 3 && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Pipeline fully active</span>
+            </span>
+          )}
         </div>
+
+        {/* If checklist is NOT complete, show getting started card side-by-side with Activity Stream */}
+        {completedSteps < 3 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Getting Started Checklist Card */}
+            <div className="bg-card border border-border rounded-2xl p-6 space-y-5 flex flex-col justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground">Getting started</h3>
+                    <p className="text-xs text-muted-foreground">Complete setup to launch your Instagram pipeline</p>
+                  </div>
+                  <span className="text-xs font-medium text-foreground bg-secondary border border-border px-3 py-1 rounded-full">
+                    {completedSteps} of 3 completed
+                  </span>
+                </div>
+
+                {/* Progress track */}
+                <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden border border-border">
+                  <div
+                    style={{ width: `${checklistPercent}%` }}
+                    className="h-full bg-primary rounded-full transition-all duration-300"
+                  />
+                </div>
+
+                {/* Step Checklist Items */}
+                <div className="space-y-3 pt-1">
+                  {/* Step 1: Connect Account */}
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-secondary/50 border border-border">
+                    <div className="flex items-center gap-3">
+                      {step1Done ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-muted-foreground shrink-0" />
+                      )}
+                      <div>
+                        <p className={`text-xs font-medium ${step1Done ? "text-foreground" : "text-muted-foreground"}`}>
+                          1. Connect your professional Instagram account
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {step1Done ? `Connected as @${currentAccount?.pageName}` : "Link your Creator or Business account"}
+                        </p>
+                      </div>
+                    </div>
+                    {!step1Done && (
+                      <Link
+                        href="/dashboard/accounts"
+                        className="text-xs text-foreground hover:underline font-semibold"
+                      >
+                        Connect &rarr;
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Step 2: Create First Rule */}
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-secondary/50 border border-border">
+                    <div className="flex items-center gap-3">
+                      {step2Done ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-muted-foreground shrink-0" />
+                      )}
+                      <div>
+                        <p className={`text-xs font-medium ${step2Done ? "text-foreground" : "text-muted-foreground"}`}>
+                          2. Create your first auto-DM rule
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {step2Done ? `${automationsCount} active automation(s) live` : "Set a trigger keyword and reply message"}
+                        </p>
+                      </div>
+                    </div>
+                    {!step2Done && (
+                      <Link
+                        href="/dashboard/automations/builder"
+                        className="text-xs text-foreground hover:underline font-semibold"
+                      >
+                        Create &rarr;
+                      </Link>
+                    )}
+                  </div>
+
+                  {/* Step 3: Test on Instagram */}
+                  <div className="flex items-center justify-between p-3.5 rounded-xl bg-secondary/50 border border-border">
+                    <div className="flex items-center gap-3">
+                      {step3Done ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-muted-foreground shrink-0" />
+                      )}
+                      <div>
+                        <p className={`text-xs font-medium ${step3Done ? "text-foreground" : "text-muted-foreground"}`}>
+                          3. Test and send your first DM
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {step3Done ? `${totalLogsCount} total interaction(s) recorded` : "Comment on your post from a test account"}
+                        </p>
+                      </div>
+                    </div>
+                    {!step3Done && (
+                      <Link
+                        href="/dashboard/logs"
+                        className="text-xs text-foreground hover:underline font-semibold"
+                      >
+                        Audit logs &rarr;
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <Link
+                  href="/dashboard/automations/builder"
+                  className="w-full h-10 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-sm flex items-center justify-center gap-2 transition-colors shadow-sm"
+                >
+                  <span>Launch new automation</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Right: Live Activity Stream Card */}
+            <div className="bg-card border border-border rounded-2xl p-6 space-y-5 flex flex-col justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-secondary border border-border flex items-center justify-center text-foreground">
+                      <ScrollText className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">Recent activity</h3>
+                      <p className="text-xs text-muted-foreground">Live webhook interaction stream</p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/dashboard/logs"
+                    className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                  >
+                    <span>View all logs ({totalLogsCount})</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+
+                {recentLogs.length === 0 ? (
+                  <div className="p-8 text-center bg-secondary/30 border border-border rounded-xl space-y-2.5 my-2">
+                    <div className="w-8 h-8 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground mx-auto">
+                      <ScrollText className="w-4 h-4" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold text-foreground">Waiting for interactions</p>
+                      <p className="text-[11px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                        When followers comment your trigger keywords or mention you in stories, live dispatch logs will stream here.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {recentLogs.map((log) => {
+                      const isComment = log.triggerSource === "COMMENT" || log.triggerSource === "COMMENTS";
+                      const isStory = log.triggerSource === "STORY_MENTION" || log.triggerSource === "STORY_MENTIONS";
+                      const avatarUrl = getCommenterAvatar(log.commenterUsername);
+                      const initial = (log.commenterUsername ? log.commenterUsername[0] : "U").toUpperCase();
+                      const timeAgo = formatTimeAgo(log.timestamp);
+
+                      return (
+                        <div
+                          key={log.id}
+                          className="p-3 bg-secondary/40 hover:bg-secondary/70 border border-border rounded-xl flex items-center justify-between gap-3 transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-7 h-7 rounded-full overflow-hidden bg-secondary border border-border flex items-center justify-center font-semibold text-xs text-foreground shrink-0 shadow-inner">
+                              {avatarUrl ? (
+                                <img
+                                  src={avatarUrl}
+                                  alt={log.commenterUsername}
+                                  className="w-full h-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : (
+                                <span>{initial}</span>
+                              )}
+                            </div>
+                            <div className="min-w-0 space-y-0.5">
+                              <p className="text-xs font-semibold text-foreground truncate">
+                                @{log.commenterUsername}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground truncate">
+                                {isComment ? (
+                                  <span>commented &quot;{log.commentText}&quot;</span>
+                                ) : isStory ? (
+                                  <span>story mention</span>
+                                ) : (
+                                  <span>sent DM &quot;{log.commentText}&quot;</span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2.5 shrink-0 text-right">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
+                              <span className="w-1 h-1 rounded-full bg-emerald-500" />
+                              Delivered
+                            </span>
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              {timeAgo}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2">
+                <Link
+                  href="/dashboard/logs"
+                  className="w-full h-10 rounded-xl border border-border hover:bg-secondary text-foreground font-medium text-xs flex items-center justify-center gap-2 transition-colors"
+                >
+                  <span>Open live audit feed</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* When Checklist is 100% COMPLETE (3 of 3): Display Active Automations & Live Activity stream! */
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Card: Live Activity Stream */}
+            <div className="bg-card border border-border rounded-2xl p-6 space-y-5 flex flex-col justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-secondary border border-border flex items-center justify-center text-foreground">
+                      <ScrollText className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">Recent activity</h3>
+                      <p className="text-xs text-muted-foreground">Live webhook interaction stream</p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/dashboard/logs"
+                    className="text-xs font-medium text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                  >
+                    <span>View all logs ({totalLogsCount})</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+
+                {recentLogs.length === 0 ? (
+                  <div className="p-8 text-center bg-secondary/30 border border-border rounded-xl space-y-2.5 my-2">
+                    <div className="w-8 h-8 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground mx-auto">
+                      <ScrollText className="w-4 h-4" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold text-foreground">Waiting for interactions</p>
+                      <p className="text-[11px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                        When followers comment your trigger keywords or mention you in stories, live dispatch logs will stream here.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {recentLogs.map((log) => {
+                      const isComment = log.triggerSource === "COMMENT" || log.triggerSource === "COMMENTS";
+                      const isStory = log.triggerSource === "STORY_MENTION" || log.triggerSource === "STORY_MENTIONS";
+                      const avatarUrl = getCommenterAvatar(log.commenterUsername);
+                      const initial = (log.commenterUsername ? log.commenterUsername[0] : "U").toUpperCase();
+                      const timeAgo = formatTimeAgo(log.timestamp);
+
+                      return (
+                        <div
+                          key={log.id}
+                          className="p-3 bg-secondary/40 hover:bg-secondary/70 border border-border rounded-xl flex items-center justify-between gap-3 transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-7 h-7 rounded-full overflow-hidden bg-secondary border border-border flex items-center justify-center font-semibold text-xs text-foreground shrink-0 shadow-inner">
+                              {avatarUrl ? (
+                                <img
+                                  src={avatarUrl}
+                                  alt={log.commenterUsername}
+                                  className="w-full h-full object-cover"
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : (
+                                <span>{initial}</span>
+                              )}
+                            </div>
+                            <div className="min-w-0 space-y-0.5">
+                              <p className="text-xs font-semibold text-foreground truncate">
+                                @{log.commenterUsername}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground truncate">
+                                {isComment ? (
+                                  <span>commented &quot;{log.commentText}&quot;</span>
+                                ) : isStory ? (
+                                  <span>story mention</span>
+                                ) : (
+                                  <span>sent DM &quot;{log.commentText}&quot;</span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2.5 shrink-0 text-right">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
+                              <span className="w-1 h-1 rounded-full bg-emerald-500" />
+                              Delivered
+                            </span>
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              {timeAgo}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2">
+                <Link
+                  href="/dashboard/logs"
+                  className="w-full h-10 rounded-xl border border-border hover:bg-secondary text-foreground font-medium text-xs flex items-center justify-center gap-2 transition-colors"
+                >
+                  <span>Open live audit feed</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Card: Active Automations Quick-Toggle Widget */}
+            <ActiveAutomationsWidget
+              initialAutomations={topAutomations}
+              totalCount={automationsCount}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
