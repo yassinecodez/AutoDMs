@@ -82,9 +82,9 @@ export default async function AccountsPage({ searchParams }: PageProps) {
   return (
     <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
       {/* Header */}
-      <div className="space-y-1 pb-6 border-b border-[#222222]">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Instagram accounts</h1>
-        <p className="text-sm text-zinc-400">
+      <div className="space-y-1 pb-6 border-b border-border">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Instagram accounts</h1>
+        <p className="text-sm text-muted-foreground">
           Connect, verify permissions, and manage your Instagram Professional profile integrations
         </p>
       </div>
@@ -104,19 +104,19 @@ export default async function AccountsPage({ searchParams }: PageProps) {
       {/* Accounts List */}
       <div className="space-y-4 pt-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold text-zinc-400">
+          <h2 className="text-xs font-semibold text-muted-foreground">
             Connected profiles ({accounts.length})
           </h2>
         </div>
 
         {accounts.length === 0 ? (
-          <div className="p-12 text-center bg-[#0A0A0A] border border-[#222222] rounded-2xl text-zinc-500 text-xs space-y-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-            <div className="w-10 h-10 rounded-full bg-[#111111] border border-[#222222] flex items-center justify-center mx-auto text-zinc-500">
+          <div className="p-12 text-center bg-card border border-border rounded-2xl text-muted-foreground text-xs space-y-3 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+            <div className="w-10 h-10 rounded-full bg-secondary border border-border flex items-center justify-center mx-auto text-muted-foreground">
               <InstagramIcon className="w-5 h-5" />
             </div>
             <div className="space-y-1">
-              <p className="text-zinc-200 font-medium text-sm">No connected profiles yet</p>
-              <p className="text-zinc-500 max-w-sm mx-auto">
+              <p className="text-foreground font-medium text-sm">No connected profiles yet</p>
+              <p className="text-muted-foreground max-w-sm mx-auto">
                 Use the account finder above to verify and connect your professional Instagram profile.
               </p>
             </div>
@@ -126,11 +126,11 @@ export default async function AccountsPage({ searchParams }: PageProps) {
             {accounts.map((acc) => (
               <div
                 key={acc.id}
-                className="p-5 bg-[#0A0A0A] border border-[#222222] rounded-2xl flex items-center justify-between gap-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-700 hover:bg-[#0D0D0D] transition-all duration-200"
+                className="p-5 bg-card border border-border rounded-2xl flex items-center justify-between gap-4 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-[#0D0D0D] transition-all duration-200"
               >
                 <div className="flex items-center gap-4 min-w-0">
                   {/* Circular Instagram Avatar */}
-                  <div className="w-12 h-12 rounded-full bg-[#141414] border border-[#262626] flex items-center justify-center text-white shrink-0 overflow-hidden shadow-inner">
+                  <div className="w-12 h-12 rounded-full bg-secondary border border-border flex items-center justify-center text-foreground shrink-0 overflow-hidden shadow-inner">
                     {acc.profilePictureUrl ? (
                       <img
                         src={acc.profilePictureUrl}
@@ -139,7 +139,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                         referrerPolicy="no-referrer"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-tr from-amber-500/20 via-rose-500/20 to-purple-600/20 flex items-center justify-center font-bold text-sm text-white">
+                      <div className="w-full h-full bg-gradient-to-tr from-amber-500/20 via-rose-500/20 to-purple-600/20 flex items-center justify-center font-bold text-sm text-foreground">
                         {(acc.pageName ? acc.pageName[0] : "I").toUpperCase()}
                       </div>
                     )}
@@ -148,16 +148,16 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                   {/* Clean Account Handle & Status */}
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-semibold text-white truncate">@{acc.pageName}</h3>
+                      <h3 className="text-base font-semibold text-foreground truncate">@{acc.pageName}</h3>
                       <svg className="w-4 h-4 text-[#0095F6] fill-current shrink-0" viewBox="0 0 24 24">
                         <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1.9 14.7l-4.2-4.2 1.4-1.4 2.8 2.8 6.8-6.8 1.4 1.4-8.2 8.2z" />
                       </svg>
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-950/50 border border-emerald-800/50 text-emerald-400">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         Connected
                       </span>
                     </div>
-                    <p className="text-xs text-zinc-400 truncate">Instagram Professional Account</p>
+                    <p className="text-xs text-muted-foreground truncate">Instagram Professional Account</p>
                   </div>
                 </div>
 
@@ -171,7 +171,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                   >
                     <button
                       type="submit"
-                      className="p-2.5 text-zinc-400 hover:text-red-400 hover:bg-[#141414] rounded-xl transition-colors border border-transparent hover:border-zinc-800"
+                      className="p-2.5 text-muted-foreground hover:text-red-500 hover:bg-secondary rounded-xl transition-colors border border-transparent"
                       title="Disconnect Account"
                     >
                       <Trash2 className="w-4 h-4" strokeWidth={1.75} />

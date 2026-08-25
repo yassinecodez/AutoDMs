@@ -61,10 +61,10 @@ export default function AccountSwitcher({
     return (
       <Link
         href="/dashboard/accounts"
-        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#111111] hover:bg-[#181818] border border-[#222222] hover:border-zinc-700 transition-all text-xs text-zinc-300 group"
+        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-zinc-100 dark:bg-[#111111] hover:bg-zinc-200 dark:hover:bg-[#181818] border border-zinc-200 dark:border-[#222222] hover:border-zinc-300 dark:hover:border-zinc-700 transition-all text-xs text-zinc-700 dark:text-zinc-300 group"
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-full bg-[#181818] border border-[#2B2B2B] flex items-center justify-center text-zinc-400 group-hover:text-white">
+          <div className="w-7 h-7 rounded-full bg-zinc-200 dark:bg-[#181818] border border-zinc-300 dark:border-[#2B2B2B] flex items-center justify-center text-zinc-600 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-white">
             <Plus className="w-3.5 h-3.5" />
           </div>
           <span className="font-medium truncate">Connect Instagram</span>
@@ -80,10 +80,10 @@ export default function AccountSwitcher({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between p-2 rounded-xl bg-[#111111] hover:bg-[#161616] border border-[#222222] hover:border-zinc-700 transition-all duration-150 text-left focus:outline-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
+        className="w-full flex items-center justify-between p-2 rounded-xl bg-zinc-100 dark:bg-[#111111] hover:bg-zinc-200/70 dark:hover:bg-[#161616] border border-zinc-200 dark:border-[#222222] hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-150 text-left focus:outline-none shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]"
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-full overflow-hidden bg-[#181818] border border-[#2B2B2B] flex items-center justify-center shrink-0 shadow-inner">
+          <div className="w-7 h-7 rounded-full overflow-hidden bg-zinc-200 dark:bg-[#181818] border border-zinc-300 dark:border-[#2B2B2B] flex items-center justify-center shrink-0 shadow-inner">
             {activeAccount.profilePictureUrl ? (
               <img
                 src={activeAccount.profilePictureUrl}
@@ -92,34 +92,34 @@ export default function AccountSwitcher({
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <span className="text-xs font-bold text-white">
+              <span className="text-xs font-bold text-zinc-900 dark:text-white">
                 {(activeAccount.pageName && activeAccount.pageName.length > 0 ? activeAccount.pageName[0] : "I").toUpperCase()}
               </span>
             )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-white truncate">
+              <span className="text-xs font-semibold text-zinc-900 dark:text-white truncate">
                 @{activeAccount.pageName || "instagram"}
               </span>
               <svg className="w-3.5 h-3.5 text-[#0095F6] fill-current shrink-0" viewBox="0 0 24 24">
                 <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1.9 14.7l-4.2-4.2 1.4-1.4 2.8 2.8 6.8-6.8 1.4 1.4-8.2 8.2z" />
               </svg>
             </div>
-            <span className="text-xs text-zinc-400 block -mt-0.5 font-medium">Workspace</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 block -mt-0.5 font-medium">Workspace</span>
           </div>
         </div>
 
-        <ChevronsUpDown className="w-3.5 h-3.5 text-zinc-500 shrink-0 ml-1.5" />
+        <ChevronsUpDown className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 shrink-0 ml-1.5" />
       </button>
 
       {/* Dropdown Menu */}
       {open && (
-        <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#0D0D0D] border border-[#262626] rounded-2xl p-1.5 shadow-2xl space-y-1 animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-[#0D0D0D] border border-zinc-200 dark:border-[#262626] rounded-2xl p-1.5 shadow-xl space-y-1 animate-in fade-in zoom-in-95 duration-150">
           {/* Header */}
-          <div className="px-2.5 py-1.5 flex items-center justify-between border-b border-[#202020] mb-1">
-            <span className="text-xs font-medium text-zinc-400">Switch workspace</span>
-            <span className="text-xs font-medium text-zinc-400 bg-[#161616] px-2 py-0.5 rounded border border-[#262626]">
+          <div className="px-2.5 py-1.5 flex items-center justify-between border-b border-zinc-100 dark:border-[#202020] mb-1">
+            <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Switch workspace</span>
+            <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-[#161616] px-2 py-0.5 rounded border border-zinc-200 dark:border-[#262626]">
               {accounts.length} {accounts.length === 1 ? "profile" : "profiles"}
             </span>
           </div>
@@ -138,12 +138,12 @@ export default function AccountSwitcher({
                   disabled={isSwitching}
                   className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-all text-xs ${
                     isSelected
-                      ? "bg-[#181818] text-white"
-                      : "text-zinc-300 hover:bg-[#141414] hover:text-white"
+                      ? "bg-zinc-100 dark:bg-[#181818] text-zinc-900 dark:text-white font-medium"
+                      : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-[#141414] hover:text-zinc-900 dark:hover:text-white"
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-6 h-6 rounded-full overflow-hidden bg-[#1C1C1C] border border-[#2B2B2B] flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 rounded-full overflow-hidden bg-zinc-200 dark:bg-[#1C1C1C] border border-zinc-300 dark:border-[#2B2B2B] flex items-center justify-center shrink-0">
                       {acc.profilePictureUrl ? (
                         <img
                           src={acc.profilePictureUrl}
@@ -152,7 +152,7 @@ export default function AccountSwitcher({
                           referrerPolicy="no-referrer"
                         />
                       ) : (
-                        <span className="text-xs font-bold text-white">
+                        <span className="text-xs font-bold text-zinc-900 dark:text-white">
                           {(acc.pageName && acc.pageName.length > 0 ? acc.pageName[0] : "I").toUpperCase()}
                         </span>
                       )}
@@ -164,7 +164,7 @@ export default function AccountSwitcher({
                     {isSwitching ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400" />
                     ) : isSelected ? (
-                      <Check className="w-3.5 h-3.5 text-white stroke-[2.5]" />
+                      <Check className="w-3.5 h-3.5 text-zinc-900 dark:text-white stroke-[2.5]" />
                     ) : null}
                   </div>
                 </button>
@@ -173,11 +173,11 @@ export default function AccountSwitcher({
           </div>
 
           {/* Footer CTA: Connect New Account */}
-          <div className="pt-1 border-t border-[#202020]">
+          <div className="pt-1 border-t border-zinc-100 dark:border-[#202020]">
             <Link
               href="/dashboard/accounts"
               onClick={() => setOpen(false)}
-              className="w-full flex items-center justify-center gap-1.5 p-2 rounded-xl text-[11px] font-medium text-zinc-400 hover:text-white hover:bg-[#141414] transition-colors"
+              className="w-full flex items-center justify-center gap-1.5 p-2 rounded-xl text-[11px] font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-50 dark:hover:bg-[#141414] transition-colors"
             >
               <Plus className="w-3 h-3" />
               <span>Connect new profile</span>

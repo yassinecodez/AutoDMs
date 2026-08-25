@@ -46,16 +46,16 @@ export default async function LogsPage() {
   return (
     <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
       {/* Header */}
-      <div className="space-y-1 pb-6 border-b border-[#222222]">
+      <div className="space-y-1 pb-6 border-b border-border">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight text-white">Activity logs</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Activity logs</h1>
           {activeAccount && (
-            <span className="text-xs font-medium text-zinc-400 bg-[#141414] border border-[#262626] px-2 py-0.5 rounded-md">
+            <span className="text-xs font-medium text-foreground bg-secondary border border-border px-2 py-0.5 rounded-md">
               @{activeAccount.pageName}
             </span>
           )}
         </div>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-muted-foreground">
           Real-time audit stream of incoming comments, story mentions, and DM dispatches for this workspace
         </p>
       </div>

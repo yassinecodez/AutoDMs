@@ -66,13 +66,13 @@ export function OnboardingModal({ hasConnectedAccounts }: OnboardingModalProps) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-[#0A0A0A] border border-[#262626] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl shadow-black/90 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md bg-card border border-border rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200">
         
         {/* Close Button */}
         <button
           type="button"
           onClick={handleDismiss}
-          className="absolute top-5 right-5 p-2 rounded-xl text-zinc-500 hover:text-zinc-300 hover:bg-[#141414] transition-colors"
+          className="absolute top-5 right-5 p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           title="Dismiss"
         >
           <X className="w-4 h-4" />
@@ -80,36 +80,36 @@ export function OnboardingModal({ hasConnectedAccounts }: OnboardingModalProps) 
 
         {/* Modal Header */}
         <div className="space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500/20 via-rose-500/20 to-purple-600/20 border border-white/10 flex items-center justify-center text-white shadow-inner">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500/20 via-rose-500/20 to-purple-600/20 border border-border flex items-center justify-center text-foreground shadow-inner">
             <InstagramIcon className="w-6 h-6" />
           </div>
 
           <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#161616] border border-[#262626] text-xs font-medium text-zinc-300">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-secondary border border-border text-xs font-medium text-foreground">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               <span>Quick setup</span>
             </div>
-            <h2 className="text-xl font-bold tracking-tight text-white">
+            <h2 className="text-xl font-bold tracking-tight text-foreground">
               Connect your Instagram account
             </h2>
-            <p className="text-sm text-zinc-400 leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Link your Creator or Business profile to start automating comments, story rewards, and DMs.
             </p>
           </div>
         </div>
 
         {/* Benefits List */}
-        <div className="space-y-2.5 p-4 rounded-2xl bg-[#111111] border border-[#222222] text-xs text-zinc-300">
+        <div className="space-y-2.5 p-4 rounded-2xl bg-secondary border border-border text-xs text-foreground">
           <div className="flex items-center gap-2.5">
-            <Check className="w-4 h-4 text-emerald-400 shrink-0" strokeWidth={2.5} />
+            <Check className="w-4 h-4 text-emerald-500 shrink-0" strokeWidth={2.5} />
             <span>1-Click official Meta OAuth authorization</span>
           </div>
           <div className="flex items-center gap-2.5">
-            <Check className="w-4 h-4 text-emerald-400 shrink-0" strokeWidth={2.5} />
+            <Check className="w-4 h-4 text-emerald-500 shrink-0" strokeWidth={2.5} />
             <span>Automate Reels, post comments, and story rewards</span>
           </div>
           <div className="flex items-center gap-2.5">
-            <Check className="w-4 h-4 text-emerald-400 shrink-0" strokeWidth={2.5} />
+            <Check className="w-4 h-4 text-emerald-500 shrink-0" strokeWidth={2.5} />
             <span>100% Meta API compliant with zero setup delay</span>
           </div>
         </div>
@@ -120,10 +120,10 @@ export function OnboardingModal({ hasConnectedAccounts }: OnboardingModalProps) 
             type="button"
             onClick={handleConnect}
             disabled={loading}
-            className="w-full h-11 bg-white hover:bg-zinc-200 text-black font-semibold rounded-xl text-sm transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+            className="w-full h-11 bg-primary text-primary-foreground hover:opacity-90 font-semibold rounded-xl text-sm transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
           >
             {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin text-black" />
+              <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" />
             ) : (
               <>
                 <span>Connect Instagram Account</span>
@@ -135,7 +135,7 @@ export function OnboardingModal({ hasConnectedAccounts }: OnboardingModalProps) 
           <button
             type="button"
             onClick={handleDismiss}
-            className="w-full h-9 text-xs font-medium text-zinc-500 hover:text-zinc-300 transition-colors"
+            className="w-full h-9 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             Skip for now
           </button>

@@ -51,21 +51,21 @@ export function GuidedConnectionHelper({
   // 1. Success Banner
   if (statusParam === "SUCCESS" || statusParam === "success") {
     return (
-      <div className="p-4 bg-[#0A0A0A] border border-emerald-500/30 text-white rounded-2xl flex items-start justify-between gap-3 shadow-sm animate-in fade-in duration-200">
+      <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-foreground rounded-2xl flex items-start justify-between gap-3 shadow-sm animate-in fade-in duration-200">
         <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-xl bg-emerald-950/60 border border-emerald-800/50 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-500 shrink-0 mt-0.5">
             <CheckCircle2 className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">Instagram Profile Connected Successfully</h3>
-            <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
+            <h3 className="text-sm font-semibold text-foreground">Instagram Profile Connected Successfully</h3>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
               Your Instagram profile is now linked. Webhook events for comments and direct messages are active in real-time.
             </p>
           </div>
         </div>
         <button
           onClick={() => setDismissed(true)}
-          className="text-zinc-500 hover:text-white transition-colors p-1"
+          className="text-muted-foreground hover:text-foreground transition-colors p-1"
           title="Dismiss"
         >
           <X className="w-4 h-4" />
@@ -77,20 +77,20 @@ export function GuidedConnectionHelper({
   // 2. Token Exchange / Permissions Banner
   if (errorParam && errorParam !== "SUCCESS" && errorParam !== "success") {
     return (
-      <div className="p-5 bg-[#0A0A0A] border border-red-500/30 text-white rounded-2xl flex items-start justify-between gap-3 shadow-sm animate-in fade-in duration-200">
+      <div className="p-5 bg-red-500/10 border border-red-500/20 text-foreground rounded-2xl flex items-start justify-between gap-3 shadow-sm animate-in fade-in duration-200">
         <div className="flex items-start gap-3">
-          <div className="w-9 h-9 rounded-xl bg-red-950/60 border border-red-800/50 flex items-center justify-center text-red-400 shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-500 shrink-0">
             <ShieldAlert className="w-5 h-5" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-white">Instagram Authorization Incomplete</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed max-w-xl">
+            <h3 className="text-sm font-semibold text-foreground">Instagram Authorization Incomplete</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
               {errorParam === "USER_DENIED"
                 ? "The connection request was cancelled. To enable automatic DM replies, please approve the requested permissions."
                 : "Instagram was unable to complete the authorization handshake. Click below to reconnect your profile."}
             </p>
             {detailsParam && (
-              <p className="text-[11px] font-normal text-red-400 bg-red-950/30 border border-red-900/40 px-2.5 py-1 rounded-lg">
+              <p className="text-[11px] font-normal text-red-500 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-lg">
                 Details: {detailsParam}
               </p>
             )}
@@ -98,7 +98,7 @@ export function GuidedConnectionHelper({
               <button
                 onClick={handleConnectAgain}
                 disabled={loading}
-                className="h-9 px-4 rounded-xl bg-white hover:bg-zinc-200 text-black font-medium text-xs inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-sm"
+                className="h-9 px-4 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-xs inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-sm"
               >
                 {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                 Try Connecting Again
@@ -108,7 +108,7 @@ export function GuidedConnectionHelper({
         </div>
         <button
           onClick={() => setDismissed(true)}
-          className="text-zinc-500 hover:text-white transition-colors p-1"
+          className="text-muted-foreground hover:text-foreground transition-colors p-1"
           title="Dismiss"
         >
           <X className="w-4 h-4" />

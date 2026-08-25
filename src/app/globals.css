@@ -37,7 +37,7 @@
   }
 
   .light {
-    --background: 0 0% 98%; /* #FAFAFA */
+    --background: 220 14% 97.5%; /* #F7F8FA */
     --foreground: 240 10% 4%; /* #09090B */
     
     --card: 0 0% 100%; /* #FFFFFF */
@@ -50,20 +50,20 @@
     --primary: 240 10% 4%; /* #09090B */
     --primary-foreground: 0 0% 98%;
     
-    --secondary: 240 5% 96%; /* #F4F4F5 */
+    --secondary: 220 13% 95%; /* #F1F3F5 */
     --secondary-foreground: 240 10% 4%;
     
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%; /* #71717A */
+    --muted: 220 13% 95%;
+    --muted-foreground: 220 9% 46%; /* #4B5563 */
     
-    --accent: 240 5% 96%;
+    --accent: 220 13% 93%;
     --accent-foreground: 240 10% 4%;
     
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 240 6% 90%; /* #E4E4E7 */
-    --input: 240 6% 90%; /* #E4E4E7 */
+    --border: 220 13% 90%; /* #E5E7EB */
+    --input: 220 13% 90%; /* #E5E7EB */
     --ring: 240 10% 4%;
   }
 }
@@ -126,20 +126,20 @@
 /* Vercel Craft Utility Classes */
 @layer components {
   .vercel-card {
-    @apply bg-[#0A0A0A] border border-[#222222] rounded-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] transition-all duration-200 hover:border-zinc-700;
+    @apply bg-card border border-border rounded-2xl shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] transition-all duration-200 hover:border-zinc-400 dark:hover:border-zinc-700;
   }
   .vercel-card-interactive {
-    @apply bg-[#0A0A0A] border border-[#222222] rounded-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] transition-all duration-200 hover:border-zinc-700 hover:bg-[#0D0D0D];
+    @apply bg-card border border-border rounded-2xl shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] transition-all duration-200 hover:border-zinc-400 dark:hover:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-[#0D0D0D];
   }
   .badge-mono {
-    @apply inline-flex items-center px-2 py-0.5 rounded-md font-medium text-[11px] bg-zinc-900/80 border border-zinc-800 text-zinc-300;
+    @apply inline-flex items-center px-2 py-0.5 rounded-md font-medium text-[11px] bg-secondary border border-border text-foreground;
   }
   .ios-glass {
-    @apply backdrop-blur-xl bg-black/70 border border-white/10;
+    @apply backdrop-blur-xl bg-card/80 border border-border;
   }
 }
 
-/* Vercel clean scrollbar */
+/* Clean scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -148,9 +148,9 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #222222;
+  @apply bg-zinc-300 dark:bg-[#222222];
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #333333;
+  @apply bg-zinc-400 dark:bg-[#333333];
 }

@@ -17,8 +17,8 @@ export function UpgradeButton({ plan, current }: UpgradeButtonProps) {
     setLoading(true);
     try {
       await upgradePlanAction(plan);
-    } catch (err) {
-      alert("Failed to update plan: " + err);
+    } catch (err: any) {
+      alert("Failed to update plan: " + err?.message || err);
     } finally {
       setLoading(false);
     }
@@ -28,7 +28,7 @@ export function UpgradeButton({ plan, current }: UpgradeButtonProps) {
     return (
       <button
         disabled
-        className="w-full h-10 bg-[#111111] text-zinc-500 font-medium rounded-lg text-sm cursor-default select-none border border-[#222222]"
+        className="w-full h-10 bg-secondary text-muted-foreground font-medium rounded-lg text-sm cursor-default select-none border border-border"
       >
         Current Plan
       </button>
@@ -41,8 +41,8 @@ export function UpgradeButton({ plan, current }: UpgradeButtonProps) {
       disabled={loading}
       className={`w-full h-10 font-medium rounded-lg text-sm transition-colors flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 ${
         plan === "PRO"
-          ? "bg-white hover:bg-zinc-200 text-black"
-          : "bg-[#111111] hover:bg-[#181818] text-white border border-[#262626]"
+          ? "bg-primary text-primary-foreground hover:opacity-90"
+          : "bg-secondary text-foreground hover:bg-secondary/80 border border-border"
       }`}
     >
       {loading ? (

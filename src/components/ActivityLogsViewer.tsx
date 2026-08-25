@@ -107,49 +107,49 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
       {/* ========================================================================= */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {/* Card 1: Total Dispatches */}
-        <div className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-2xl flex items-center justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+        <div className="p-4 bg-card border border-border rounded-2xl flex items-center justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <div className="space-y-0.5">
-            <p className="text-xs font-medium text-zinc-400">Total dispatches</p>
-            <p className="text-2xl font-bold text-white tracking-tight">{totalDispatches.toLocaleString()}</p>
-            <p className="text-xs text-zinc-500 font-medium">Live webhook triggers</p>
+            <p className="text-xs font-medium text-muted-foreground">Total dispatches</p>
+            <p className="text-2xl font-bold text-foreground tracking-tight">{totalDispatches.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground font-medium">Live webhook triggers</p>
           </div>
-          <div className="p-2.5 rounded-xl bg-[#141414] border border-[#262626] text-white shrink-0">
+          <div className="p-2.5 rounded-xl bg-secondary border border-border text-foreground shrink-0">
             <Send className="w-4 h-4" strokeWidth={1.75} />
           </div>
         </div>
 
         {/* Card 2: Delivery Success Rate */}
-        <div className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-2xl flex items-center justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+        <div className="p-4 bg-card border border-border rounded-2xl flex items-center justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <div className="space-y-0.5">
-            <p className="text-xs font-medium text-zinc-400">Success rate</p>
-            <p className="text-2xl font-bold text-white tracking-tight">{successRate}%</p>
-            <p className="text-xs text-zinc-500 font-medium">{deliveredCount} delivered</p>
+            <p className="text-xs font-medium text-muted-foreground">Success rate</p>
+            <p className="text-2xl font-bold text-foreground tracking-tight">{successRate}%</p>
+            <p className="text-xs text-muted-foreground font-medium">{deliveredCount} delivered</p>
           </div>
-          <div className="p-2.5 rounded-xl bg-[#141414] border border-[#262626] text-white shrink-0">
+          <div className="p-2.5 rounded-xl bg-secondary border border-border text-foreground shrink-0">
             <CheckCircle2 className="w-4 h-4" strokeWidth={1.75} />
           </div>
         </div>
 
         {/* Card 3: Leads Captured */}
-        <div className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-2xl flex items-center justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+        <div className="p-4 bg-card border border-border rounded-2xl flex items-center justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <div className="space-y-0.5">
-            <p className="text-xs font-medium text-zinc-400">Leads captured</p>
-            <p className="text-2xl font-bold text-white tracking-tight">{leadsCapturedCount.toLocaleString()}</p>
-            <p className="text-xs text-zinc-500 font-medium">Contact extractions</p>
+            <p className="text-xs font-medium text-muted-foreground">Leads captured</p>
+            <p className="text-2xl font-bold text-foreground tracking-tight">{leadsCapturedCount.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground font-medium">Contact extractions</p>
           </div>
-          <div className="p-2.5 rounded-xl bg-[#141414] border border-[#262626] text-white shrink-0">
+          <div className="p-2.5 rounded-xl bg-secondary border border-border text-foreground shrink-0">
             <Zap className="w-4 h-4" strokeWidth={1.75} />
           </div>
         </div>
 
         {/* Card 4: Skipped / Filtered */}
-        <div className="p-4 bg-[#0A0A0A] border border-[#222222] rounded-2xl flex items-center justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+        <div className="p-4 bg-card border border-border rounded-2xl flex items-center justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           <div className="space-y-0.5">
-            <p className="text-xs font-medium text-zinc-400">Skipped / Filtered</p>
-            <p className="text-2xl font-bold text-white tracking-tight">{skippedOrRestrictedCount.toLocaleString()}</p>
-            <p className="text-xs text-zinc-500 font-medium">No match or quota</p>
+            <p className="text-xs font-medium text-muted-foreground">Skipped / Filtered</p>
+            <p className="text-2xl font-bold text-foreground tracking-tight">{skippedOrRestrictedCount.toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground font-medium">No match or quota</p>
           </div>
-          <div className="p-2.5 rounded-xl bg-[#141414] border border-[#262626] text-white shrink-0">
+          <div className="p-2.5 rounded-xl bg-secondary border border-border text-foreground shrink-0">
             <ScrollText className="w-4 h-4" strokeWidth={1.75} />
           </div>
         </div>
@@ -158,28 +158,28 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
       {/* ========================================================================= */}
       {/* 2. Search & Filter Controls */}
       {/* ========================================================================= */}
-      <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl p-3 flex flex-wrap gap-3 items-center justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+      <div className="bg-card border border-border rounded-2xl p-3 flex flex-wrap gap-3 items-center justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
         {/* Search Bar */}
         <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by username, text, error..."
-            className="w-full h-10 pl-9 pr-3 bg-[#111111] border border-[#262626] rounded-xl text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
+            className="w-full h-10 pl-9 pr-3 bg-secondary border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
           />
         </div>
 
         {/* Filter Controls */}
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {/* Status Tabs */}
-          <div className="flex items-center bg-[#111111] border border-[#262626] rounded-xl p-1 text-xs font-medium text-zinc-400">
+          <div className="flex items-center bg-secondary border border-border rounded-xl p-1 text-xs font-medium text-muted-foreground">
             <button
               type="button"
               onClick={() => setSelectedStatus("ALL")}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
-                selectedStatus === "ALL" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
+                selectedStatus === "ALL" ? "bg-card text-foreground shadow-sm font-semibold" : "hover:text-foreground"
               }`}
             >
               All status
@@ -188,7 +188,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
               type="button"
               onClick={() => setSelectedStatus("SUCCESS")}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
-                selectedStatus === "SUCCESS" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
+                selectedStatus === "SUCCESS" ? "bg-card text-foreground shadow-sm font-semibold" : "hover:text-foreground"
               }`}
             >
               Delivered
@@ -197,7 +197,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
               type="button"
               onClick={() => setSelectedStatus("LEAD_CAPTURED")}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
-                selectedStatus === "LEAD_CAPTURED" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
+                selectedStatus === "LEAD_CAPTURED" ? "bg-card text-foreground shadow-sm font-semibold" : "hover:text-foreground"
               }`}
             >
               Lead captured
@@ -206,7 +206,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
               type="button"
               onClick={() => setSelectedStatus("FAILED")}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
-                selectedStatus === "FAILED" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
+                selectedStatus === "FAILED" ? "bg-card text-foreground shadow-sm font-semibold" : "hover:text-foreground"
               }`}
             >
               Failed
@@ -215,7 +215,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
               type="button"
               onClick={() => setSelectedStatus("SKIPPED")}
               className={`px-3 py-1.5 rounded-lg transition-colors ${
-                selectedStatus === "SKIPPED" ? "bg-[#222222] text-white shadow-sm" : "hover:text-zinc-200"
+                selectedStatus === "SKIPPED" ? "bg-card text-foreground shadow-sm font-semibold" : "hover:text-foreground"
               }`}
             >
               Skipped
@@ -241,22 +241,22 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
       {/* ========================================================================= */}
       {initialLogs.length === 0 ? (
         /* Empty State (0 logs recorded) */
-        <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl p-12 text-center my-8 space-y-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-          <div className="w-12 h-12 rounded-2xl bg-[#111111] border border-[#222222] flex items-center justify-center mx-auto text-zinc-500">
+        <div className="bg-card border border-border rounded-2xl p-12 text-center my-8 space-y-4 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+          <div className="w-12 h-12 rounded-2xl bg-secondary border border-border flex items-center justify-center mx-auto text-muted-foreground">
             <ScrollText className="w-6 h-6" strokeWidth={1.75} />
           </div>
           <div className="space-y-1.5">
-            <h3 className="text-base font-semibold text-white">No activity recorded yet</h3>
-            <p className="text-sm text-zinc-400 max-w-sm mx-auto leading-relaxed">
+            <h3 className="text-base font-semibold text-foreground">No activity recorded yet</h3>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
               When followers comment trigger keywords on your posts or send DMs, real-time dispatch logs will stream here.
             </p>
           </div>
         </div>
       ) : filteredLogs.length === 0 ? (
         /* Zero Match Filter State */
-        <div className="p-12 text-center bg-[#0A0A0A] border border-[#222222] rounded-2xl text-xs space-y-3 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-          <Filter className="w-6 h-6 text-zinc-500 mx-auto" />
-          <p className="text-zinc-200 font-medium text-sm">No activity logs match your filter criteria</p>
+        <div className="p-12 text-center bg-card border border-border rounded-2xl text-xs space-y-3 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+          <Filter className="w-6 h-6 text-muted-foreground mx-auto" />
+          <p className="text-foreground font-medium text-sm">No activity logs match your filter criteria</p>
           <button
             type="button"
             onClick={() => {
@@ -264,16 +264,16 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
               setSelectedStatus("ALL");
               setSelectedSource("ALL");
             }}
-            className="text-xs font-medium text-white hover:underline pt-1"
+            className="text-xs font-semibold text-foreground hover:underline pt-1"
           >
             Reset all filters
           </button>
         </div>
       ) : (
         /* Logs Stream Table (12-Column Linear / Vercel Grid) */
-        <div className="bg-[#0A0A0A] border border-[#222222] rounded-2xl overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
           {/* Header Row */}
-          <div className="grid grid-cols-12 px-5 py-3 text-xs font-medium text-zinc-400 border-b border-[#1F1F23] bg-[#0A0A0A] rounded-t-xl gap-3 sm:gap-4">
+          <div className="grid grid-cols-12 px-5 py-3 text-xs font-medium text-muted-foreground border-b border-border bg-card rounded-t-xl gap-3 sm:gap-4">
             <div className="col-span-5 font-medium">User & event</div>
             <div className="col-span-3 font-medium">Automation rule</div>
             <div className="col-span-2 font-medium">Status</div>
@@ -281,7 +281,7 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
           </div>
 
           {/* Rows Stream */}
-          <div className="divide-y divide-[#18181B]">
+          <div className="divide-y divide-border">
             {filteredLogs.map((log) => {
               const timeAgo = formatTimeAgo(log.timestamp);
               const isComment = log.triggerSource === "COMMENT" || log.triggerSource === "COMMENTS";
@@ -292,12 +292,12 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
               return (
                 <div
                   key={log.id}
-                  className="grid grid-cols-12 items-center px-5 py-3.5 border-b border-[#18181B] bg-[#0A0A0A] hover:bg-[#0E0E10] transition-colors last:border-b-0 last:rounded-b-xl gap-3 sm:gap-4"
+                  className="grid grid-cols-12 items-center px-5 py-3.5 border-b border-border bg-card hover:bg-zinc-50 dark:hover:bg-[#0E0E10] transition-colors last:border-b-0 last:rounded-b-xl gap-3 sm:gap-4"
                 >
                   {/* Columns 1-5: User & Event (42% width) */}
                   <div className="col-span-5 flex items-center gap-3 min-w-0">
                     {/* 36px Crisp Avatar */}
-                    <div className="h-9 w-9 flex-shrink-0 rounded-full overflow-hidden bg-[#161618] border border-[#26262A] text-white font-semibold text-sm flex items-center justify-center shadow-inner">
+                    <div className="h-9 w-9 flex-shrink-0 rounded-full overflow-hidden bg-secondary border border-border text-foreground font-semibold text-sm flex items-center justify-center shadow-inner">
                       {avatarUrl ? (
                         <img
                           src={avatarUrl}
@@ -312,29 +312,29 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
 
                     <div className="min-w-0 flex-1 space-y-0.5">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-white truncate">
+                        <span className="text-sm font-semibold text-foreground truncate">
                           @{log.commenterUsername}
                         </span>
                         {log.isFollower ? (
-                          <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-medium px-2 py-0.5 rounded-md shrink-0">
+                          <span className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[11px] font-medium px-2 py-0.5 rounded-md shrink-0">
                             Follower
                           </span>
                         ) : (
-                          <span className="bg-zinc-800/80 text-zinc-400 border border-zinc-700/50 text-[11px] font-medium px-2 py-0.5 rounded-md shrink-0">
+                          <span className="bg-secondary text-muted-foreground border border-border text-[11px] font-medium px-2 py-0.5 rounded-md shrink-0">
                             Not following
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-zinc-400 mt-0.5 truncate">
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
                         {isComment ? (
                           <span>
-                            commented <span className="text-zinc-200 font-normal">"{log.commentText}"</span>
+                            commented <span className="text-foreground font-normal">&quot;{log.commentText}&quot;</span>
                           </span>
                         ) : isStory ? (
                           <span>mentioned you in a story</span>
                         ) : (
                           <span>
-                            sent DM <span className="text-zinc-200 font-normal">"{log.commentText}"</span>
+                            sent DM <span className="text-foreground font-normal">&quot;{log.commentText}&quot;</span>
                           </span>
                         )}
                       </p>
@@ -343,56 +343,56 @@ export function ActivityLogsViewer({ initialLogs }: ActivityLogsViewerProps) {
 
                   {/* Columns 6-8: Automation Rule (25% width) */}
                   <div className="col-span-3 min-w-0 space-y-0.5">
-                    <p className="text-sm font-medium text-zinc-200 truncate">
+                    <p className="text-sm font-medium text-foreground truncate">
                       {log.automation?.name || "Direct Trigger Rule"}
                     </p>
-                    <p className="text-xs text-zinc-500 truncate">
+                    <p className="text-xs text-muted-foreground truncate">
                       {isStory ? "Story mention trigger" : "Private DM + Link delivered"}
                     </p>
                   </div>
 
                   {/* Columns 9-10: Status (18% width) */}
                   <div className="col-span-2 min-w-0">
-                    <div className="w-fit flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#141414] border border-[#222222]">
+                    <div className="w-fit flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary border border-border">
                       {log.dmStatus === "SUCCESS" ? (
                         <>
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                          <span className="text-xs font-medium text-emerald-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                          <span className="text-xs font-medium text-emerald-500">
                             Delivered
                           </span>
                         </>
                       ) : log.dmStatus === "LEAD_CAPTURED" ? (
                         <>
-                          <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
-                          <span className="text-xs font-medium text-white">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                          <span className="text-xs font-medium text-foreground">
                             Lead captured
                           </span>
                         </>
                       ) : log.dmStatus === "FAILED" ? (
                         <>
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
-                          <span className="text-xs font-medium text-red-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                          <span className="text-xs font-medium text-red-500">
                             Failed
                           </span>
                         </>
                       ) : (
                         <>
-                          <span className="w-1.5 h-1.5 rounded-full bg-zinc-600 shrink-0" />
-                          <span className="text-xs font-medium text-zinc-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground shrink-0" />
+                          <span className="text-xs font-medium text-muted-foreground">
                             {log.dmStatus === "TEST_EVENT" ? "Test event" : "Skipped"}
                           </span>
                         </>
                       )}
                     </div>
                     {log.dmError && (
-                      <p className="text-xs text-zinc-500 truncate max-w-[150px] mt-0.5" title={log.dmError}>
+                      <p className="text-xs text-red-500 truncate max-w-[150px] mt-0.5" title={log.dmError}>
                         {log.dmError}
                       </p>
                     )}
                   </div>
 
                   {/* Columns 11-12: Time (15% width) */}
-                  <div className="col-span-2 text-right text-xs text-zinc-400 font-mono">
+                  <div className="col-span-2 text-right text-xs text-muted-foreground font-mono">
                     <span title={new Date(log.timestamp).toLocaleString()}>
                       {timeAgo}
                     </span>

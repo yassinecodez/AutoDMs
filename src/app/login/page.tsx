@@ -98,23 +98,23 @@ function LoginForm() {
     <div className="w-full max-w-sm mx-auto my-auto space-y-6">
       
       <div className="space-y-1 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Log in to AutoDMs</h1>
-        <p className="text-sm text-zinc-400 mt-1">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Log in to AutoDMs</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Instagram Comment-to-DM SaaS Automation
         </p>
       </div>
 
-      <div className="p-6 bg-[#0A0A0A] border border-[#222222] rounded-xl shadow-2xl space-y-4">
+      <div className="p-6 bg-card border border-border rounded-2xl shadow-xl space-y-4">
         
         {/* Primary Google OAuth Button */}
         <button
           type="button"
           onClick={handleGoogleSignIn}
           disabled={googleLoading || loading}
-          className="w-full bg-[#111111] hover:bg-[#181818] text-white border border-[#262626] rounded-lg h-10 px-4 flex items-center justify-center gap-3 text-sm font-medium transition-colors disabled:opacity-50"
+          className="w-full bg-secondary hover:bg-secondary/80 text-foreground border border-border rounded-xl h-10 px-4 flex items-center justify-center gap-3 text-sm font-medium transition-colors disabled:opacity-50"
         >
           {googleLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin text-white" />
+            <Loader2 className="w-4 h-4 animate-spin text-foreground" />
           ) : (
             <>
               <GoogleIcon />
@@ -125,8 +125,8 @@ function LoginForm() {
 
         {/* Divider */}
         <div className="relative flex items-center justify-center my-4">
-          <div className="w-full border-t border-[#1F1F1F]" />
-          <span className="absolute bg-[#0A0A0A] px-2 text-xs text-zinc-500 font-medium">
+          <div className="w-full border-t border-border" />
+          <span className="absolute bg-card px-2 text-xs text-muted-foreground font-medium">
             or continue with email
           </span>
         </div>
@@ -134,7 +134,7 @@ function LoginForm() {
         {/* Email & Password Form */}
         <form onSubmit={handleCredentialsSubmit} className="space-y-3.5">
           <div className="space-y-1">
-            <label htmlFor="email" className="text-xs text-zinc-400 font-medium block">
+            <label htmlFor="email" className="text-xs text-foreground font-medium block">
               Email
             </label>
             <input
@@ -143,13 +143,13 @@ function LoginForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#0A0A0A] border border-[#262626] text-white placeholder-zinc-500 rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-zinc-500 transition-colors"
+              className="w-full bg-secondary border border-border text-foreground placeholder:text-muted-foreground rounded-xl h-10 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
               placeholder="name@company.com"
             />
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="password" className="text-xs text-zinc-400 font-medium block">
+            <label htmlFor="password" className="text-xs text-foreground font-medium block">
               Password
             </label>
             <input
@@ -158,22 +158,22 @@ function LoginForm() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#0A0A0A] border border-[#262626] text-white placeholder-zinc-500 rounded-lg h-10 px-3 text-sm focus:outline-none focus:border-zinc-500 transition-colors"
+              className="w-full bg-secondary border border-border text-foreground placeholder:text-muted-foreground rounded-xl h-10 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
               placeholder="••••••••"
             />
           </div>
 
           {error && (
-            <p className="text-red-400 text-xs mt-2 text-center leading-relaxed">{error}</p>
+            <p className="text-red-500 text-xs mt-2 text-center leading-relaxed">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading || googleLoading}
-            className="w-full bg-white hover:bg-zinc-200 text-black font-medium rounded-lg h-10 text-sm transition-colors mt-2 flex items-center justify-center gap-1.5 disabled:opacity-50"
+            className="w-full bg-primary text-primary-foreground hover:opacity-90 font-medium rounded-xl h-10 text-sm transition-colors mt-2 flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-sm"
           >
             {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin text-black" />
+              <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" />
             ) : (
               <>
                 Continue with Email
@@ -183,8 +183,8 @@ function LoginForm() {
           </button>
         </form>
 
-        <div className="border-t border-[#1F1F1F] pt-3 text-center">
-          <p className="text-[11px] text-zinc-500 leading-relaxed">
+        <div className="border-t border-border pt-3 text-center">
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
             New user? Entering your email and password will automatically register your account.
           </p>
         </div>
@@ -196,20 +196,20 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-[#000000] text-zinc-100 flex flex-col justify-between p-6 selection:bg-white/20 selection:text-white">
+    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between p-6">
       {/* Top Header */}
       <div className="flex items-center justify-between max-w-5xl w-full mx-auto">
-        <Link href="/" className="flex items-center gap-2 text-sm font-semibold text-white tracking-tight">
-          <span className="w-2 h-2 rounded-full bg-white inline-block" />
+        <Link href="/" className="flex items-center gap-2 text-sm font-bold text-foreground tracking-tight">
+          <span className="w-2 h-2 rounded-full bg-primary inline-block" />
           AutoDMs
         </Link>
-        <Link href="/" className="text-xs text-zinc-400 hover:text-white transition-colors">
+        <Link href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
           Back to home
         </Link>
       </div>
 
       <Suspense fallback={
-        <div className="w-full max-w-sm mx-auto my-auto p-6 text-center text-zinc-500 text-xs">
+        <div className="w-full max-w-sm mx-auto my-auto p-6 text-center text-muted-foreground text-xs">
           Loading login...
         </div>
       }>
@@ -217,7 +217,7 @@ export default function LoginPage() {
       </Suspense>
 
       {/* Footer */}
-      <div className="text-center text-xs text-zinc-600">
+      <div className="text-center text-xs text-muted-foreground">
         © 2026 AutoDMs Inc. All rights reserved.
       </div>
     </div>

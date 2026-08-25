@@ -149,40 +149,60 @@ export default function AutomationBuilderClient({
     setIsSavedDot(false);
     const t = setTimeout(() => setIsSavedDot(true), 400);
     return () => clearTimeout(t);
-  }, [ruleName, triggerSource, triggerScope, targetMediaIds, triggerType, triggerKeyword, replyDmMessage, enableLeadCapture, leadConfirmationDm, leavePublicReply, replyCommentOptions, enableButtons, buttonTitle, buttonUrl, secondaryButtonTitle, secondaryButtonUrl, requireFollow, followPromptMessage]);
+  }, [
+    ruleName,
+    triggerSource,
+    triggerScope,
+    targetMediaIds,
+    triggerType,
+    triggerKeyword,
+    replyDmMessage,
+    enableButtons,
+    buttonTitle,
+    buttonUrl,
+    secondaryButtonTitle,
+    secondaryButtonUrl,
+    requireFollow,
+    followPromptMessage,
+    enableLeadCapture,
+    leadConfirmationDm,
+    leavePublicReply,
+    replyCommentOptions,
+  ]);
 
-  // Fetch Instagram posts if target is SPECIFIC_POSTS and media list is empty
+  // Fetch Instagram Media
   useEffect(() => {
-    if (triggerScope === "SPECIFIC_POSTS" && mediaItems.length === 0) {
-      const fetchMedia = async () => {
-        setMediaLoading(true);
-        try {
-          const res = await fetch("/api/instagram/media");
-          if (res.ok) {
-            const data = await res.json();
-            setMediaItems(data.media || []);
+    async function fetchMedia() {
+      if (connectedAccounts.length === 0) return;
+      setMediaLoading(true);
+      try {
+        const res = await fetch("/api/instagram/media");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.media) {
+            setMediaItems(data.media);
           }
-        } catch (err: any) {
-          console.error("Failed to load Instagram media:", err);
-        } finally {
-          setMediaLoading(false);
         }
-      };
-      fetchMedia();
+      } catch (err) {
+        console.error("Failed to fetch IG media:", err);
+      } finally {
+        setMediaLoading(false);
+      }
     }
-  }, [triggerScope, mediaItems.length]);
+    fetchMedia();
+  }, [connectedAccounts]);
 
   const handleNext = () => {
     if (step < 4) {
       setDirection(1);
-      setStep((prev) => (prev + 1) as any);
+      setStep((p) => (p + 1) as any);
     }
   };
 
   const handleBack = () => {
     if (step > 1) {
       setDirection(-1);
-      setStep((prev) => (prev - 1) as any);
+      setStep((p) => (p - 1) as any);
     }
   };
 
@@ -193,10 +213,9 @@ export default function AutomationBuilderClient({
   };
 
   const addCommentOption = () => {
-    if (newCommentOption.trim().length > 0) {
-      setReplyCommentOptions((prev) => [...prev, newCommentOption.trim()]);
-      setNewCommentOption("");
-    }
+    if (!newCommentOption.trim()) return;
+    setReplyCommentOptions((prev) => [...prev, newCommentOption.trim()]);
+    setNewCommentOption("");
   };
 
   const removeCommentOption = (index: number) => {
@@ -207,69 +226,71 @@ export default function AutomationBuilderClient({
     setLoading(true);
     setError("");
 
-    const formData = new FormData();
-    formData.append("name", ruleName || "Instagram Comment-to-DM");
-    formData.append("triggerSource", triggerSource);
-    formData.append("triggerScope", triggerSource === "COMMENTS" ? triggerScope : "ALL_POSTS");
-    formData.append("triggerType", triggerSource === "STORY_MENTIONS" ? "ALL" : triggerType === "ALL" ? "ALL" : matchMode === "EXACT" ? "EXACT" : "KEYWORD");
-    formData.append("triggerKeyword", triggerSource === "STORY_MENTIONS" ? "" : triggerKeyword);
-    formData.append("enableLeadCapture", String(enableLeadCapture));
-    formData.append("replyDmMessage", replyDmMessage);
-    formData.append("leadConfirmationDm", enableLeadCapture ? leadConfirmationDm : "");
-    formData.append("replyCommentOptions", triggerSource === "COMMENTS" && leavePublicReply ? replyCommentOptions.join("\n") : "");
-    formData.append("targetMediaIds", triggerScope === "SPECIFIC_POSTS" && triggerSource === "COMMENTS" ? targetMediaIds.join(",") : "");
-    
-    // Buttons Fields
-    formData.append("buttonTitle", enableButtons ? buttonTitle : "");
-    formData.append("buttonUrl", enableButtons ? buttonUrl : "");
-    formData.append("secondaryButtonTitle", enableButtons ? secondaryButtonTitle : "");
-    formData.append("secondaryButtonUrl", enableButtons ? secondaryButtonUrl : "");
-
-    // Follow-to-Unlock Growth Gate
-    formData.append("requireFollow", String(requireFollow));
-    formData.append("followPromptMessage", requireFollow ? followPromptMessage : "");
-
-    if (activeAccountId) {
-      formData.append("igAccountId", activeAccountId);
-    }
-
     try {
-      await createAutomation(formData);
+      const activeAccount =
+        connectedAccounts.find((a) => a.id === activeAccountId) ||
+        connectedAccounts[0] ||
+        null;
+
+      await createAutomation({
+        name: ruleName.trim() || "Instagram Comment-to-DM",
+        triggerType: triggerType,
+        triggerKeyword: triggerType === "KEYWORD" ? triggerKeyword.trim() : null,
+        replyDmMessage: replyDmMessage.trim(),
+        replyCommentOptions: leavePublicReply ? replyCommentOptions : [],
+        triggerScope: triggerScope,
+        targetMediaIds: triggerScope === "SPECIFIC_POSTS" ? targetMediaIds : [],
+        triggerSource: triggerSource,
+        enableLeadCapture: enableLeadCapture,
+        leadConfirmationDm: enableLeadCapture ? leadConfirmationDm.trim() : null,
+        buttonTitle: enableButtons && buttonTitle.trim() ? buttonTitle.trim() : null,
+        buttonUrl: enableButtons && buttonUrl.trim() ? buttonUrl.trim() : null,
+        secondaryButtonTitle: enableButtons && secondaryButtonTitle.trim() ? secondaryButtonTitle.trim() : null,
+        secondaryButtonUrl: enableButtons && secondaryButtonUrl.trim() ? secondaryButtonUrl.trim() : null,
+        requireFollow: requireFollow,
+        followPromptMessage: requireFollow && followPromptMessage.trim() ? followPromptMessage.trim() : null,
+        igAccountId: activeAccount?.id || null,
+      });
+
       router.push("/dashboard/automations");
     } catch (err: any) {
-      setError(err.message || "Failed to publish automation rule.");
+      setError(err?.message || "Failed to publish automation rule.");
+    } finally {
       setLoading(false);
     }
   };
 
-  const activeAccount = connectedAccounts.find((a) => a.id === activeAccountId) || connectedAccounts[0];
-  const username = activeAccount?.pageName || "your_brand";
-  const firstKeyword = triggerKeyword ? triggerKeyword.split(",")[0].trim() : "PRICE";
+  const activeAccount =
+    connectedAccounts.find((a) => a.id === activeAccountId) ||
+    connectedAccounts[0] ||
+    null;
+  const username = activeAccount?.pageName || "yourbrand";
+  const firstKeyword = triggerKeyword.split(",")[0]?.trim() || "LINK";
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#000000] text-zinc-100 font-sans selection:bg-white/20 selection:text-white">
+    <div className="flex flex-col min-h-screen bg-background text-foreground font-sans">
       
-      {/* Sleek Minimalist Header */}
-      <header className="h-14 px-4 sm:px-6 bg-[#000000] border-b border-[#222222] flex items-center justify-between shrink-0 sticky top-0 z-20">
+      {/* Header */}
+      <header className="h-14 px-4 sm:px-6 bg-card border-b border-border flex items-center justify-between shrink-0 sticky top-0 z-20">
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard/automations"
-            className="flex items-center gap-1 text-sm text-zinc-400 hover:text-white transition-colors font-medium"
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors font-medium"
           >
             <ChevronLeft className="w-4 h-4" strokeWidth={1.75} />
             Automations
           </Link>
-          <span className="text-zinc-700">/</span>
+          <span className="text-muted-foreground">/</span>
           <div className="flex items-center gap-2">
             <input
               type="text"
               value={ruleName}
               onChange={(e) => setRuleName(e.target.value)}
-              className="bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-white font-semibold text-sm text-white focus:outline-none px-1.5 py-0.5 max-w-[240px] truncate"
+              className="bg-transparent border-b border-transparent hover:border-border focus:border-foreground font-semibold text-sm text-foreground focus:outline-none px-1.5 py-0.5 max-w-[240px] truncate"
               title="Click to rename rule"
             />
-            <div className="flex items-center gap-1.5 text-xs text-zinc-400 font-medium">
-              <span className={`w-2 h-2 rounded-full ${isSavedDot ? "bg-emerald-400 animate-pulse" : "bg-zinc-600"}`} />
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
+              <span className={`w-2 h-2 rounded-full ${isSavedDot ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground"}`} />
               <span>{isSavedDot ? "Saved" : "Saving..."}</span>
             </div>
           </div>
@@ -278,31 +299,31 @@ export default function AutomationBuilderClient({
         <button
           onClick={handleGoLive}
           disabled={loading}
-          className="h-10 px-5 bg-white hover:bg-zinc-200 text-black font-medium rounded-xl text-sm transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
+          className="h-10 px-5 bg-primary text-primary-foreground hover:opacity-90 font-medium rounded-xl text-sm transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
         >
           {loading ? (
-            <Loader2 className="w-4 h-4 animate-spin text-black" />
+            <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" />
           ) : (
             "Go live"
           )}
         </button>
       </header>
 
-      {/* Main Responsive Grid Layout (7 cols Form / 5 cols iPhone Preview) */}
+      {/* Main Grid Layout (7 cols Form / 5 cols iPhone Preview) */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* LEFT PANEL: 4-Step Interactive Configuration */}
-        <div className="lg:col-span-7 bg-[#0A0A0A] border border-[#222222] rounded-2xl p-6 sm:p-8 flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] space-y-6">
+        <div className="lg:col-span-7 bg-card border border-border rounded-2xl p-6 sm:p-8 flex flex-col justify-between shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] space-y-6">
           
           {/* Connected Timeline Stepper */}
           <div className="mb-2 shrink-0">
             <div className="relative flex items-center justify-between px-2">
               {/* Background horizontal connecting track */}
-              <div className="absolute left-6 right-6 top-3.5 h-[2px] bg-[#1F1F1F] -z-0" />
+              <div className="absolute left-6 right-6 top-3.5 h-[2px] bg-secondary -z-0" />
               
               {/* Active progress track */}
               <div
-                className="absolute left-6 top-3.5 h-[2px] bg-white transition-all duration-300 -z-0"
+                className="absolute left-6 top-3.5 h-[2px] bg-primary transition-all duration-300 -z-0"
                 style={{ width: `${Math.max(0, Math.min(100, ((step - 1) / 3) * 100))}%` }}
               />
 
@@ -325,10 +346,10 @@ export default function AutomationBuilderClient({
                     <div
                       className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-200 ${
                         isCurrent
-                          ? "bg-white text-black shadow-[0_0_14px_rgba(255,255,255,0.4)] ring-4 ring-white/10"
+                          ? "bg-primary text-primary-foreground shadow-md ring-4 ring-primary/10"
                           : isCompleted
-                          ? "bg-zinc-200 text-black"
-                          : "bg-[#111111] border border-[#2B2B2B] text-zinc-500 group-hover:border-zinc-500 group-hover:text-zinc-300"
+                          ? "bg-secondary text-foreground font-semibold"
+                          : "bg-secondary border border-border text-muted-foreground group-hover:border-zinc-400 group-hover:text-foreground"
                       }`}
                     >
                       {isCompleted ? (
@@ -340,10 +361,10 @@ export default function AutomationBuilderClient({
                     <span
                       className={`text-xs font-medium mt-2 transition-colors ${
                         isCurrent
-                          ? "text-white font-semibold"
+                          ? "text-foreground font-semibold"
                           : isCompleted
-                          ? "text-zinc-300"
-                          : "text-zinc-500 group-hover:text-zinc-400"
+                          ? "text-foreground"
+                          : "text-muted-foreground group-hover:text-foreground"
                       }`}
                     >
                       {s.name}
@@ -357,7 +378,7 @@ export default function AutomationBuilderClient({
           {/* Form Step Content */}
           <div className="flex-1 flex flex-col justify-start">
             {error && (
-              <p className="text-red-400 text-xs mb-4">{error}</p>
+              <p className="text-red-500 text-xs mb-4">{error}</p>
             )}
 
             <AnimatePresence mode="wait" custom={direction}>
@@ -374,8 +395,8 @@ export default function AutomationBuilderClient({
                 {step === 1 && (
                   <div className="space-y-4">
                     <div className="space-y-0.5">
-                      <h2 className="text-sm font-semibold text-white">Step 1: When someone interacts with...</h2>
-                      <p className="text-xs text-zinc-400">Select which Instagram touchpoint activates this automation rule.</p>
+                      <h2 className="text-sm font-semibold text-foreground">Step 1: When someone interacts with...</h2>
+                      <p className="text-xs text-muted-foreground">Select which Instagram touchpoint activates this automation rule.</p>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2.5">
@@ -390,27 +411,27 @@ export default function AutomationBuilderClient({
                           <div
                             key={item.id}
                             onClick={() => setTriggerSource(item.id as any)}
-                            className={`p-3.5 border rounded-2xl cursor-pointer transition-all duration-200 flex flex-col justify-between h-[106px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ${
+                            className={`p-3.5 border rounded-2xl cursor-pointer transition-all duration-200 flex flex-col justify-between h-[106px] shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] ${
                               isSelected
-                                ? "border-white bg-[#141414] ring-1 ring-white/20"
-                                : "border-[#222222] bg-[#0A0A0A] hover:border-zinc-700 hover:bg-[#0D0D0D]"
+                                ? "border-primary bg-secondary ring-1 ring-primary/20"
+                                : "border-border bg-card hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-secondary/40"
                             }`}
                           >
                             <div className="flex items-center justify-between">
                               <div className={`w-8 h-8 rounded-xl flex items-center justify-center border transition-colors ${
-                                isSelected ? "bg-white text-black border-white" : "bg-[#141414] text-zinc-400 border-[#262626]"
+                                isSelected ? "bg-primary text-primary-foreground border-primary" : "bg-secondary text-muted-foreground border-border"
                               }`}>
                                 <Icon className="w-4 h-4" strokeWidth={1.75} />
                               </div>
                               <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
-                                isSelected ? "border-white bg-white" : "border-zinc-700 bg-transparent"
+                                isSelected ? "border-primary bg-primary" : "border-border bg-transparent"
                               }`}>
-                                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-black" />}
+                                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />}
                               </div>
                             </div>
                             <div>
-                              <p className="text-xs font-semibold text-white">{item.title}</p>
-                              <p className="text-[10px] text-zinc-400 mt-0.5 leading-tight">{item.desc}</p>
+                              <p className="text-xs font-semibold text-foreground">{item.title}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{item.desc}</p>
                             </div>
                           </div>
                         );
@@ -418,32 +439,32 @@ export default function AutomationBuilderClient({
                     </div>
 
                     {triggerSource === "COMMENTS" && (
-                      <div className="space-y-3 pt-3 border-t border-[#222222]">
-                        <label className="text-xs font-medium text-zinc-300 block">Target publications</label>
+                      <div className="space-y-3 pt-3 border-t border-border">
+                        <label className="text-xs font-medium text-foreground block">Target publications</label>
                         
                         <div className="grid grid-cols-2 gap-2.5">
                           <div
                             onClick={() => setTriggerScope("ALL_POSTS")}
                             className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                               triggerScope === "ALL_POSTS"
-                                ? "border-white bg-[#111111]"
-                                : "border-[#222222] bg-[#0A0A0A] hover:border-zinc-700"
+                                ? "border-primary bg-secondary"
+                                : "border-border bg-card hover:border-zinc-300 dark:hover:border-zinc-700"
                             }`}
                           >
-                            <p className="text-xs font-medium text-white">All current & future posts</p>
-                            <p className="text-[10px] text-zinc-400 mt-0.5">Applies across all profile publications</p>
+                            <p className="text-xs font-medium text-foreground">All current & future posts</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">Applies across all profile publications</p>
                           </div>
 
                           <div
                             onClick={() => setTriggerScope("SPECIFIC_POSTS")}
                             className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                               triggerScope === "SPECIFIC_POSTS"
-                                ? "border-white bg-[#111111]"
-                                : "border-[#222222] bg-[#0A0A0A] hover:border-zinc-700"
+                                ? "border-primary bg-secondary"
+                                : "border-border bg-card hover:border-zinc-300 dark:hover:border-zinc-700"
                             }`}
                           >
-                            <p className="text-xs font-medium text-white">Specific posts or reels</p>
-                            <p className="text-[10px] text-zinc-400 mt-0.5">Select specific media thumbnails</p>
+                            <p className="text-xs font-medium text-foreground">Specific posts or reels</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">Select specific media thumbnails</p>
                           </div>
                         </div>
 
@@ -453,23 +474,23 @@ export default function AutomationBuilderClient({
                             {targetMediaIds.length > 0 ? (
                               <div className="space-y-2.5">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs font-medium text-white">
+                                  <span className="text-xs font-medium text-foreground">
                                     Selected Publications ({targetMediaIds.length})
                                   </span>
                                   <div className="flex items-center gap-2">
                                     <button
                                       type="button"
                                       onClick={() => setIsPickerOpen(true)}
-                                      className="text-xs font-medium text-white hover:underline flex items-center gap-1"
+                                      className="text-xs font-medium text-foreground hover:underline flex items-center gap-1"
                                     >
                                       <Plus className="w-3.5 h-3.5" />
                                       Change / Add More
                                     </button>
-                                    <span className="text-zinc-600">•</span>
+                                    <span className="text-muted-foreground">•</span>
                                     <button
                                       type="button"
                                       onClick={() => setTargetMediaIds([])}
-                                      className="text-xs text-zinc-500 hover:text-red-400 transition-colors"
+                                      className="text-xs text-muted-foreground hover:text-red-500 transition-colors"
                                     >
                                       Clear
                                     </button>
@@ -486,10 +507,10 @@ export default function AutomationBuilderClient({
                                     return (
                                       <div
                                         key={mediaId}
-                                        className="p-2.5 bg-[#0A0A0A] border border-[#222222] rounded-xl flex items-center justify-between gap-3 group hover:border-zinc-700 transition-colors"
+                                        className="p-2.5 bg-secondary/50 border border-border rounded-xl flex items-center justify-between gap-3 group hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors"
                                       >
                                         <div className="flex items-center gap-2.5 min-w-0">
-                                          <div className="relative w-11 h-11 rounded-lg bg-[#141414] border border-[#262626] overflow-hidden shrink-0">
+                                          <div className="relative w-11 h-11 rounded-lg bg-secondary border border-border overflow-hidden shrink-0">
                                             {thumbnail ? (
                                               <img
                                                 src={thumbnail}
@@ -498,7 +519,7 @@ export default function AutomationBuilderClient({
                                                 crossOrigin="anonymous"
                                               />
                                             ) : (
-                                              <div className="w-full h-full flex items-center justify-center text-zinc-600">
+                                              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                                                 <ImageIcon className="w-4 h-4" />
                                               </div>
                                             )}
@@ -509,10 +530,10 @@ export default function AutomationBuilderClient({
                                             )}
                                           </div>
                                           <div className="min-w-0 space-y-0.5">
-                                            <p className="text-xs font-medium text-white truncate max-w-[140px]">
+                                            <p className="text-xs font-medium text-foreground truncate max-w-[140px]">
                                               {caption}
                                             </p>
-                                            <p className="text-[10px] text-zinc-500 font-medium">
+                                            <p className="text-[10px] text-muted-foreground font-medium">
                                               ID: {mediaId.slice(-8)}
                                             </p>
                                           </div>
@@ -521,7 +542,7 @@ export default function AutomationBuilderClient({
                                         <button
                                           type="button"
                                           onClick={() => handleToggleMediaSelect(mediaId)}
-                                          className="p-1 text-zinc-500 hover:text-red-400 transition-colors rounded"
+                                          className="p-1 text-muted-foreground hover:text-red-500 transition-colors rounded"
                                           title="Remove"
                                         >
                                           <Trash2 className="w-3.5 h-3.5" />
@@ -533,20 +554,20 @@ export default function AutomationBuilderClient({
                               </div>
                             ) : (
                               /* Empty Trigger Callout */
-                              <div className="border border-dashed border-[#262626] rounded-xl p-5 text-center space-y-3 bg-[#050505]">
-                                <div className="w-9 h-9 rounded-full bg-[#111111] border border-[#222222] flex items-center justify-center mx-auto text-zinc-400">
+                              <div className="border border-dashed border-border rounded-xl p-5 text-center space-y-3 bg-secondary/20">
+                                <div className="w-9 h-9 rounded-full bg-secondary border border-border flex items-center justify-center mx-auto text-muted-foreground">
                                   <ImageIcon className="w-4 h-4" />
                                 </div>
                                 <div className="space-y-0.5">
-                                  <p className="text-xs font-medium text-white">No publications selected</p>
-                                  <p className="text-[11px] text-zinc-500 max-w-xs mx-auto">
+                                  <p className="text-xs font-medium text-foreground">No publications selected</p>
+                                  <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">
                                     Pick the specific Reels or Posts from your Instagram feed where comments will trigger this rule.
                                   </p>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={() => setIsPickerOpen(true)}
-                                  className="h-8 px-3.5 bg-white hover:bg-zinc-200 text-black font-medium rounded-lg text-xs inline-flex items-center gap-1.5 transition-colors shadow-sm"
+                                  className="h-8 px-3.5 bg-primary text-primary-foreground hover:opacity-90 font-medium rounded-lg text-xs inline-flex items-center gap-1.5 transition-colors shadow-sm"
                                 >
                                   <Plus className="w-3.5 h-3.5" strokeWidth={2} />
                                   Select Post or Reel
@@ -561,7 +582,7 @@ export default function AutomationBuilderClient({
                                 placeholder="Or paste Instagram post URL (optional)..."
                                 value={postUrlInput}
                                 onChange={(e) => setPostUrlInput(e.target.value)}
-                                className="w-full h-9 px-3 bg-[#0A0A0A] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
+                                className="w-full h-9 px-3 bg-secondary border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
                               />
                             </div>
                           </div>
@@ -575,15 +596,15 @@ export default function AutomationBuilderClient({
                 {step === 2 && (
                   <div className="space-y-4">
                     <div className="space-y-0.5">
-                      <h2 className="text-sm font-semibold text-white">Step 2: Trigger keywords & condition</h2>
-                      <p className="text-xs text-zinc-400">Specify what words followers must say to receive your response.</p>
+                      <h2 className="text-sm font-semibold text-foreground">Step 2: Trigger keywords & condition</h2>
+                      <p className="text-xs text-muted-foreground">Specify what words followers must say to receive your response.</p>
                     </div>
 
                     {triggerSource === "STORY_MENTIONS" ? (
-                      <div className="p-5 bg-[#0A0A0A] border border-[#222222] rounded-xl text-center space-y-2">
-                        <Camera className="w-5 h-5 text-white mx-auto" strokeWidth={1.75} />
-                        <p className="text-xs font-medium text-white">No keywords required for Story Mentions</p>
-                        <p className="text-[11px] text-zinc-400 max-w-xs mx-auto leading-relaxed">
+                      <div className="p-5 bg-secondary/50 border border-border rounded-xl text-center space-y-2">
+                        <Camera className="w-5 h-5 text-foreground mx-auto" strokeWidth={1.75} />
+                        <p className="text-xs font-medium text-foreground">No keywords required for Story Mentions</p>
+                        <p className="text-[11px] text-muted-foreground max-w-xs mx-auto leading-relaxed">
                           Whenever someone mentions you in their Instagram story, AutoDMs automatically sends your reply.
                         </p>
                       </div>
@@ -594,43 +615,43 @@ export default function AutomationBuilderClient({
                             onClick={() => setTriggerType("KEYWORD")}
                             className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                               triggerType === "KEYWORD"
-                                ? "border-white bg-[#111111]"
-                                : "border-[#222222] bg-[#0A0A0A] hover:border-zinc-700"
+                                ? "border-primary bg-secondary"
+                                : "border-border bg-card hover:border-zinc-300 dark:hover:border-zinc-700"
                             }`}
                           >
-                            <p className="text-xs font-medium text-white">Specific keywords</p>
-                            <p className="text-[10px] text-zinc-400 mt-0.5">Triggers on matched phrases</p>
+                            <p className="text-xs font-medium text-foreground">Specific keywords</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">Triggers on matched phrases</p>
                           </div>
 
                           <div
                             onClick={() => setTriggerType("ALL")}
                             className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                               triggerType === "ALL"
-                                ? "border-white bg-[#111111]"
-                                : "border-[#222222] bg-[#0A0A0A] hover:border-zinc-700"
+                                ? "border-primary bg-secondary"
+                                : "border-border bg-card hover:border-zinc-300 dark:hover:border-zinc-700"
                             }`}
                           >
-                            <p className="text-xs font-medium text-white">All messages / comments</p>
-                            <p className="text-[10px] text-zinc-400 mt-0.5">Responds to every interaction</p>
+                            <p className="text-xs font-medium text-foreground">All messages / comments</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">Responds to every interaction</p>
                           </div>
                         </div>
 
                         {triggerType === "KEYWORD" && (
-                          <div className="space-y-3 pt-2 border-t border-[#222222]">
+                          <div className="space-y-3 pt-2 border-t border-border">
                             <div className="flex items-center justify-between">
-                              <label className="text-xs font-medium text-zinc-300">Keyword phrases (comma-separated)</label>
+                              <label className="text-xs font-medium text-foreground">Keyword phrases (comma-separated)</label>
                               <div className="flex items-center gap-1.5 text-[10px]">
                                 <button
                                   type="button"
                                   onClick={() => setMatchMode("CONTAINS")}
-                                  className={`px-2 py-0.5 rounded ${matchMode === "CONTAINS" ? "bg-white/10 text-white font-medium" : "text-zinc-500"}`}
+                                  className={`px-2 py-0.5 rounded ${matchMode === "CONTAINS" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground"}`}
                                 >
                                   Contains
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setMatchMode("EXACT")}
-                                  className={`px-2 py-0.5 rounded ${matchMode === "EXACT" ? "bg-white/10 text-white font-medium" : "text-zinc-500"}`}
+                                  className={`px-2 py-0.5 rounded ${matchMode === "EXACT" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground"}`}
                                 >
                                   Exact match
                                 </button>
@@ -642,13 +663,13 @@ export default function AutomationBuilderClient({
                               value={triggerKeyword}
                               onChange={(e) => setTriggerKeyword(e.target.value)}
                               placeholder="e.g. LINK, PRICE, CODE, INFO"
-                              className="w-full h-10 px-3 bg-[#0A0A0A] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
+                              className="w-full h-10 px-3 bg-secondary border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
                             />
 
                             {/* Tag Chips */}
                             <div className="flex flex-wrap gap-1.5">
                               {triggerKeyword.split(",").map((k) => k.trim()).filter((k) => k.length > 0).map((chip, idx) => (
-                                <span key={idx} className="px-2 py-0.5 rounded bg-[#111111] border border-[#222222] text-zinc-300 font-medium text-[10px]">
+                                <span key={idx} className="px-2 py-0.5 rounded bg-secondary border border-border text-foreground font-medium text-[10px]">
                                   #{chip.toLowerCase()}
                                 </span>
                               ))}
@@ -664,18 +685,18 @@ export default function AutomationBuilderClient({
                 {step === 3 && (
                   <div className="space-y-4">
                     <div className="space-y-0.5">
-                      <h2 className="text-sm font-semibold text-white">Step 3: Direct Message reply & interactive buttons</h2>
-                      <p className="text-xs text-zinc-400">Craft the automated DM sent directly to the follower's inbox.</p>
+                      <h2 className="text-sm font-semibold text-foreground">Step 3: Direct Message reply & interactive buttons</h2>
+                      <p className="text-xs text-muted-foreground">Craft the automated DM sent directly to the follower&apos;s inbox.</p>
                     </div>
 
                     <div className="space-y-3">
                       <div className="space-y-1.5">
                         <div className="flex justify-between items-center text-xs">
-                          <label className="font-medium text-zinc-300">Message copy</label>
+                          <label className="font-medium text-foreground">Message copy</label>
                           <button
                             type="button"
                             onClick={() => setReplyDmMessage((p) => p + " {{username}}")}
-                            className="text-[10px] font-medium text-zinc-400 hover:text-white"
+                            className="text-[10px] font-semibold text-foreground hover:underline"
                           >
                             + Insert @username
                           </button>
@@ -685,31 +706,31 @@ export default function AutomationBuilderClient({
                           value={replyDmMessage}
                           onChange={(e) => setReplyDmMessage(e.target.value)}
                           placeholder="Hey {{username}}! Here is your download link..."
-                          className="w-full px-3 py-2 bg-[#0A0A0A] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors leading-relaxed resize-none"
+                          className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors leading-relaxed resize-none"
                         />
                       </div>
 
                       {/* Interactive Button Attachment */}
-                      <div className="p-3.5 bg-[#0A0A0A] border border-[#222222] rounded-xl space-y-3">
+                      <div className="p-3.5 bg-secondary/50 border border-border rounded-xl space-y-3">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-xs font-medium text-white">Interactive Web URL Buttons</p>
-                            <p className="text-[10px] text-zinc-400">Adds clickable action buttons below the DM card</p>
+                            <p className="text-xs font-medium text-foreground">Interactive Web URL Buttons</p>
+                            <p className="text-[10px] text-muted-foreground">Adds clickable action buttons below the DM card</p>
                           </div>
                           <button
                             type="button"
                             onClick={() => setEnableButtons(!enableButtons)}
-                            className={`w-9 h-5 rounded-full transition-colors relative ${enableButtons ? "bg-white" : "bg-zinc-700"}`}
+                            className={`w-9 h-5 rounded-full transition-colors relative ${enableButtons ? "bg-primary" : "bg-zinc-300 dark:bg-zinc-700"}`}
                           >
-                            <span className={`w-3.5 h-3.5 rounded-full bg-black absolute top-0.5 transition-transform ${enableButtons ? "right-1" : "left-1"}`} />
+                            <span className={`w-3.5 h-3.5 rounded-full bg-background absolute top-0.5 transition-transform ${enableButtons ? "right-1" : "left-1"}`} />
                           </button>
                         </div>
 
                         {enableButtons && (
-                          <div className="space-y-3 pt-2 border-t border-[#222222]">
+                          <div className="space-y-3 pt-2 border-t border-border">
                             <div className="grid grid-cols-2 gap-2.5">
                               <div className="space-y-1">
-                                <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
+                                <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
                                   <span>Button title</span>
                                   <span>{buttonTitle.length}/20</span>
                                 </div>
@@ -719,24 +740,24 @@ export default function AutomationBuilderClient({
                                   value={buttonTitle}
                                   onChange={(e) => setButtonTitle(e.target.value)}
                                   placeholder="e.g. Shop Now"
-                                  className="w-full h-9 px-3 bg-[#111111] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
+                                  className="w-full h-9 px-3 bg-card border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
                                 />
                               </div>
                               <div className="space-y-1">
-                                <span className="text-[10px] text-zinc-400 font-medium block">Destination URL</span>
+                                <span className="text-[10px] text-muted-foreground font-medium block">Destination URL</span>
                                 <input
                                   type="text"
                                   value={buttonUrl}
                                   onChange={(e) => setButtonUrl(e.target.value)}
                                   placeholder="https://example.com"
-                                  className="w-full h-9 px-3 bg-[#111111] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
+                                  className="w-full h-9 px-3 bg-card border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
                                 />
                               </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-2.5 pt-1">
                               <div className="space-y-1">
-                                <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
+                                <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
                                   <span>Secondary button (optional)</span>
                                   <span>{secondaryButtonTitle.length}/20</span>
                                 </div>
@@ -746,17 +767,17 @@ export default function AutomationBuilderClient({
                                   value={secondaryButtonTitle}
                                   onChange={(e) => setSecondaryButtonTitle(e.target.value)}
                                   placeholder="e.g. WhatsApp"
-                                  className="w-full h-9 px-3 bg-[#111111] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
+                                  className="w-full h-9 px-3 bg-card border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
                                 />
                               </div>
                               <div className="space-y-1">
-                                <span className="text-[10px] text-zinc-400 font-medium block">Secondary URL</span>
+                                <span className="text-[10px] text-muted-foreground font-medium block">Secondary URL</span>
                                 <input
                                   type="text"
                                   value={secondaryButtonUrl}
                                   onChange={(e) => setSecondaryButtonUrl(e.target.value)}
                                   placeholder="https://wa.me/..."
-                                  className="w-full h-9 px-3 bg-[#111111] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
+                                  className="w-full h-9 px-3 bg-card border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
                                 />
                               </div>
                             </div>
@@ -765,26 +786,26 @@ export default function AutomationBuilderClient({
                       </div>
 
                       {/* Growth Gate: Require Follow Before Link */}
-                      <div className="p-3.5 bg-[#0A0A0A] border border-[#222222] rounded-xl space-y-3">
+                      <div className="p-3.5 bg-secondary/50 border border-border rounded-xl space-y-3">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-xs font-medium text-white">Require follow before receiving link</p>
-                            <p className="text-[10px] text-zinc-400">
+                            <p className="text-xs font-medium text-foreground">Require follow before receiving link</p>
+                            <p className="text-[10px] text-muted-foreground">
                               Encourage commenters to follow your profile before unlocking their private link or discount.
                             </p>
                           </div>
                           <button
                             type="button"
                             onClick={() => setRequireFollow(!requireFollow)}
-                            className={`w-9 h-5 rounded-full transition-colors relative ${requireFollow ? "bg-white" : "bg-zinc-700"}`}
+                            className={`w-9 h-5 rounded-full transition-colors relative ${requireFollow ? "bg-primary" : "bg-zinc-300 dark:bg-zinc-700"}`}
                           >
-                            <span className={`w-3.5 h-3.5 rounded-full bg-black absolute top-0.5 transition-transform ${requireFollow ? "right-1" : "left-1"}`} />
+                            <span className={`w-3.5 h-3.5 rounded-full bg-background absolute top-0.5 transition-transform ${requireFollow ? "right-1" : "left-1"}`} />
                           </button>
                         </div>
 
                         {requireFollow && (
-                          <div className="space-y-1.5 pt-2 border-t border-[#222222]">
-                            <label className="text-[10px] font-medium text-zinc-300 block">
+                          <div className="space-y-1.5 pt-2 border-t border-border">
+                            <label className="text-[10px] font-medium text-foreground block">
                               Follow prompt message (sent to non-followers)
                             </label>
                             <textarea
@@ -792,7 +813,7 @@ export default function AutomationBuilderClient({
                               value={followPromptMessage}
                               onChange={(e) => setFollowPromptMessage(e.target.value)}
                               placeholder="Hey {{username}}! Please follow our profile first to unlock your private link 🚀"
-                              className="w-full px-3 py-2 bg-[#111111] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors leading-relaxed resize-none"
+                              className="w-full px-3 py-2 bg-card border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors leading-relaxed resize-none"
                             />
                           </div>
                         )}
@@ -805,35 +826,35 @@ export default function AutomationBuilderClient({
                 {step === 4 && (
                   <div className="space-y-4">
                     <div className="space-y-0.5">
-                      <h2 className="text-sm font-semibold text-white">Step 4: Public reply & lead capture</h2>
-                      <p className="text-xs text-zinc-400">Configure comment replies and optional email capture.</p>
+                      <h2 className="text-sm font-semibold text-foreground">Step 4: Public reply & lead capture</h2>
+                      <p className="text-xs text-muted-foreground">Configure comment replies and optional email capture.</p>
                     </div>
 
                     <div className="space-y-3">
                       {/* Lead Capture Toggle */}
-                      <div className="p-3.5 bg-[#0A0A0A] border border-[#222222] rounded-xl space-y-2">
+                      <div className="p-3.5 bg-secondary/50 border border-border rounded-xl space-y-2">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-xs font-medium text-white">Collect Email or Phone Leads First?</p>
-                            <p className="text-[10px] text-zinc-400">Captures contacts before delivering resource link</p>
+                            <p className="text-xs font-medium text-foreground">Collect Email or Phone Leads First?</p>
+                            <p className="text-[10px] text-muted-foreground">Captures contacts before delivering resource link</p>
                           </div>
                           <button
                             type="button"
                             onClick={() => setEnableLeadCapture(!enableLeadCapture)}
-                            className={`w-9 h-5 rounded-full transition-colors relative ${enableLeadCapture ? "bg-white" : "bg-zinc-700"}`}
+                            className={`w-9 h-5 rounded-full transition-colors relative ${enableLeadCapture ? "bg-primary" : "bg-zinc-300 dark:bg-zinc-700"}`}
                           >
-                            <span className={`w-3.5 h-3.5 rounded-full bg-black absolute top-0.5 transition-transform ${enableLeadCapture ? "right-1" : "left-1"}`} />
+                            <span className={`w-3.5 h-3.5 rounded-full bg-background absolute top-0.5 transition-transform ${enableLeadCapture ? "right-1" : "left-1"}`} />
                           </button>
                         </div>
 
                         {enableLeadCapture && (
-                          <div className="space-y-1.5 pt-2 border-t border-[#222222]">
-                            <label className="text-[10px] font-medium text-zinc-300 block">Step 2 Confirmation DM (After Contact Provided)</label>
+                          <div className="space-y-1.5 pt-2 border-t border-border">
+                            <label className="text-[10px] font-medium text-foreground block">Step 2 Confirmation DM (After Contact Provided)</label>
                             <textarea
                               rows={2}
                               value={leadConfirmationDm}
                               onChange={(e) => setLeadConfirmationDm(e.target.value)}
-                              className="w-full px-3 py-1.5 bg-[#111111] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
+                              className="w-full px-3 py-1.5 bg-card border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
                             />
                           </div>
                         )}
@@ -841,31 +862,31 @@ export default function AutomationBuilderClient({
 
                       {/* Public Comments Reply */}
                       {triggerSource === "COMMENTS" && (
-                        <div className="p-3.5 bg-[#0A0A0A] border border-[#222222] rounded-xl space-y-3">
+                        <div className="p-3.5 bg-secondary/50 border border-border rounded-xl space-y-3">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-xs font-medium text-white">Post Public Comment Reply</p>
-                              <p className="text-[10px] text-zinc-400">Boosts post ranking with randomized responses</p>
+                              <p className="text-xs font-medium text-foreground">Post Public Comment Reply</p>
+                              <p className="text-[10px] text-muted-foreground">Boosts post ranking with randomized responses</p>
                             </div>
                             <button
                               type="button"
                               onClick={() => setLeavePublicReply(!leavePublicReply)}
-                              className={`w-9 h-5 rounded-full transition-colors relative ${leavePublicReply ? "bg-white" : "bg-zinc-700"}`}
+                              className={`w-9 h-5 rounded-full transition-colors relative ${leavePublicReply ? "bg-primary" : "bg-zinc-300 dark:bg-zinc-700"}`}
                             >
-                              <span className={`w-3.5 h-3.5 rounded-full bg-black absolute top-0.5 transition-transform ${leavePublicReply ? "right-1" : "left-1"}`} />
+                              <span className={`w-3.5 h-3.5 rounded-full bg-background absolute top-0.5 transition-transform ${leavePublicReply ? "right-1" : "left-1"}`} />
                             </button>
                           </div>
 
                           {leavePublicReply && (
-                            <div className="space-y-2 pt-2 border-t border-[#222222]">
+                            <div className="space-y-2 pt-2 border-t border-border">
                               <div className="space-y-1.5 max-h-[110px] overflow-y-auto pr-1">
                                 {replyCommentOptions.map((opt, idx) => (
-                                  <div key={idx} className="flex items-center justify-between gap-2 p-1.5 px-2 bg-[#111111] border border-[#222222] rounded-lg text-[11px] text-zinc-300">
-                                    <span className="truncate">"{opt}"</span>
+                                  <div key={idx} className="flex items-center justify-between gap-2 p-1.5 px-2 bg-card border border-border rounded-lg text-[11px] text-foreground">
+                                    <span className="truncate">&quot;{opt}&quot;</span>
                                     <button
                                       type="button"
                                       onClick={() => removeCommentOption(idx)}
-                                      className="text-zinc-500 hover:text-red-400 transition-colors"
+                                      className="text-muted-foreground hover:text-red-500 transition-colors"
                                     >
                                       <Trash2 className="w-3 h-3" />
                                     </button>
@@ -879,12 +900,12 @@ export default function AutomationBuilderClient({
                                   placeholder="Add reply variation..."
                                   value={newCommentOption}
                                   onChange={(e) => setNewCommentOption(e.target.value)}
-                                  className="flex-1 h-9 px-3 bg-[#111111] border border-[#262626] rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-400 transition-colors"
+                                  className="flex-1 h-9 px-3 bg-card border border-border rounded-lg text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
                                 />
                                 <button
                                   type="button"
                                   onClick={addCommentOption}
-                                  className="px-3 h-9 bg-[#1F1F1F] hover:bg-[#2A2A2A] text-white font-medium rounded-lg text-xs transition-colors"
+                                  className="px-3 h-9 bg-secondary hover:bg-secondary/80 text-foreground font-medium rounded-lg text-xs transition-colors border border-border"
                                 >
                                   Add
                                 </button>
@@ -902,11 +923,11 @@ export default function AutomationBuilderClient({
           </div>
 
           {/* Stepper Footer Controls */}
-          <div className="flex items-center justify-between pt-5 border-t border-[#222222] shrink-0">
+          <div className="flex items-center justify-between pt-5 border-t border-border shrink-0">
             <button
               onClick={handleBack}
               disabled={step === 1}
-              className="h-10 px-4 border border-[#222222] hover:bg-[#111111] text-zinc-300 font-medium rounded-xl text-sm flex items-center gap-1.5 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+              className="h-10 px-4 border border-border hover:bg-secondary text-foreground font-medium rounded-xl text-sm flex items-center gap-1.5 transition-colors disabled:opacity-30 disabled:pointer-events-none"
             >
               <ChevronLeft className="w-4 h-4" />
               Back
@@ -915,7 +936,7 @@ export default function AutomationBuilderClient({
             {step < 4 ? (
               <button
                 onClick={handleNext}
-                className="h-10 px-5 bg-white hover:bg-zinc-200 text-black font-medium rounded-xl text-sm flex items-center gap-1.5 transition-colors shadow-sm"
+                className="h-10 px-5 bg-primary text-primary-foreground hover:opacity-90 font-medium rounded-xl text-sm flex items-center gap-1.5 transition-colors shadow-sm"
               >
                 Next
                 <ChevronRight className="w-4 h-4" />
@@ -924,9 +945,9 @@ export default function AutomationBuilderClient({
               <button
                 onClick={handleGoLive}
                 disabled={loading}
-                className="h-10 px-5 bg-white hover:bg-zinc-200 text-black font-medium rounded-xl text-sm flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50"
+                className="h-10 px-5 bg-primary text-primary-foreground hover:opacity-90 font-medium rounded-xl text-sm flex items-center gap-2 transition-colors shadow-sm disabled:opacity-50"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin text-black" /> : "Go live"}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin text-primary-foreground" /> : "Go live"}
               </button>
             )}
           </div>

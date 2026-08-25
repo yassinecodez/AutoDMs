@@ -74,21 +74,21 @@ export function SidebarNav() {
             className={cn(
               "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors group relative",
               isActive
-                ? "bg-white/10 text-white"
-                : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
+                ? "bg-zinc-900/10 dark:bg-white/10 text-zinc-900 dark:text-white font-semibold"
+                : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-200"
             )}
           >
             <div className="flex items-center gap-2.5">
               <Icon
                 className={cn(
                   "w-4 h-4 transition-colors",
-                  isActive ? "text-white" : "text-zinc-500 group-hover:text-zinc-300"
+                  isActive ? "text-zinc-900 dark:text-white" : "text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300"
                 )}
               />
               <span>{item.name}</span>
             </div>
             {isActive && (
-              <span className="w-1 h-3 rounded-full bg-white shrink-0" />
+              <span className="w-1 h-3 rounded-full bg-zinc-900 dark:bg-white shrink-0" />
             )}
           </Link>
         );
