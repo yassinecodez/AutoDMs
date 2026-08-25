@@ -20,7 +20,7 @@ export function LandingNav() {
       className={`fixed inset-x-0 mx-auto z-50 transition-all duration-300 ease-out flex items-center justify-between ${
         scrolled
           ? "top-4 w-[90%] max-w-4xl py-2.5 px-6 rounded-full bg-black/90 backdrop-blur-3xl border border-white/15 shadow-2xl"
-          : "top-5 w-[94%] max-w-[1400px] px-6 sm:px-8 py-3.5 rounded-2xl backdrop-blur-2xl bg-black/85 border border-white/12 shadow-2xl"
+          : "top-5 w-[94%] max-w-[1360px] px-6 sm:px-8 py-3.5 rounded-2xl backdrop-blur-2xl bg-black/85 border border-white/12 shadow-2xl"
       }`}
     >
       {/* Left: Minimalist AutoDMs Logo */}

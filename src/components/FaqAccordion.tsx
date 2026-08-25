@@ -27,7 +27,7 @@ export function FaqAccordion() {
 
   return (
     <section id="faq" className="py-24 border-t border-[#1F1F1F] bg-[#000000]">
-      <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16 space-y-12">
+      <div className="w-full max-w-[1360px] mx-auto px-6 sm:px-10 lg:px-12 space-y-12">
         
         {/* Header */}
         <div className="text-center space-y-2 max-w-xl mx-auto">

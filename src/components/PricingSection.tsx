@@ -65,7 +65,7 @@ export function PricingSection() {
 
   return (
     <section id="pricing" className="py-24 border-t border-[#1F1F1F] bg-[#000000]">
-      <div className="w-full max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-16 text-center space-y-12">
+      <div className="w-full max-w-[1360px] mx-auto px-6 sm:px-10 lg:px-12 text-center space-y-12">
         
         {/* Section Header */}
         <div className="space-y-3 max-w-xl mx-auto">
@@ -97,7 +97,7 @@ export function PricingSection() {
           </span>
         </div>
 
-        {/* Pricing Cards Grid (Spread across 1400px) */}
+        {/* Pricing Cards Grid (Spread across 1360px) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left mt-8">
           {plans.map((plan, idx) => (
             <div
