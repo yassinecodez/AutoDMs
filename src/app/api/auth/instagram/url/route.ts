@@ -51,13 +51,14 @@ export async function GET(request: NextRequest) {
 
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
-  // Pure Meta Business Login for Instagram (Configuration ID)
-  // Omitting auth_type & scope allows Meta to trigger the native Instagram Account Chooser & Business Asset Picker
+  // Official Meta Instagram Onboarding (IG_API_ONBOARDING)
+  // This triggers the native Instagram account chooser & asset linking window used by ManyChat
   const params = new URLSearchParams({
     client_id: clientId,
     config_id: configId,
     redirect_uri: redirectUri,
     response_type: "code",
+    extras: JSON.stringify({ setup: { channel: "IG_API_ONBOARDING" } }),
     state: state,
   });
 
