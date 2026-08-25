@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
   const errorDescription = searchParams.get("error_description");
   const stateParam = searchParams.get("state");
 
-  // 1. Exact User ID Resolution from Session or State
+  // 1. User ID Resolution from Session or State
   const session = await getServerSession(authOptions);
   const statePayload = extractStatePayload(stateParam);
 
@@ -130,10 +130,8 @@ export async function GET(request: NextRequest) {
     return renderPopupResult("/login?error=SESSION_EXPIRED", "Session Expired", true);
   }
 
-  console.log(`[Instagram Callback] Bound to verified database user: ID=${verifiedUserId}, Email=${verifiedUser.email}`);
-
   if (error || !code) {
-    console.error("[Instagram Callback] OAuth callback returned error:", error, errorReason, errorDescription);
+    console.error("[Instagram Callback] OAuth error:", error, errorReason, errorDescription);
     const errCode = errorReason === "user_denied" ? "USER_DENIED" : (error || "NO_CODE");
     return renderPopupResult(
       `/dashboard/accounts?error=${encodeURIComponent(errCode)}&details=${encodeURIComponent(errorDescription || "User denied authorization")}`,
@@ -152,7 +150,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // 2. Exchange authorization code for short-lived User Access Token
-    console.log("[Instagram Callback] Exchanging code for access token with Instagram API...");
+    console.log("[Instagram Callback] Exchanging code for access token...");
     const tokenUrl = "https://api.instagram.com/oauth/access_token";
 
     const formBody = new URLSearchParams();
@@ -188,8 +186,26 @@ export async function GET(request: NextRequest) {
       return renderPopupResult("/dashboard/accounts?error=NO_ACCESS_TOKEN", "No Access Token", true);
     }
 
-    // 3. Exchange short-lived token for long-lived User Access Token (60 days)
-    console.log("[Instagram Callback] Exchanging for 60-day long-lived token...");
+    // 3. Immediately query profile with short-lived token
+    let instagramId = igUserId ? String(igUserId) : "";
+    let username = "";
+    let profilePictureUrl: string | null = null;
+
+    try {
+      const pUrl = `https://graph.instagram.com/me?fields=id,username,name,account_type,profile_picture_url&access_token=${encodeURIComponent(shortLivedToken)}`;
+      const pRes = await fetch(pUrl);
+      if (pRes.ok) {
+        const pData = await pRes.json();
+        if (pData.username) username = String(pData.username).trim().toLowerCase();
+        if (pData.id) instagramId = String(pData.id);
+        if (pData.profile_picture_url) profilePictureUrl = pData.profile_picture_url;
+      }
+    } catch (pErr) {
+      console.warn("[Instagram Callback] Short-lived profile fetch error:", pErr);
+    }
+
+    // 4. Upgrade to long-lived token (60 days)
+    console.log("[Instagram Callback] Upgrading to 60-day long-lived token...");
     let longLivedToken = shortLivedToken;
     let tokenExpiresAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
 
@@ -208,34 +224,30 @@ export async function GET(request: NextRequest) {
         }
       }
     } catch (llErr) {
-      console.warn("[Instagram Callback] Could not upgrade to long-lived token, using short-lived token:", llErr);
+      console.warn("[Instagram Callback] Token upgrade error:", llErr);
     }
 
-    // 4. Dynamic Instagram Profile & Username Resolution (Zero Hardcoding)
-    let instagramId = igUserId ? String(igUserId) : "";
-    let username = "";
-    let profilePictureUrl: string | null = null;
+    // 5. Query profile with long-lived token if username not yet found
+    if (!username) {
+      const endpointsToTry = [
+        `https://graph.instagram.com/v24.0/me?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`,
+        `https://graph.instagram.com/me?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`,
+        `https://graph.instagram.com/${instagramId}?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`,
+      ];
 
-    const endpointsToTry = [
-      `https://graph.instagram.com/v24.0/me?fields=id,username,account_type,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`,
-      `https://graph.instagram.com/me?fields=id,username,account_type,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`,
-      `https://graph.instagram.com/v24.0/${instagramId}?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`,
-      `https://graph.facebook.com/v24.0/${instagramId}?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`
-    ];
-
-    for (const ep of endpointsToTry) {
-      try {
-        const profileRes = await fetch(ep);
-        if (profileRes.ok) {
-          const profileData = await profileRes.json();
-          if (profileData.username) username = String(profileData.username).trim().toLowerCase();
-          else if (profileData.name) username = String(profileData.name).trim().toLowerCase();
-          if (profileData.profile_picture_url) profilePictureUrl = profileData.profile_picture_url;
-          if (profileData.id) instagramId = String(profileData.id);
-          if (username) break;
+      for (const ep of endpointsToTry) {
+        try {
+          const res = await fetch(ep);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.username) username = String(data.username).trim().toLowerCase();
+            if (data.profile_picture_url) profilePictureUrl = data.profile_picture_url;
+            if (data.id) instagramId = String(data.id);
+            if (username) break;
+          }
+        } catch (e) {
+          // ignore
         }
-      } catch (profileErr) {
-        console.warn(`[Instagram Callback] Error fetching from ${ep}:`, profileErr);
       }
     }
 
@@ -243,18 +255,17 @@ export async function GET(request: NextRequest) {
       instagramId = String(igUserId || `ig_${Date.now()}`);
     }
 
-    // 5. Dynamic Fallback: Use targetHandle from user session if API does not return username
     if (!username && statePayload.targetHandle) {
       username = statePayload.targetHandle.trim().replace(/^@+/, "").toLowerCase();
     }
 
     if (!username) {
-      username = `user_${instagramId.slice(-6)}`;
+      username = `instagram_user_${instagramId.slice(-6)}`;
     }
 
-    console.log(`[Instagram Callback] Dynamically resolved handle: @${username} (ID: ${instagramId}) for user ${verifiedUserId}`);
+    console.log(`[Instagram Callback] Dynamically saved handle: @${username} (ID: ${instagramId})`);
 
-    // 6. Universal Database Persistence (Supports unlimited users and accounts)
+    // 6. Universal Database Persistence
     const encryptedToken = encrypt(longLivedToken);
     const pageIdValue = `ig_${instagramId}`;
     const normalizedUsername = username.toLowerCase().trim();
@@ -321,10 +332,8 @@ export async function GET(request: NextRequest) {
           },
         });
       }
-
-      console.log("[Account Saved in DB]:", savedAccount.id, savedAccount.pageName, savedAccount.userId);
     } catch (prismaError: any) {
-      console.error("[Instagram Callback] Prisma persistence error:", prismaError);
+      console.error("[Instagram Callback] Persistence error:", prismaError);
       return renderPopupResult(
         `/dashboard/accounts?error=DATABASE_ERROR&details=${encodeURIComponent(prismaError.code || "UPSERT_FAILED")}`,
         "Database Error",
@@ -356,7 +365,7 @@ export async function GET(request: NextRequest) {
 
     return response;
   } catch (err: any) {
-    console.error("[Instagram Callback] Unexpected error during OAuth callback:", err);
+    console.error("[Instagram Callback] Unexpected error:", err);
     return renderPopupResult(
       `/dashboard/accounts?error=TOKEN_EXCHANGE_FAILED&details=${encodeURIComponent(err.message || "UNEXPECTED_ERROR")}`,
       "Handshake Error",
