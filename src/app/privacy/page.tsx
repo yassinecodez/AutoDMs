@@ -89,17 +89,6 @@ export default function PrivacyPolicyPage() {
               .
             </p>
           </section>
-
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground">6. Contact Us</h2>
-            <p>
-              If you have any questions or concerns regarding our privacy practices, you can contact our privacy team at{" "}
-              <a href="mailto:yassinzarouk08@gmail.com" className="text-blue-500 hover:underline">
-                yassinzarouk08@gmail.com
-              </a>
-              .
-            </p>
-          </section>
         </div>
       </div>
     </div>

@@ -62,21 +62,6 @@ export default function DataDeletionPage() {
               <li>Meta will automatically notify our Data Deletion Callback endpoint, triggering immediate data purge.</li>
             </ol>
           </section>
-
-          <section className="space-y-4 bg-secondary/30 border border-border rounded-2xl p-6 sm:p-8">
-            <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-              <Mail className="w-5 h-5 text-purple-500" />
-              <span>Option 3: Manual Data Deletion Request</span>
-            </h2>
-            <p>
-              If you wish to request manual deletion of your user account and all associated records, send an email to our data privacy team at{" "}
-              <a href="mailto:yassinzarouk08@gmail.com" className="text-blue-500 hover:underline font-medium">
-                yassinzarouk08@gmail.com
-              </a>{" "}
-              with the subject line <em>&quot;Data Deletion Request&quot;</em>.
-            </p>
-            <p>Our team will process your request and confirm data erasure within 48 hours.</p>
-          </section>
         </div>
       </div>
     </div>

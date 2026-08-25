@@ -69,17 +69,6 @@ export default function TermsOfServicePage() {
               AutoDMs provides the platform on an &quot;as is&quot; and &quot;as available&quot; basis. We are not responsible for any actions taken by Meta or Instagram regarding your social media accounts.
             </p>
           </section>
-
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground">6. Contact</h2>
-            <p>
-              For questions regarding these Terms, please contact{" "}
-              <a href="mailto:yassinzarouk08@gmail.com" className="text-blue-500 hover:underline">
-                yassinzarouk08@gmail.com
-              </a>
-              .
-            </p>
-          </section>
         </div>
       </div>
     </div>
