@@ -35,7 +35,7 @@ export function AccountFinder() {
     const top = window.screenY + (window.outerHeight - height) / 2;
     const popup = window.open(
       url,
-      "InstagramLogin",
+      "MetaBusinessLogin",
       `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes`
     );
 
@@ -52,7 +52,7 @@ export function AccountFinder() {
     setConnecting(true);
 
     try {
-      const res = await fetch("/api/auth/instagram/url");
+      const res = await fetch("/api/auth/facebook/url");
       if (!res.ok) {
         throw new Error("Failed to generate authorization session.");
       }
@@ -60,11 +60,11 @@ export function AccountFinder() {
       if (data.url) {
         openAuthPopup(data.url);
       } else {
-        openAuthPopup("/api/auth/instagram/url");
+        openAuthPopup("/api/auth/facebook/url");
       }
     } catch (err: any) {
       console.error("Connection initiation error:", err);
-      openAuthPopup("/api/auth/instagram/url");
+      openAuthPopup("/api/auth/facebook/url");
     }
   };
 
@@ -81,7 +81,7 @@ export function AccountFinder() {
           <div className="space-y-1.5">
             <h2 className="text-lg font-semibold text-foreground tracking-tight">Connect Instagram Account</h2>
             <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-              Connect your Instagram account directly on Instagram. 1-click authorization links your Instagram profile to AutoDMs.
+              Connect your Instagram Professional or Creator account with 1-click Meta SSO.
             </p>
           </div>
         </div>
@@ -107,11 +107,11 @@ export function AccountFinder() {
       <div className="pt-4 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
           <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-          <span>Pure Instagram OAuth with end-to-end encrypted token storage</span>
+          <span>Official Meta Partner SSO with end-to-end encrypted token storage</span>
         </div>
         <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
           <Zap className="w-4 h-4 text-blue-500 shrink-0" />
-          <span>Automatic real-time DM automations and comment triggers</span>
+          <span>Automatic real-time post, reel, and comment synchronization</span>
         </div>
       </div>
     </div>
