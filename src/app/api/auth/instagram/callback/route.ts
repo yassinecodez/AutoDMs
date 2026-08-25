@@ -211,45 +211,50 @@ export async function GET(request: NextRequest) {
       console.warn("[Instagram Callback] Could not upgrade to long-lived token, using short-lived token:", llErr);
     }
 
-    // 4. Resolve Instagram Profile & Handle
+    // 4. Dynamic Instagram Profile & Username Resolution (Zero Hardcoding)
     let instagramId = igUserId ? String(igUserId) : "";
     let username = "";
     let profilePictureUrl: string | null = null;
 
-    try {
-      const profileUrl = `https://graph.instagram.com/me?fields=id,username,account_type,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`;
-      const profileRes = await fetch(profileUrl);
-      if (profileRes.ok) {
-        const profileData = await profileRes.json();
-        if (profileData.id) instagramId = String(profileData.id);
-        if (profileData.username) username = String(profileData.username).trim();
-        else if (profileData.name) username = String(profileData.name).trim();
-        if (profileData.profile_picture_url) profilePictureUrl = profileData.profile_picture_url;
+    const endpointsToTry = [
+      `https://graph.instagram.com/v24.0/me?fields=id,username,account_type,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`,
+      `https://graph.instagram.com/me?fields=id,username,account_type,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`,
+      `https://graph.instagram.com/v24.0/${instagramId}?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`,
+      `https://graph.facebook.com/v24.0/${instagramId}?fields=id,username,name,profile_picture_url&access_token=${encodeURIComponent(longLivedToken)}`
+    ];
+
+    for (const ep of endpointsToTry) {
+      try {
+        const profileRes = await fetch(ep);
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          if (profileData.username) username = String(profileData.username).trim().toLowerCase();
+          else if (profileData.name) username = String(profileData.name).trim().toLowerCase();
+          if (profileData.profile_picture_url) profilePictureUrl = profileData.profile_picture_url;
+          if (profileData.id) instagramId = String(profileData.id);
+          if (username) break;
+        }
+      } catch (profileErr) {
+        console.warn(`[Instagram Callback] Error fetching from ${ep}:`, profileErr);
       }
-    } catch (profileErr) {
-      console.warn("[Instagram Callback] Error fetching profile details:", profileErr);
     }
 
     if (!instagramId) {
       instagramId = String(igUserId || `ig_${Date.now()}`);
     }
 
-    // 5. Accurate Handle Resolution
-    if (!username) {
-      if (statePayload.targetHandle) {
-        username = statePayload.targetHandle.trim().replace(/^@+/, "");
-      } else if (instagramId === "28015633814761976" || instagramId.startsWith("280156")) {
-        username = "yassine.efx";
-      } else if (instagramId === "37760646346917256" || instagramId.startsWith("377606")) {
-        username = "eartech.ma";
-      } else {
-        username = "yassine.efx";
-      }
+    // 5. Dynamic Fallback: Use targetHandle from user session if API does not return username
+    if (!username && statePayload.targetHandle) {
+      username = statePayload.targetHandle.trim().replace(/^@+/, "").toLowerCase();
     }
 
-    console.log(`[Instagram Callback] Resolved authenticated handle: @${username} (ID: ${instagramId}) for user ${verifiedUserId}`);
+    if (!username) {
+      username = `user_${instagramId.slice(-6)}`;
+    }
 
-    // 6. Strict Account Persistence Logic
+    console.log(`[Instagram Callback] Dynamically resolved handle: @${username} (ID: ${instagramId}) for user ${verifiedUserId}`);
+
+    // 6. Universal Database Persistence (Supports unlimited users and accounts)
     const encryptedToken = encrypt(longLivedToken);
     const pageIdValue = `ig_${instagramId}`;
     const normalizedUsername = username.toLowerCase().trim();
@@ -326,14 +331,6 @@ export async function GET(request: NextRequest) {
         true
       );
     }
-
-    // Clean up any legacy placeholder accounts
-    await db.igAccount.deleteMany({
-      where: {
-        userId: verifiedUserId,
-        pageName: { in: ["Instagram Account", "ig_28015633814761976", "ig_37760646346917256"] },
-      },
-    });
 
     // 7. Revalidate dashboard paths
     revalidatePath("/dashboard/accounts");

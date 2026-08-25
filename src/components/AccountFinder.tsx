@@ -162,7 +162,7 @@ export function AccountFinder() {
                   setFoundProfile(null);
                 }
               }}
-              placeholder="yassine.efx or eartech.ma"
+              placeholder="your_instagram_handle"
               className="w-full h-10 pl-8 pr-4 bg-secondary border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
             />
           </div>
