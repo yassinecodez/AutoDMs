@@ -4,6 +4,8 @@ import { decrypt } from "@/lib/crypto";
 import { inspectAndRefreshAccountToken } from "@/lib/tokenRefresh";
 import { MetaApi } from "@/lib/meta";
 
+export const BUILD_VERSION = "v2026.08.25-unified-meta-oauth";
+
 export async function GET(request: NextRequest) {
   try {
     const rawAccounts = await db.igAccount.findMany({
@@ -23,6 +25,7 @@ export async function GET(request: NextRequest) {
     if (rawAccounts.length === 0) {
       return NextResponse.json({
         success: false,
+        version: BUILD_VERSION,
         message: "No Instagram accounts connected in database.",
         accounts: [],
         timestamp: new Date().toISOString(),
@@ -125,6 +128,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      version: BUILD_VERSION,
       accounts: accountsReport,
       totalActiveAutomations,
       totalLeads,
@@ -135,6 +139,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
+        version: BUILD_VERSION,
         error: "Diagnostic health check crashed: " + (err.message || String(err)),
         timestamp: new Date().toISOString(),
       },
