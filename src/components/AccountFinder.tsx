@@ -6,7 +6,6 @@ import {
   Loader2,
   ShieldCheck,
   Zap,
-  Sparkles,
 } from "lucide-react";
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -27,66 +26,51 @@ const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export function AccountFinder() {
-  const [connectingIg, setConnectingIg] = useState(false);
-  const [connectingMeta, setConnectingMeta] = useState(false);
+  const [connecting, setConnecting] = useState(false);
 
-  const openAuthPopup = (url: string, name: string) => {
+  const openAuthPopup = (url: string) => {
     const width = 600;
     const height = 750;
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
     const popup = window.open(
       url,
-      name,
+      "MetaAuthLogin",
       `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes`
     );
 
     const checkPopup = setInterval(() => {
       if (!popup || popup.closed) {
         clearInterval(checkPopup);
-        setConnectingIg(false);
-        setConnectingMeta(false);
+        setConnecting(false);
         window.location.reload();
       }
     }, 1000);
   };
 
-  const handleDirectInstagramConnect = async () => {
-    setConnectingIg(true);
-    try {
-      const res = await fetch("/api/auth/instagram/url");
-      const data = await res.json();
-      if (data.url) {
-        openAuthPopup(data.url, "InstagramDirectLogin");
-      } else {
-        openAuthPopup("/api/auth/instagram/url", "InstagramDirectLogin");
-      }
-    } catch (err: any) {
-      console.error("Direct Instagram initiation error:", err);
-      openAuthPopup("/api/auth/instagram/url", "InstagramDirectLogin");
-    }
-  };
-
-  const handleMetaBusinessConnect = async () => {
-    setConnectingMeta(true);
+  const handleConnect = async () => {
+    setConnecting(true);
     try {
       const res = await fetch("/api/auth/facebook/url");
+      if (!res.ok) {
+        throw new Error("Failed to generate authorization session.");
+      }
       const data = await res.json();
       if (data.url) {
-        openAuthPopup(data.url, "MetaBusinessLogin");
+        openAuthPopup(data.url);
       } else {
-        openAuthPopup("/api/auth/facebook/url", "MetaBusinessLogin");
+        openAuthPopup("/api/auth/facebook/url");
       }
     } catch (err: any) {
-      console.error("Meta Business initiation error:", err);
-      openAuthPopup("/api/auth/facebook/url", "MetaBusinessLogin");
+      console.error("Connection initiation error:", err);
+      openAuthPopup("/api/auth/facebook/url");
     }
   };
 
   return (
     <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
-      {/* Clean Connect Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      {/* Clean Direct Connect Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 p-[1.5px] shrink-0">
             <div className="w-full h-full bg-card rounded-[14px] flex items-center justify-center">
@@ -96,55 +80,37 @@ export function AccountFinder() {
           <div className="space-y-1.5">
             <h2 className="text-lg font-semibold text-foreground tracking-tight">Connect Instagram Account</h2>
             <p className="text-sm text-muted-foreground max-w-xl leading-relaxed">
-              Connect your account directly via Instagram or link via Meta Business Suite.
+              Connect your Instagram Professional or Creator account using Meta&apos;s official 1-click Asset Selector.
             </p>
           </div>
         </div>
 
-        {/* Dual Connect Actions */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-          {/* Direct Instagram CTA */}
-          <button
-            type="button"
-            onClick={handleDirectInstagramConnect}
-            disabled={connectingIg || connectingMeta}
-            className="h-11 px-6 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 hover:opacity-95 text-white font-medium text-sm inline-flex items-center justify-center gap-2.5 transition-all shadow-sm hover:shadow active:scale-[0.98] disabled:opacity-50"
-          >
-            {connectingIg ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <InstagramIcon className="w-4 h-4" />
-            )}
-            <span>Direct Instagram Login</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-
-          {/* Meta Business Suite CTA */}
-          <button
-            type="button"
-            onClick={handleMetaBusinessConnect}
-            disabled={connectingIg || connectingMeta}
-            className="h-11 px-5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground font-medium text-sm inline-flex items-center justify-center gap-2 border border-border transition-all active:scale-[0.98] disabled:opacity-50"
-          >
-            {connectingMeta ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4 text-blue-500" />
-            )}
-            <span>Meta Business</span>
-          </button>
-        </div>
+        {/* Primary CTA Button */}
+        <button
+          type="button"
+          onClick={handleConnect}
+          disabled={connecting}
+          className="h-11 px-7 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm inline-flex items-center justify-center gap-2.5 transition-all shadow-sm hover:shadow active:scale-[0.98] disabled:opacity-50 shrink-0"
+        >
+          {connecting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <InstagramIcon className="w-4 h-4" />
+          )}
+          <span>Connect with Instagram</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Feature Highlights */}
       <div className="pt-4 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
           <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
-          <span>AES-256 encrypted token storage with automatic token refresh</span>
+          <span>Official Meta Partner OAuth with AES-256 encrypted permanent Page Tokens</span>
         </div>
         <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
           <Zap className="w-4 h-4 text-blue-500 shrink-0" />
-          <span>Real-time post triggers, comment automations, and instant DM dispatch</span>
+          <span>Instant Webhook synchronization for DMs, comments, and story mentions</span>
         </div>
       </div>
     </div>
