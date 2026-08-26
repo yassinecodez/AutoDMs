@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
         resolvedUserId = dbUser.id;
       }
     } catch (err) {
-      console.warn("[Meta Business URL] Could not resolve user by email:", err);
+      console.warn("[Meta Auth URL] Could not resolve user by email:", err);
     }
   }
 
@@ -36,7 +36,13 @@ export async function GET(request: NextRequest) {
       : "http://localhost:3000/api/auth/facebook/callback";
 
   const clientId = process.env.META_APP_ID || "954476037671354";
-  const configId = process.env.META_CONFIG_ID || "3012437062432078";
+  const scopes = [
+    "instagram_basic",
+    "instagram_manage_messages",
+    "instagram_manage_comments",
+    "pages_show_list",
+    "pages_read_engagement",
+  ].join(",");
 
   const statePayload = {
     userId: resolvedUserId,
@@ -46,18 +52,10 @@ export async function GET(request: NextRequest) {
 
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
-  // Exact 1-Click Meta Business SSO Dialog (Matching ManyChat)
-  const dialogParams = new URLSearchParams({
-    client_id: clientId,
-    config_id: configId,
-    response_type: "code",
-    override_default_response_type: "true",
-    redirect_uri: redirectUri,
-    state: state,
-  });
-
-  const dialogUrl = `https://business.facebook.com/dialog/oauth?${dialogParams.toString()}`;
-  const url = `https://business.facebook.com/business/loginpage/?next=${encodeURIComponent(dialogUrl)}`;
+  // Direct Meta Graph Dialog (Bypasses business.facebook.com/business/loginpage)
+  const url = `https://www.facebook.com/v24.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(
+    redirectUri
+  )}&scope=${encodeURIComponent(scopes)}&response_type=code&state=${state}`;
 
   const acceptHeader = request.headers.get("accept") || "";
   if (acceptHeader.includes("application/json")) {
