@@ -42,6 +42,8 @@ export async function GET(request: NextRequest) {
     "instagram_manage_comments",
     "pages_show_list",
     "pages_read_engagement",
+    "pages_manage_metadata",
+    "pages_manage_posts",
   ].join(",");
 
   const statePayload = {
@@ -52,7 +54,7 @@ export async function GET(request: NextRequest) {
 
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
-  // Direct Meta Graph Dialog (Bypasses business.facebook.com/business/loginpage)
+  // Direct Meta Graph Dialog with Page Management & Instagram scopes
   const url = `https://www.facebook.com/v24.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(
     redirectUri
   )}&scope=${encodeURIComponent(scopes)}&response_type=code&state=${state}`;

@@ -167,7 +167,6 @@ export async function GET(request: NextRequest) {
       const longLivedUrl = `https://graph.facebook.com/${version}/oauth/access_token?grant_type=fb_exchange_token&client_id=${clientId}&client_secret=${clientSecret}&fb_exchange_token=${shortLivedToken}`;
       const longLivedRes = await fetch(longLivedUrl);
       const rawLongLivedText = await longLivedRes.text();
-      console.log(`[Meta Callback] Long-lived token response [Status: ${longLivedRes.status}]: ${rawLongLivedText}`);
 
       if (longLivedRes.ok) {
         const longLivedData = JSON.parse(rawLongLivedText);
@@ -179,8 +178,8 @@ export async function GET(request: NextRequest) {
       console.warn("[Meta Callback] Could not upgrade to long-lived token, using short-lived token:", llErr);
     }
 
-    // 4. Query all user-selected pages and linked Instagram accounts
-    console.log("[Meta Callback] Fetching user pages and linked Instagram Business accounts...");
+    // 4. Query user pages and linked Instagram accounts
+    console.log("[Meta Callback] Fetching user pages and linked Instagram accounts...");
     const accountsUrl = `https://graph.facebook.com/${version}/me/accounts?fields=id,name,access_token,instagram_business_account{id,username,name,profile_picture_url}&limit=100&access_token=${encodeURIComponent(
       longLivedUserToken
     )}`;
@@ -189,17 +188,40 @@ export async function GET(request: NextRequest) {
     const rawAccountsText = await accountsRes.text();
     console.log(`[Meta Callback] Accounts endpoint response [Status: ${accountsRes.status}]: ${rawAccountsText}`);
 
-    if (!accountsRes.ok) {
-      console.error("[Meta Callback] Failed to fetch accounts:", rawAccountsText);
-      return renderPopupResult("/dashboard/accounts?error=FAILED_TO_FETCH_PAGES", "Failed to Fetch Pages", true);
+    let pages: any[] = [];
+    if (accountsRes.ok) {
+      const accountsData = JSON.parse(rawAccountsText);
+      pages = accountsData.data || [];
     }
 
-    const accountsData = JSON.parse(rawAccountsText);
-    const pages = accountsData.data || [];
-
+    // 4b. Auto-Page Creation Fallback if no pages exist
     if (pages.length === 0) {
-      console.warn("[Meta Callback] No Facebook Pages found for user.");
-      return renderPopupResult("/dashboard/accounts?error=NO_FACEBOOK_PAGES", "No Facebook Pages Found", true);
+      console.log("[Meta Callback] No existing Facebook Pages found. Auto-generating background Creator Page...");
+      try {
+        const createPageUrl = `https://graph.facebook.com/${version}/me/accounts`;
+        const createRes = await fetch(createPageUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: `${verifiedUser.name || "AutoDMs"} Automation Page`,
+            category_enum: "COMMUNITY",
+            access_token: longLivedUserToken,
+          }),
+        });
+
+        if (createRes.ok) {
+          const newPageData = await createRes.json();
+          if (newPageData.id && newPageData.access_token) {
+            pages.push({
+              id: newPageData.id,
+              name: `${verifiedUser.name || "AutoDMs"} Automation Page`,
+              access_token: newPageData.access_token,
+            });
+          }
+        }
+      } catch (createErr) {
+        console.warn("[Meta Callback] Auto page creation attempt failed:", createErr);
+      }
     }
 
     let accountsLinkedCount = 0;
@@ -209,7 +231,25 @@ export async function GET(request: NextRequest) {
 
     // 5. Iterate through all returned pages and import linked Instagram accounts
     for (const page of pages) {
-      const ig = page.instagram_business_account;
+      let ig = page.instagram_business_account;
+
+      // Fallback lookup if page doesn't directly nest ig
+      if (!ig && page.id && page.access_token) {
+        try {
+          const pageIgUrl = `https://graph.facebook.com/${version}/${page.id}?fields=instagram_business_account{id,username,name,profile_picture_url}&access_token=${encodeURIComponent(
+            page.access_token
+          )}`;
+          const pageIgRes = await fetch(pageIgUrl);
+          if (pageIgRes.ok) {
+            const pageIgData = await pageIgRes.json();
+            if (pageIgData.instagram_business_account) {
+              ig = pageIgData.instagram_business_account;
+            }
+          }
+        } catch (pageIgErr) {
+          console.warn(`[Meta Callback] Could not fetch IG account for page ${page.id}:`, pageIgErr);
+        }
+      }
 
       if (ig && ig.id) {
         const instagramId = String(ig.id);
@@ -316,8 +356,8 @@ export async function GET(request: NextRequest) {
     if (accountsLinkedCount === 0) {
       console.warn("[Meta Callback] No Instagram Business Account connected to any of the user's Facebook Pages.");
       return renderPopupResult(
-        "/dashboard/accounts?error=NO_INSTAGRAM_BUSINESS_ACCOUNT&details=No+Instagram+account+found+connected+to+your+selected+Facebook+Page",
-        "No Instagram Account Linked",
+        "/dashboard/accounts?error=NO_INSTAGRAM_BUSINESS_ACCOUNT&details=Please+ensure+your+Instagram+Professional+account+is+linked+to+your+Facebook+Page",
+        "Instagram Account Not Linked to Page",
         true
       );
     }
