@@ -97,9 +97,12 @@ function LoginForm() {
   return (
     <div className="w-full max-w-sm mx-auto my-auto space-y-6">
       
-      <div className="space-y-1 text-center">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Log in to AutoDMs</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+      <div className="space-y-2 text-center">
+        <Link href="/" className="inline-block focus:outline-none">
+          <img src="/logo.svg" alt="AutoDMs" className="h-7 w-auto mx-auto object-contain" />
+        </Link>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">Log in to AutoDMs</h1>
+        <p className="text-xs text-muted-foreground">
           Instagram Comment-to-DM SaaS Automation
         </p>
       </div>

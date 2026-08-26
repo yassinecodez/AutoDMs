@@ -23,13 +23,12 @@ export function LandingNav() {
           : "top-5 w-[94%] max-w-[1360px] px-6 sm:px-8 py-3.5 rounded-2xl backdrop-blur-2xl bg-black/85 border border-white/12 shadow-2xl"
       }`}
     >
-      {/* Left: Minimalist AutoDMs Logo */}
+      {/* Left: Official AutoDMs Logo */}
       <Link
         href="/"
-        className="flex items-center gap-2.5 font-bold text-white text-base tracking-tight select-none shrink-0"
+        className="flex items-center gap-2 font-bold text-white text-base tracking-tight select-none shrink-0"
       >
-        <span className="w-2.5 h-2.5 rounded-full bg-white inline-block shadow-sm" />
-        <span>AutoDMs</span>
+        <img src="/logo.svg" alt="AutoDMs" className="h-6 w-auto object-contain brightness-100 invert-0" />
       </Link>
 
       {/* Center: Navigation Links */}
