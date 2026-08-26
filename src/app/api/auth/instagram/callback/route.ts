@@ -141,8 +141,8 @@ export async function GET(request: NextRequest) {
   }
 
   const sanitizedCode = code.split("#")[0].replace(/_$/, "").trim();
-  const clientId = process.env.INSTAGRAM_APP_ID || "1041048208692049";
-  const clientSecret = process.env.INSTAGRAM_APP_SECRET || "41fed97dd8c8940e7b929984d3f16a5f";
+  const clientId = process.env.META_APP_ID || "954476037671354";
+  const clientSecret = process.env.META_APP_SECRET || "33f555ff97da5f3b5ba5f88c3ee40e11";
   const redirectUri =
     process.env.NODE_ENV === "production" || process.env.VERCEL
       ? "https://autodms-project.vercel.app/api/auth/instagram/callback"

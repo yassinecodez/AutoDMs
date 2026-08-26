@@ -39,7 +39,8 @@ export async function GET(request: NextRequest) {
       ? "https://autodms-project.vercel.app/api/auth/instagram/callback"
       : "http://localhost:3000/api/auth/instagram/callback";
 
-  const clientId = process.env.INSTAGRAM_APP_ID || "1041048208692049";
+  // Use the verified live Meta App ID for Instagram Business Login
+  const clientId = process.env.META_APP_ID || "954476037671354";
 
   const statePayload = {
     userId: resolvedUserId,
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
 
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
-  // Pure 1-Click Instagram OAuth (No password prompt, uses active Instagram login)
+  // Pure Instagram Login for Business Dialog
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
