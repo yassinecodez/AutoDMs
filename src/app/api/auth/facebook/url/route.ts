@@ -52,10 +52,10 @@ export async function GET(request: NextRequest) {
 
   const state = Buffer.from(JSON.stringify(statePayload)).toString("base64url");
 
-  // Meta Dialog with auth_type=rerequest to ensure the Instagram Account Selector is always displayed
+  // Pure 1-Click Meta OAuth Dialog (No password prompt, uses active browser session)
   const url = `https://www.facebook.com/v24.0/dialog/oauth?client_id=${clientId}&redirect_uri=${encodeURIComponent(
     redirectUri
-  )}&scope=${encodeURIComponent(scopes)}&response_type=code&state=${state}&auth_type=rerequest`;
+  )}&scope=${encodeURIComponent(scopes)}&response_type=code&state=${state}`;
 
   const acceptHeader = request.headers.get("accept") || "";
   if (acceptHeader.includes("application/json")) {
