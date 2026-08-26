@@ -345,6 +345,95 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 5b. Check Business Portfolios if no IG found directly on pages
+    if (accountsLinkedCount === 0) {
+      try {
+        console.log("[Meta Callback] Checking user's Business Portfolios for Instagram accounts...");
+        const bizUrl = `https://graph.facebook.com/${version}/me/businesses?fields=id,name,instagram_business_accounts{id,username,name,profile_picture_url}&access_token=${encodeURIComponent(
+          longLivedUserToken
+        )}`;
+        const bizRes = await fetch(bizUrl);
+        if (bizRes.ok) {
+          const bizData = await bizRes.json();
+          for (const b of (bizData.data || [])) {
+            for (const ig of (b.instagram_business_accounts?.data || [])) {
+              if (ig.id) {
+                const instagramId = String(ig.id);
+                const username = ig.username || ig.name;
+                const profilePictureUrl = ig.profile_picture_url || null;
+                const encryptedToken = encrypt(longLivedUserToken);
+                const normalizedUsername = username.toLowerCase().trim();
+
+                const existingAccounts = await db.igAccount.findMany({
+                  where: {
+                    userId: verifiedUser.id,
+                    OR: [
+                      { instagramAccountId: instagramId },
+                      { pageName: { equals: normalizedUsername, mode: "insensitive" } },
+                    ],
+                  },
+                });
+
+                let savedAcc: any = null;
+                if (existingAccounts.length > 0) {
+                  savedAcc = await db.igAccount.update({
+                    where: { id: existingAccounts[0].id },
+                    data: {
+                      instagramAccountId: instagramId,
+                      pageName: username,
+                      profilePictureUrl: profilePictureUrl || existingAccounts[0].profilePictureUrl,
+                      accessToken: encryptedToken,
+                    },
+                  });
+                } else {
+                  savedAcc = await db.igAccount.create({
+                    data: {
+                      userId: verifiedUser.id,
+                      instagramAccountId: instagramId,
+                      pageId: `biz_${b.id}`,
+                      pageName: username,
+                      profilePictureUrl: profilePictureUrl,
+                      accessToken: encryptedToken,
+                      planType: userPlan,
+                      dmsLimit: userLimit,
+                    },
+                  });
+                }
+                accountsLinkedCount++;
+                if (!primaryConnectedAccount) primaryConnectedAccount = savedAcc;
+              }
+            }
+          }
+        }
+      } catch (bizErr) {
+        console.warn("[Meta Callback] Business portfolio lookup failed:", bizErr);
+      }
+    }
+
+    // 5c. Page Fallback: If pages exist but IG isn't attached yet, link the Page
+    if (accountsLinkedCount === 0 && pages.length > 0) {
+      const primaryPage = pages[0];
+      if (primaryPage.id && primaryPage.access_token) {
+        console.log(`[Meta Callback] Using Page ${primaryPage.name} as primary connection...`);
+        const encryptedToken = encrypt(primaryPage.access_token);
+        const username = primaryPage.name || "Meta Connected Account";
+
+        const savedAcc = await db.igAccount.create({
+          data: {
+            userId: verifiedUser.id,
+            instagramAccountId: `fb_${primaryPage.id}`,
+            pageId: String(primaryPage.id),
+            pageName: username,
+            accessToken: encryptedToken,
+            planType: userPlan,
+            dmsLimit: userLimit,
+          },
+        });
+        accountsLinkedCount++;
+        primaryConnectedAccount = savedAcc;
+      }
+    }
+
     // Clean up any legacy placeholder accounts
     await db.igAccount.deleteMany({
       where: {
