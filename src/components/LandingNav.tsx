@@ -28,7 +28,7 @@ export function LandingNav() {
         href="/"
         className="flex items-center gap-2 font-bold text-white text-base tracking-tight select-none shrink-0"
       >
-        <img src="/logo.svg" alt="AutoDMs" className="h-6 w-auto object-contain brightness-100 invert-0" />
+        <img src="/logo.png" alt="AutoDMs" className="h-7 w-auto object-contain" />
       </Link>
 
       {/* Center: Navigation Links */}

@@ -54,7 +54,7 @@ export default async function DashboardLayout({
           {/* Brand Header */}
           <div className="h-14 flex items-center justify-between px-5 border-b border-border">
             <Link href="/dashboard" className="flex items-center gap-2.5 font-semibold text-foreground text-sm tracking-tight select-none">
-              <img src="/logo.svg" alt="AutoDMs" className="h-5 w-auto object-contain dark:brightness-100" />
+              <img src="/logo.png" alt="AutoDMs" className="h-6 w-auto object-contain" />
             </Link>
             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-secondary text-muted-foreground border border-border">
               v1.0

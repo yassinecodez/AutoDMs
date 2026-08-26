@@ -99,7 +99,7 @@ function LoginForm() {
       
       <div className="space-y-2 text-center">
         <Link href="/" className="inline-block focus:outline-none">
-          <img src="/logo.svg" alt="AutoDMs" className="h-7 w-auto mx-auto object-contain" />
+          <img src="/logo.png" alt="AutoDMs" className="h-8 w-auto mx-auto object-contain" />
         </Link>
         <h1 className="text-xl font-bold tracking-tight text-foreground">Log in to AutoDMs</h1>
         <p className="text-xs text-muted-foreground">
