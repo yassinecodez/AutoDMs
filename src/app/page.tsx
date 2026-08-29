@@ -194,19 +194,24 @@ export default function HomePage() {
       <FaqAccordion />
 
       {/* Footer */}
-      <footer className="border-t border-[#1F1F1F] bg-[#000000] py-12 text-center text-xs text-zinc-500">
-        <div className="w-full max-w-[1360px] mx-auto px-6 sm:px-10 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-6">
+      <footer className="border-t border-[#1F1F1F] bg-[#000000] py-12 text-xs text-zinc-500">
+        <div className="w-full max-w-[1360px] mx-auto px-6 sm:px-10 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5 font-semibold text-white text-sm">
-            <span className="w-2.5 h-2.5 rounded-full bg-white inline-block" />
-            AutoDMs
+            <img src="/logo.png" alt="AutoDMs" className="h-6 w-auto object-contain" />
           </div>
-          <div>
-            © 2026 AutoDMs Inc. 100% Meta Graph API Compliant.
+          <div className="text-center md:text-left space-y-1">
+            <div>
+              © 2026 AutoDMs. Operated by <strong className="text-zinc-300">Yassine Zerouk</strong>. All rights reserved.
+            </div>
+            <div className="text-zinc-500 text-[11px]">
+              BD AL MASSIRA, LOTISSEMENT AL WIAM, LOT N 1,12, Kenitra, Morocco · <a href="mailto:contact@codexity.dev" className="text-zinc-400 hover:underline">contact@codexity.dev</a>
+            </div>
           </div>
           <div className="flex items-center gap-6 text-zinc-400 text-xs">
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link href="/data-deletion" className="hover:text-white transition-colors">Data Deletion</Link>
             <Link href="/login" className="hover:text-white transition-colors">Log In</Link>
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
           </div>
         </div>
       </footer>

@@ -69,6 +69,18 @@ export default function TermsOfServicePage() {
               AutoDMs provides the platform on an &quot;as is&quot; and &quot;as available&quot; basis. We are not responsible for any actions taken by Meta or Instagram regarding your social media accounts.
             </p>
           </section>
+
+          <section className="space-y-3 border-t border-border pt-6">
+            <h2 className="text-lg font-semibold text-foreground">6. Legal Entity & Contact Information</h2>
+            <p>
+              AutoDMs is legally owned and operated by <strong className="text-foreground">Yassine Zerouk</strong>.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Address: BD AL MASSIRA, LOTISSEMENT AL WIAM, LOT N 1,12, Kenitra, Morocco<br />
+              Email: <a href="mailto:contact@codexity.dev" className="text-blue-500 hover:underline">contact@codexity.dev</a><br />
+              Official Website: <a href="https://codexity.dev" className="text-blue-500 hover:underline">https://codexity.dev</a>
+            </p>
+          </section>
         </div>
       </div>
     </div>

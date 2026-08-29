@@ -35,7 +35,7 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-3">
             <h2 className="text-lg font-semibold text-foreground">1. Introduction & Overview</h2>
             <p>
-              AutoDMs (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) provides Instagram automation, direct messaging, and comment management tools for creators, businesses, and agencies. We are committed to protecting the privacy of our users and ensuring full transparency regarding data collection, processing, and security in compliance with Meta Platform Terms, GDPR, and CCPA.
+              AutoDMs (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;), legally operated and controlled by <strong className="text-foreground">Yassine Zerouk</strong> (located at BD AL MASSIRA, LOTISSEMENT AL WIAM, LOT N 1,12, Kenitra, Morocco · contact@codexity.dev), provides Instagram automation, direct messaging, and comment management tools for creators, businesses, and agencies. We are committed to protecting the privacy of our users and ensuring full transparency regarding data collection, processing, and security in compliance with Meta Platform Terms, GDPR, and CCPA.
             </p>
           </section>
 
